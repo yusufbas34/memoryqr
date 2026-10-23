@@ -5,6 +5,7 @@
 //   POST /del   [{key, exp, sig}]       mesaj: DEL|<anahtar>|<exp>
 //   POST /delp  {prefix, exp, sig}      mesaj: DELP|<önek>|<exp>          (etkinliğin tüm dosyaları)
 //   GET  /f/<anahtar>[?dl=dosya-adı]    dosyayı verir (video için Range destekli); dl varsa indirme olarak
+//   GET  /durum                         kurulum kontrolü (R2 bağlantısı ve UPLOAD_SECRET var mı; gizli değer gösterilmez)
 // Ortam: BUCKET (R2 bağlantısı), UPLOAD_SECRET (gizli), ALLOWED_ORIGINS (virgüllü; boşsa her yer)
 
 const KEY_RE = /^e\/[A-Z0-9]{4,12}\/[0-9a-f-]{36}(_t)?\.[a-z0-9]{2,5}$/;
@@ -13,7 +14,7 @@ const enc = new TextEncoder();
 
 function cors(req, env) {
   const origin = req.headers.get("Origin") || "";
-  const list = (env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
+  const list = (env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim().replace(/\/+$/, "")).filter(Boolean);
   const allow = !list.length ? "*" : list.includes(origin) ? origin : list[0];
   return {
     "Access-Control-Allow-Origin": allow,
@@ -45,6 +46,16 @@ const CONTENT_TYPES = {jpg: "image/jpeg", png: "image/png", webp: "image/webp", 
 
 export default {
   async fetch(req, env) {
+    // beklenmeyen hata da CORS başlıklı JSON dönsün: tarayıcı "ulaşılamadı" yerine nedeni görsün
+    try { return await handle(req, env); } catch (e) {
+      return new Response(JSON.stringify({error: "worker_error", detail: String(e?.message || e)}),
+        {status: 500, headers: {...cors(req, env), "Content-Type": "application/json"}});
+    }
+  },
+};
+
+async function handle(req, env) {
+  {
     const h = cors(req, env);
     const json = (body, status = 200) => new Response(JSON.stringify(body), {status, headers: {...h, "Content-Type": "application/json"}});
     if (req.method === "OPTIONS") return new Response(null, {status: 204, headers: h});
@@ -113,7 +124,15 @@ export default {
       return new Response(req.method === "HEAD" ? null : obj.body, {status, headers});
     }
 
+    if (path === "/durum") {
+      let bucket = !!env.BUCKET, write = false;
+      if (bucket) { try { await env.BUCKET.head("durum-kontrol"); write = true; } catch (e) {} }
+      const origins = (env.ALLOWED_ORIGINS || "").trim();
+      return json({bucket, bucket_ok: write, secret: !!env.UPLOAD_SECRET, secret_length: (env.UPLOAD_SECRET || "").length,
+        allowed_origins: origins || "(boş: her yer)", origin: req.headers.get("Origin") || null});
+    }
+
     if (path === "/") return new Response("MemoryQR dosya sunucusu çalışıyor.", {headers: {...h, "Content-Type": "text/plain; charset=utf-8"}});
     return new Response("Bulunamadı", {status: 404, headers: h});
-  },
-};
+  }
+}

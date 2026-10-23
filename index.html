@@ -363,8 +363,8 @@ function put(key, max, exp, sig, blob, mime, onProgress) {
     x.upload.onprogress = e => e.lengthComputable && onProgress?.(e.loaded / e.total);
     x.onload = () => {
       if (x.status >= 200 && x.status < 300) return res();
-      let code = ""; try { code = JSON.parse(x.responseText).error || ""; } catch (e) {}
-      rej(Object.assign(new Error(putError(x.status, code)), {status: x.status}));
+      let code = "", detail = ""; try { const j = JSON.parse(x.responseText); code = j.error || ""; detail = j.detail || ""; } catch (e) {}
+      rej(Object.assign(new Error(putError(x.status, code) + (detail ? ` [${detail}]` : "")), {status: x.status}));
     };
     x.onerror = () => rej(new Error("Dosya sunucusuna ulaşılamadı. İnternet bağlantınızı kontrol edin. (Sürerse: Worker adresi ya da ALLOWED_ORIGINS ayarı)"));
     x.ontimeout = () => rej(new Error("Zaman aşımı"));

@@ -56,7 +56,7 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 ### 4. Site
 1. `index.html` başındaki `FILES_URL` satırına Worker adresini yazın (sonunda `/` olmadan).
 2. `SITE_URL` QR kartlara basılan adrestir. **Kartlar basıldıktan sonra değiştirmeyin.** Şu an
-   `https://yusufbas34.github.io/memeryqr/` (GitHub > Settings > Pages > Branch: `main` / root). Kendi alan adı
+   `https://yusufbas34.github.io/memoryqr/` (GitHub > Settings > Pages > Branch: `main` / root). Kendi alan adı
    (ör. `memoryqr.com.tr`) alınacaksa ilk kartlar basılmadan önce: köke `CNAME` dosyası, DNS'te CNAME kaydı
    `yusufbas34.github.io`, ardından `SITE_URL`'i güncelleyin.
 3. `SITE_URL` + `?admin` adresinden giriş yapın, etkinliği oluşturun, **Masa kartı PDF**'ini Özalit'e gönderin.

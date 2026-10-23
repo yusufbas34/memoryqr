@@ -1,0 +1,9 @@
+/* Barlow ve Barlow Condensed (SIL OFL 1.1, fonts/OFL.txt): site ve uygulama çevrimdışı da aynı fontu kullansın */
+@font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:400;font-display:swap;src:url(fonts/barlow-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:600;font-display:swap;src:url(fonts/barlow-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:"Barlow";font-weight:700;font-display:swap;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-weight:700;font-display:swap;src:url(fonts/barlow-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:"Barlow Condensed";font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-latin-ext-700-normal.woff2) format("woff2");unicode-range:U+0100-02AF,U+1E00-1EFF}

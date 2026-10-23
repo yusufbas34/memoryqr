@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gizlilik · MemoryQR</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="stylesheet" href="fonts.css">
+<style>
+:root{--ink:#1d1820;--accent:#8c2f52;--muted:#6b6070;--bg:#faf7f6}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Barlow",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;padding:28px 18px 48px}
+main{max-width:720px;margin:0 auto}
+h1{font-size:28px;margin:0 0 4px}
+h2{font-size:20px;margin:28px 0 8px}
+p,li{font-size:16px}
+.meta{color:var(--muted);font-size:14px;margin:0 0 18px}
+.box{background:#fff;border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>Gizlilik ve KVKK aydınlatma metni</h1>
+<p class="meta">MemoryQR (Bul QR) · Son güncelleme: 23 Ekim 2026</p>
+
+<p class="box"><b>Kısaca:</b> Hesap açmazsınız. Yüklediğiniz fotoğraf ve videolar yalnızca o etkinliğin albümünde durur ve
+albüm süresi dolunca (çoğunlukla etkinlikten 30 gün sonra) kalıcı olarak silinir. Verileri satmıyoruz, reklam ya da takip yapmıyoruz.</p>
+
+<h2>1. Hangi verileri işliyoruz?</h2>
+<ul>
+  <li><b>Misafirler:</b> yazdığınız ad, yüklediğiniz fotoğraf ve videolar, yükleme zamanı. Adınız ve albüm kodu yalnızca
+    kendi telefonunuzun tarayıcısında hatırlanır.</li>
+  <li><b>Etkinlik sahibi:</b> etkinlik başlığı ve tarihi; sipariş için verdiğiniz ad ve telefon numarası.</li>
+</ul>
+
+<h2>2. Kimler görür?</h2>
+<ul>
+  <li>Etkinlik sahibi albümdeki her şeyi görür, indirir, gizler ve siler.</li>
+  <li>Etkinlik sahibi açık bıraktıysa QR'ı okutan diğer misafirler de gizlenmemiş fotoğrafları görebilir.</li>
+  <li>Albümler arama motorlarına kapalıdır; bağlantıyı ya da QR'ı bilmeyen kişi albüme ulaşamaz.</li>
+</ul>
+
+<h2>3. Veri sorumlusu</h2>
+<p>Albümdeki fotoğraflar açısından veri sorumlusu etkinliği düzenleyen kişidir; MemoryQR yalnızca saklama hizmeti veren veri
+  işleyendir. Sipariş bilgileri için veri sorumlusu MemoryQR'dır.</p>
+
+<h2>4. Nerede ve ne kadar saklanır?</h2>
+<ul>
+  <li>Fotoğraf ve videolar Cloudflare R2'de, kayıtlar Supabase'de tutulur. Bu hizmetler yurt dışındaki sunucularda çalışabilir.</li>
+  <li>Albümün süresi dolunca (etkinlik sayfasında tarihi yazar) dosyalar kalıcı olarak silinir. Etkinlik sahibi daha önce de silebilir.</li>
+  <li>Sipariş kayıtları en fazla 2 yıl saklanır.</li>
+</ul>
+
+<h2>5. Haklarınız</h2>
+<p>6698 sayılı KVKK kapsamında verilerinizin işlenip işlenmediğini öğrenme, düzeltilmesini ya da silinmesini isteme ve itiraz
+  etme haklarınız vardır. Albümdeki bir fotoğrafınızın kaldırılmasını etkinlik sahibinden ya da albüm kodunu belirterek bizden
+  isteyebilirsiniz. Talepler en geç 30 gün içinde yerine getirilir.</p>
+
+<p><a href="./">← MemoryQR</a></p>
+</main>
+</body>
+</html>

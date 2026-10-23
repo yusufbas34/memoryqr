@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MemoryQR</title>
+<meta name="description" content="Düğün, nişan, kına ve mezuniyet için tek QR: misafirler okutur, fotoğraf ve videolarını yükler, tüm anılar tek albümde toplanır.">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<meta name="theme-color" content="#8c2f52">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MemoryQR">
+<meta property="og:title" content="MemoryQR | Anılarınız için tek QR">
+<meta property="og:description" content="Okut, yükle, tüm anılar tek yerde toplansın. Uygulama indirmek gerekmez.">
+<link rel="stylesheet" href="fonts.css">
+<script src="vendor/qrcode.js"></script>
+<script>
+  // ==================== AYARLAR ====================
+  // Supabase projesi (Tasma QR ile aynı proje olabilir; tablolar "memory_" ile başlar). Kurulum: kurulum.sql
+  const SUPABASE_URL = "https://vsurqyzjtxtbhhbtbhgz.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_Dz8WxGrendM_qa9UxVbC3g_nvwAnCcH";
+  // Cloudflare Worker adresi (worker/): dosyalar buraya yüklenir ve buradan açılır. Sonunda / olmadan.
+  const FILES_URL = "https://memoryqr-dosya.BURAYA.workers.dev";
+  // QR kartlara basılan adres. QR'lar basıldıktan sonra bu adres değişmemeli.
+  const SITE_URL = "https://yusufbas34.github.io/memeryqr/";
+  // =================================================
+</script>
+<style>
+:root{--ink:#1d1820;--muted:#6b6070;--line:#e7dfe3;--bg:#faf7f6;--card:#fff;--accent:#8c2f52;--accent2:#6f2240;
+  --gold:#a8832f;--ok:#1f7a4a;--err:#b3261e;--soft:#f4ecef}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;
+  padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+main{max-width:520px;margin:0 auto;display:grid;gap:18px}
+main.wide{max-width:1100px}
+h1,h2,h3{margin:0;line-height:1.15;text-wrap:balance}
+h1{font-family:"Barlow Condensed","Barlow",sans-serif;font-weight:700;font-size:clamp(34px,9vw,46px);letter-spacing:.01em}
+h2{font-size:21px}
+h3{font-size:17px}
+p{margin:0;line-height:1.5;color:var(--muted)}
+a{color:var(--accent)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.14em;font-size:13px;color:var(--accent);text-decoration:none}
+.brand svg{width:22px;height:22px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.hero{display:grid;gap:8px;text-align:center;padding:10px 0 4px}
+.hero p{max-width:40ch;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:12px}
+label{font-weight:600;font-size:15px}
+input[type=text],input[type=tel],input[type=password],input[type=date],input[type=number],select,textarea{width:100%;font:inherit;font-size:18px;
+  padding:12px 13px;border:2px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+textarea{font-size:16px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.btn{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-weight:600;font-size:17px;
+  padding:14px 18px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;min-height:50px}
+.btn:hover{background:var(--accent2)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--accent);border:2px solid var(--accent)}
+.btn.ghost:hover{background:var(--soft)}
+.btn.light{background:var(--soft);color:var(--ink)}
+.btn.danger{background:var(--err)}
+.btn.small{font-size:15px;padding:8px 12px;min-height:38px;border-radius:9px}
+.btn svg{width:20px;height:20px;flex:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>.btn{flex:1 1 auto}
+.stack{display:grid;gap:10px}
+.big-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big-pick .btn{flex-direction:column;min-height:96px;font-size:16px}
+.big-pick .btn svg{width:30px;height:30px}
+.hint{font-size:14px;color:var(--muted);line-height:1.45}
+.err{color:var(--err);font-weight:600;font-size:15px}
+.ok{color:var(--ok);font-weight:600}
+.hello{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px}
+.linkbtn{background:none;border:0;color:var(--accent);font:inherit;font-size:15px;cursor:pointer;text-decoration:underline;padding:4px}
+
+/* yükleme kuyruğu */
+.queue{display:grid;gap:8px}
+.qi{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;font-size:14px}
+.qi .th{width:48px;height:48px;border-radius:8px;background:var(--soft) center/cover no-repeat}
+.qi .bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin-top:5px}
+.qi .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.qi.done .bar i{background:var(--ok)}
+.qi.fail .bar i{background:var(--err)}
+.qi .st{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.qi .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.summary{font-weight:600;font-size:15px}
+
+/* galeri */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:4px}
+main.wide .gal{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.gi{position:relative;aspect-ratio:1;max-width:100%;background:var(--soft);border:0;padding:0;cursor:pointer;overflow:hidden;border-radius:4px}
+.gi img{width:100%;height:100%;object-fit:cover;display:block}
+.gi .vid{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;font-size:12px;padding:2px 8px}
+.gi .novid{display:flex;align-items:center;justify-content:center;height:100%;font-size:30px;color:var(--muted)}
+.gi.hid img{opacity:.35}
+.gi.hid::after{content:"Gizli";position:absolute;left:6px;top:6px;background:var(--ink);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px}
+.gi.sel{outline:4px solid var(--accent);outline-offset:-4px}
+.gi .tick{position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25)}
+.gi.sel .tick{background:var(--accent)}
+.gi:focus-visible,.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* tam ekran görüntüleyici */
+.lb{position:fixed;inset:0;background:rgba(12,10,14,.96);z-index:50;display:grid;grid-template-rows:auto 1fr auto;color:#fff;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.lb .top,.lb .bot{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap}
+.lb .top{justify-content:space-between}
+.lb .media{display:flex;align-items:center;justify-content:center;min-height:0;position:relative}
+.lb .media img,.lb .media video{max-width:100%;max-height:100%;object-fit:contain}
+.lb .nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:0;color:#fff;width:46px;height:64px;
+  font-size:30px;cursor:pointer;border-radius:10px}
+.lb .nav.l{left:8px}.lb .nav.r{right:8px}
+.lb .x{background:none;border:0;color:#fff;font-size:30px;cursor:pointer;padding:4px 8px}
+.lb .who{font-weight:600}
+.lb .btn{min-height:42px;font-size:15px;padding:9px 14px}
+.lb .btn.light{background:rgba(255,255,255,.14);color:#fff}
+
+/* çift paneli */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-family:"Barlow Condensed","Barlow",sans-serif;font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--muted)}
+.toolbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.switch{display:flex;align-items:center;gap:10px;font-size:16px;cursor:pointer}
+.switch input{width:22px;height:22px;accent-color:var(--accent)}
+.pin{font-family:ui-monospace,Menlo,monospace;font-size:28px;letter-spacing:.3em;text-align:center}
+.prog{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+
+/* slayt */
+body.slide{background:#000;padding:0;overflow:hidden;cursor:none}
+.sl{position:fixed;inset:0}
+.sl img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 1.2s ease}
+.sl img.on{opacity:1}
+.sl .cap{position:absolute;left:28px;bottom:24px;color:#fff;font-size:clamp(18px,2.4vw,30px);font-weight:600;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+.sl .qr{position:absolute;right:24px;bottom:24px;background:#fff;border-radius:14px;padding:12px;width:clamp(140px,14vw,220px);
+  display:grid;gap:6px;text-align:center;color:var(--ink);font-weight:600;font-size:clamp(12px,1.1vw,16px);line-height:1.2}
+.sl .qr svg{width:100%;height:auto}
+.sl .empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#fff;gap:12px;padding:20px}
+.sl .empty h1{color:#fff}
+.sl .empty p{color:#cfc4cc}
+
+/* yönetim */
+.ev{display:grid;gap:8px}
+.ev .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--muted)}
+.ev .code{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--ink)}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--ink)}
+.pill.on{background:#e3f3ea;color:var(--ok)}
+.pill.off{background:#f7e3e1;color:var(--err)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+
+/* iletişim kutuları */
+.modal{position:fixed;inset:0;background:rgba(20,14,20,.55);z-index:60;display:grid;place-items:center;padding:20px}
+.modal .card{max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:12px 18px;border-radius:10px;font-size:15px;z-index:70;max-width:90vw}
+footer{text-align:center;font-size:13px;color:var(--muted);display:grid;gap:6px;padding-top:10px}
+footer a{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app"><p>Yükleniyor…</p></main>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------- yardımcılar
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const app = $("#app");
+const params = new URLSearchParams(location.search);
+const BASE = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : SITE_URL;
+const guestLink = code => `${SITE_URL}?e=${encodeURIComponent(code)}`;
+const ownerLink = code => `${SITE_URL}?e=${encodeURIComponent(code)}&sahip`;
+const fileUrl = key => `${FILES_URL}/f/${key}`;
+
+async function rpc(fn, args = {}) {
+  const headers = {"Content-Type": "application/json", apikey: SUPABASE_KEY};
+  if (SUPABASE_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + SUPABASE_KEY; // eski tip anon key
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {method: "POST", headers, body: JSON.stringify(args)});
+  const data = await r.json().catch(() => null);
+  if (!r.ok) { const e = new Error(data?.message || r.statusText); e.status = r.status; throw e; }
+  return data;
+}
+
+const store = {
+  get(k, d = null) { try { const v = localStorage.getItem("mqr_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("mqr_" + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem("mqr_" + k); } catch (e) {} },
+};
+const session = {
+  get(k) { try { return sessionStorage.getItem("mqr_" + k); } catch (e) { return null; } },
+  set(k, v) { try { sessionStorage.setItem("mqr_" + k, v); } catch (e) {} },
+  del(k) { try { sessionStorage.removeItem("mqr_" + k); } catch (e) {} },
+};
+
+const KINDS = {dugun: "Düğün", nisan: "Nişan", kina: "Kına", soz: "Söz", mezuniyet: "Mezuniyet", dogum_gunu: "Doğum günü", diger: "Etkinlik"};
+const fmtDate = d => new Date(String(d).length === 10 ? d + "T12:00:00" : d).toLocaleDateString("tr-TR", {day: "numeric", month: "long", year: "numeric"});
+const fmtTime = d => new Date(d).toLocaleString("tr-TR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+const daysLeft = d => Math.max(0, Math.ceil((new Date(d) - Date.now()) / 864e5));
+function fmtBytes(b) {
+  b = Number(b) || 0;
+  if (b < 1e6) return Math.max(1, Math.round(b / 1e3)) + " KB";
+  if (b < 1e9) return (b / 1e6).toFixed(b < 1e7 ? 1 : 0).replace(".", ",") + " MB";
+  return (b / 1e9).toFixed(1).replace(".", ",") + " GB";
+}
+const slug = s => String(s || "").toLocaleLowerCase("tr-TR").replace(/[çğıöşü]/g, c => ({ç:"c",ğ:"g",ı:"i",ö:"o",ş:"s",ü:"u"}[c]))
+  .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "misafir";
+function fileName(f) {
+  const d = new Date(f.created_at), p = n => String(n).padStart(2, "0");
+  return `${slug(f.guest)}-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}-${f.id.slice(0, 4)}.${f.key.split(".").pop()}`;
+}
+
+function toast(msg, ms = 2600) {
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg; t.setAttribute("role", "status");
+  document.body.append(t);
+  setTimeout(() => t.remove(), ms);
+}
+
+// confirm() yerine sayfa içi soru kutusu
+function ask(title, text, ok = "Tamam", danger = false) {
+  return new Promise(res => {
+    const m = document.createElement("div");
+    m.className = "modal";
+    m.innerHTML = `<div class="card" role="dialog" aria-modal="true"><h2>${esc(title)}</h2><p>${esc(text)}</p>
+      <div class="row"><button class="btn light" data-v="0">Vazgeç</button><button class="btn ${danger ? "danger" : ""}" data-v="1">${esc(ok)}</button></div></div>`;
+    m.addEventListener("click", e => {
+      const b = e.target.closest("[data-v]");
+      if (b || e.target === m) { m.remove(); res(b?.dataset.v === "1"); }
+    });
+    document.body.append(m);
+    m.querySelector('[data-v="1"]').focus();
+  });
+}
+
+async function copy(text, msg = "Kopyalandı") {
+  try { await navigator.clipboard.writeText(text); toast(msg); }
+  catch (e) {
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.append(ta); ta.select();
+    try { document.execCommand("copy"); toast(msg); } catch (e2) { toast("Kopyalanamadı: " + text, 6000); }
+    ta.remove();
+  }
+}
+
+function qrSvg(text, attrs = "") {
+  const q = qrcode(0, "M");
+  q.addData(text); q.make();
+  const n = q.getModuleCount();
+  let d = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (!q.isDark(r, c)) continue;
+    const s = c;
+    while (c + 1 < n && q.isDark(r, c + 1)) c++;
+    d += `M${s} ${r}h${c - s + 1}v1h-${c - s + 1}z`;
+  }
+  return `<svg ${attrs} viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges" aria-hidden="true"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#111"/></svg>`;
+}
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if ([...document.scripts].some(s => s.src.endsWith(src))) return res();
+    const el = document.createElement("script");
+    el.src = src; el.onload = res; el.onerror = () => rej(new Error(src + " yüklenemedi"));
+    document.head.append(el);
+  });
+}
+
+function saveBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+const ICON = {
+  logo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5c1.6-1.6 4 .7 2.4 2.4l-2.4 2.6-2.4-2.6c-1.6-1.7.8-4 2.4-2.4z" fill="currentColor" stroke="none"/></svg>`,
+  image: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 17-5-5-9 8"/></svg>`,
+  camera: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>`,
+  play: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>`,
+  link: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>`,
+  print: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z"/></svg>`,
+  wa: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.4.2.5.3.1.2.1.7-.1 1.3z"/></svg>`,
+};
+const brandHtml = `<a class="brand" href="${esc(BASE)}">${ICON.logo}MEMORYQR</a>`;
+const footerHtml = code => `<footer>${code ? `<a href="?e=${esc(code)}&sahip">Etkinlik sahibi girişi</a>` : ""}
+  <span>MemoryQR · Bul QR · <a href="gizlilik.html">Gizlilik</a></span></footer>`;
+
+// ---------------------------------------------------------------- görsel hazırlama
+// Fotoğraf tarayıcıda küçültülür (uzun kenar 2560 px, JPEG): salon internetinde hızlı yüklensin, depolama ucuz kalsın.
+const MAX_EDGE = 2560, THUMB_EDGE = 480;
+const VIDEO_TYPES = {mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", "3gp": "video/3gpp"};
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif"];
+const MAX_VIDEO = 300e6;
+
+function scaled(src, w, h, edge, q) {
+  const k = Math.min(1, edge / Math.max(w, h));
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  return new Promise(res => c.toBlob(b => res(b), "image/jpeg", q));
+}
+
+async function decodeImage(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file, {imageOrientation: "from-image"}); } catch (e) {}
+  }
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("decode")); };
+    img.src = url;
+  });
+}
+
+function videoThumb(file) {
+  return new Promise(res => {
+    const v = document.createElement("video"), url = URL.createObjectURL(file);
+    let done = false;
+    const fin = b => { if (done) return; done = true; URL.revokeObjectURL(url); v.removeAttribute("src"); res(b); };
+    setTimeout(() => fin(null), 7000);
+    v.muted = true; v.playsInline = true; v.preload = "auto";
+    v.onloadeddata = () => { try { v.currentTime = Math.min(1, (v.duration || 2) / 3); } catch (e) { fin(null); } };
+    v.onseeked = async () => { try { fin(v.videoWidth ? await scaled(v, v.videoWidth, v.videoHeight, THUMB_EDGE, .75) : null); } catch (e) { fin(null); } };
+    v.onerror = () => fin(null);
+    v.src = url;
+  });
+}
+
+async function prepare(file) {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (file.type.startsWith("video/") || VIDEO_TYPES[ext]) {
+    const mime = Object.values(VIDEO_TYPES).includes(file.type) ? file.type : VIDEO_TYPES[ext];
+    if (!mime) throw new Error("Bu video türü desteklenmiyor.");
+    if (file.size > MAX_VIDEO) throw new Error(`Video çok büyük (${fmtBytes(file.size)}, en çok 300 MB). Daha kısa bir bölüm seçin.`);
+    return {kind: "video", blob: file, mime, thumb: await videoThumb(file)};
+  }
+  let img;
+  try { img = await decodeImage(file); } catch (e) {
+    // tarayıcı açamadı (ör. masaüstünde HEIC): olduğu gibi yükle
+    const mime = PHOTO_TYPES.includes(file.type) ? file.type : ext === "heic" ? "image/heic" : ext === "heif" ? "image/heif" : null;
+    if (!mime) throw new Error("Bu dosya bir fotoğraf ya da video değil.");
+    return {kind: "photo", blob: file, mime, thumb: null};
+  }
+  const w = img.width, h = img.height;
+  const thumb = await scaled(img, w, h, THUMB_EDGE, .75);
+  // küçük JPEG'ler olduğu gibi kalır (EXIF bilgisi korunur)
+  if (file.type === "image/jpeg" && Math.max(w, h) <= MAX_EDGE && file.size < 2.5e6) { img.close?.(); return {kind: "photo", blob: file, mime: "image/jpeg", thumb}; }
+  const blob = await scaled(img, w, h, MAX_EDGE, .86);
+  img.close?.();
+  if (file.type === "image/gif") return {kind: "photo", blob: file, mime: "image/gif", thumb};
+  return {kind: "photo", blob, mime: "image/jpeg", thumb};
+}
+
+function put(key, max, exp, sig, blob, mime, onProgress) {
+  return new Promise((res, rej) => {
+    const x = new XMLHttpRequest();
+    x.open("PUT", `${FILES_URL}/u/${key}?max=${max}&exp=${exp}&sig=${sig}`);
+    x.setRequestHeader("Content-Type", mime);
+    x.upload.onprogress = e => e.lengthComputable && onProgress?.(e.loaded / e.total);
+    x.onload = () => x.status >= 200 && x.status < 300 ? res() : rej(Object.assign(new Error("HTTP " + x.status), {status: x.status}));
+    x.onerror = () => rej(new Error("Bağlantı koptu"));
+    x.ontimeout = () => rej(new Error("Zaman aşımı"));
+    x.send(blob);
+  });
+}
+
+async function withRetry(fn, tries = 4) {
+  for (let i = 0; ; i++) {
+    try { return await fn(); } catch (e) {
+      if (i >= tries - 1 || (e.status >= 400 && e.status < 500)) throw e;
+      await new Promise(r => setTimeout(r, [2000, 5000, 12000][i] || 15000));
+    }
+  }
+}
+
+const UPLOAD_ERRORS = {
+  expired: "Bu albümün süresi doldu, yeni yükleme alınmıyor.", not_found: "Albüm bulunamadı.", no_name: "Önce adınızı yazın.",
+  bad_type: "Bu dosya türü desteklenmiyor.", too_big: "Dosya çok büyük.", full: "Albüm dolu. Etkinlik sahibine haber verin.",
+  busy: "Şu anda çok fazla yükleme var, birazdan tekrar deneyin.",
+};
+
+// ---------------------------------------------------------------- tam ekran görüntüleyici
+function lightbox(list, index, {owner = null, onChange} = {}) {
+  const el = document.createElement("div");
+  el.className = "lb"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
+  document.body.append(el);
+  let i = index;
+  const close = () => { el.remove(); document.removeEventListener("keydown", key); };
+  const key = e => { if (e.key === "Escape") close(); if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); };
+  const go = d => { i = (i + d + list.length) % list.length; draw(); };
+  function draw() {
+    const f = list[i];
+    if (!f) return close();
+    el.innerHTML = `<div class="top"><div><div class="who">${esc(f.guest)}</div><div style="font-size:13px;opacity:.75">${esc(fmtTime(f.created_at))} · ${i + 1}/${list.length}</div></div>
+        <button class="x" aria-label="Kapat">×</button></div>
+      <div class="media">${f.kind === "video" ? `<video src="${esc(fileUrl(f.key))}" controls playsinline autoplay></video>` : `<img src="${esc(fileUrl(f.key))}" alt="${esc(f.guest)} yükledi">`}
+        ${list.length > 1 ? `<button class="nav l" aria-label="Önceki">‹</button><button class="nav r" aria-label="Sonraki">›</button>` : ""}</div>
+      <div class="bot"><a class="btn light" href="${esc(fileUrl(f.key))}?dl=${encodeURIComponent(fileName(f))}">${ICON.download}İndir</a>
+        ${owner ? `<button class="btn light" data-a="hide">${f.hidden ? "Göster" : "Gizle"}</button><button class="btn light" data-a="del">Sil</button>` : ""}</div>`;
+  }
+  el.addEventListener("click", async e => {
+    if (e.target.closest(".x")) return close();
+    if (e.target.closest(".nav.l")) return go(-1);
+    if (e.target.closest(".nav.r")) return go(1);
+    const a = e.target.closest("[data-a]")?.dataset.a;
+    if (!a) return;
+    const f = list[i];
+    if (a === "hide" && await owner.hide([f.id], !f.hidden)) { f.hidden = !f.hidden; draw(); onChange?.(); }
+    if (a === "del" && await owner.remove([f.id])) { list.splice(i, 1); onChange?.(); if (!list.length) return close(); i = i % list.length; draw(); }
+  });
+  let x0 = null;
+  el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, {passive: true});
+  el.addEventListener("touchend", e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) go(dx > 0 ? -1 : 1); x0 = null; });
+  document.addEventListener("keydown", key);
+  draw();
+}
+
+function thumbHtml(f, i, sel) {
+  const src = f.thumb_key ? fileUrl(f.thumb_key) : f.kind === "photo" ? fileUrl(f.key) : null;
+  return `<button class="gi${f.hidden ? " hid" : ""}${sel?.has(f.id) ? " sel" : ""}" data-i="${i}" aria-label="${esc(f.guest)}: ${f.kind === "video" ? "video" : "fotoğraf"}">
+    ${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="novid">▶</span>`}
+    ${f.kind === "video" ? `<span class="vid">video</span>` : ""}${sel ? `<span class="tick"></span>` : ""}</button>`;
+}
+
+// ---------------------------------------------------------------- misafir sayfası
+async function guestView(code) {
+  app.innerHTML = `<p>Yükleniyor…</p>`;
+  let ev;
+  try { ev = await rpc("memory_event", {p_code: code}); } catch (e) { return fail("Bağlantı kurulamadı", "İnternet bağlantınızı kontrol edip sayfayı yenileyin."); }
+  if (!ev) return fail("Albüm bulunamadı", "QR kodu ya da bağlantıyı yeniden okutun.");
+  document.title = `${ev.title} · MemoryQR`;
+  const nameKey = "name_" + ev.code;
+  let name = store.get(nameKey) || store.get("name") || "";
+  const mine = new Set(store.get("mine_" + ev.code, []));
+  let files = [], more = true, loading = false;
+
+  app.innerHTML = `${brandHtml}
+    <section class="hero"><div class="eyebrow">${esc(KINDS[ev.kind] || "Etkinlik")} · ${esc(fmtDate(ev.event_date))}</div>
+      <h1>${esc(ev.title)}</h1>
+      <p>${ev.active ? "Bu güne ait fotoğraf ve videolarınızı buraya yükleyin. Hepsi tek albümde toplanır." : "Bu albümün süresi doldu."}</p></section>
+    <section class="card" id="nameCard"></section>
+    <section class="card" id="upCard" hidden>
+      <div class="big-pick">
+        <label class="btn" for="pick">${ICON.image}Fotoğraf / video seç</label>
+        <label class="btn ghost" for="shoot">${ICON.camera}Fotoğraf çek</label>
+      </div>
+      <input type="file" id="pick" accept="image/*,video/*" multiple hidden>
+      <input type="file" id="shoot" accept="image/*" capture="environment" hidden>
+      <p class="hint">Birden fazla dosya seçebilirsiniz. Yükleme bitene kadar bu sayfayı kapatmayın.</p>
+      <div class="summary" id="sum" hidden></div>
+      <div class="queue" id="queue"></div>
+    </section>
+    <section class="stack" id="galSec" hidden>
+      <div class="row" style="justify-content:space-between"><h2>Tüm anılar <span id="galN" class="hint"></span></h2></div>
+      <div class="gal" id="gal"></div>
+      <button class="btn light" id="moreBtn" hidden>Daha fazla göster</button>
+    </section>
+    <p class="hint" style="text-align:center">Yüklediğiniz fotoğraf ve videolar etkinlik sahibiyle${ev.guest_gallery ? " ve diğer misafirlerle" : ""} paylaşılır,
+      ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir.</p>
+    ${footerHtml(ev.code)}`;
+
+  function drawName() {
+    const c = $("#nameCard");
+    if (!ev.active) { c.innerHTML = `<p>Yükleme ve görüntüleme süresi ${esc(fmtDate(ev.expires_at))} tarihinde sona erdi. Fotoğraflar etkinlik sahibine teslim edildi.</p>`; return; }
+    if (name) {
+      c.innerHTML = `<div class="hello"><span>Merhaba, <b>${esc(name)}</b></span><button class="linkbtn" id="chg">Adımı değiştir</button></div>`;
+      $("#chg").onclick = () => { name = ""; drawName(); };
+      $("#upCard").hidden = false;
+    } else {
+      c.innerHTML = `<form class="stack" id="nf"><label for="nm">Adınız</label>
+        <input type="text" id="nm" maxlength="40" autocomplete="name" placeholder="Ör. Zeynep Yılmaz" required>
+        <span class="hint">Yüklediğiniz fotoğrafların altında görünür.</span><button class="btn">Devam</button></form>`;
+      $("#upCard").hidden = true;
+      $("#nf").onsubmit = e => {
+        e.preventDefault();
+        const v = $("#nm").value.trim().replace(/\s+/g, " ");
+        if (!v) return;
+        name = v; store.set(nameKey, v); store.set("name", v); drawName();
+      };
+    }
+  }
+  drawName();
+
+  // yükleme kuyruğu: aynı anda 2 dosya
+  const queue = [];
+  let running = 0, okCount = 0, failCount = 0;
+  const busy = () => queue.some(q => !q.done);
+  window.addEventListener("beforeunload", e => { if (busy()) { e.preventDefault(); e.returnValue = ""; } });
+  const onPick = e => { addFiles([...e.target.files]); e.target.value = ""; };
+  $("#pick").onchange = onPick; $("#shoot").onchange = onPick;
+
+  function addFiles(list) {
+    for (const file of list) {
+      const item = {file, done: false, el: document.createElement("div")};
+      item.el.className = "qi";
+      item.el.innerHTML = `<span class="th"></span><div style="min-width:0"><div class="nm">${esc(file.name || "Fotoğraf")}</div><div class="bar"><i></i></div></div><span class="st">Sırada</span>`;
+      $("#queue").prepend(item.el);
+      queue.push(item);
+    }
+    pump(); drawSum();
+  }
+  function drawSum() {
+    const s = $("#sum"), total = queue.length, left = queue.filter(q => !q.done).length;
+    s.hidden = !total;
+    s.innerHTML = left ? `${total - left}/${total} yüklendi…` : `<span class="ok">${okCount} dosya yüklendi. Teşekkürler!</span>${failCount ? ` <span class="err">${failCount} dosya yüklenemedi.</span>` : ""}`;
+  }
+  function pump() {
+    while (running < 2) {
+      const item = queue.find(q => !q.done && !q.started);
+      if (!item) break;
+      item.started = true; running++;
+      upload(item).finally(() => { running--; item.done = true; drawSum(); pump(); });
+    }
+  }
+  async function upload(item) {
+    const st = $(".st", item.el), bar = $(".bar i", item.el);
+    const set = (t, p) => { st.textContent = t; if (p != null) bar.style.width = Math.round(p * 100) + "%"; };
+    try {
+      set("Hazırlanıyor");
+      const p = await prepare(item.file);
+      if (p.thumb) $(".th", item.el).style.backgroundImage = `url(${URL.createObjectURL(p.thumb)})`;
+      const t = await rpc("memory_upload_begin", {p_code: ev.code, p_guest: name, p_kind: p.kind, p_mime: p.mime, p_bytes: p.blob.size, p_thumb: !!p.thumb});
+      if (!t.ok) throw new Error(UPLOAD_ERRORS[t.error] || "Yüklenemedi.");
+      set("0%", 0);
+      await withRetry(() => put(t.key, t.max, t.exp, t.sig, p.blob, p.mime, f => set(Math.round(f * 100) + "%", f * .97)));
+      let thumbOk = false;
+      if (p.thumb && t.thumb_key && p.thumb.size <= t.thumb_max) {
+        try { await withRetry(() => put(t.thumb_key, t.thumb_max, t.exp, t.thumb_sig, p.thumb, "image/jpeg"), 2); thumbOk = true; } catch (e) {}
+      }
+      await withRetry(() => rpc("memory_upload_done", {p_code: ev.code, p_id: t.id, p_thumb: thumbOk}));
+      mine.add(t.id); store.set("mine_" + ev.code, [...mine].slice(-500));
+      okCount++; item.el.classList.add("done"); set("✓", 1);
+      refreshSoon();
+    } catch (e) {
+      failCount++; item.el.classList.add("fail"); set("Hata", 1);
+      $(".nm", item.el).innerHTML = `${esc(item.file.name || "Dosya")} <span class="err">${esc(e.message || "Yüklenemedi")}</span>`;
+    }
+  }
+
+  // galeri
+  async function loadMore(reset) {
+    if (loading || !ev.guest_gallery || !ev.active) return;
+    loading = true;
+    try {
+      const before = reset || !files.length ? null : files[files.length - 1].created_at;
+      const got = await rpc("memory_files", {p_code: ev.code, p_before: before, p_limit: 120});
+      files = reset ? got : files.concat(got);
+      more = got.length === 120;
+      drawGal();
+    } catch (e) {} finally { loading = false; }
+  }
+  function drawGal() {
+    $("#galSec").hidden = !files.length;
+    $("#galN").textContent = `(${Math.max(files.length, ev.files)})`;
+    $("#gal").innerHTML = files.map((f, i) => thumbHtml(f, i)).join("");
+    $("#moreBtn").hidden = !more;
+  }
+  let timer;
+  function refreshSoon() { clearTimeout(timer); timer = setTimeout(async () => { ev.files++; await loadMore(true); }, 1500); }
+  $("#gal").onclick = e => { const b = e.target.closest(".gi"); if (b) lightbox(files, +b.dataset.i); };
+  $("#moreBtn").onclick = () => loadMore(false);
+  loadMore(true);
+}
+
+function fail(title, text) {
+  app.innerHTML = `${brandHtml}<section class="hero"><h1>${esc(title)}</h1><p>${esc(text)}</p></section>${footerHtml()}`;
+}
+
+// ---------------------------------------------------------------- etkinlik sahibi
+async function ownerView(code) {
+  const pinKey = "pin_" + code.toUpperCase();
+  let pin = session.get(pinKey) || store.get(pinKey);
+  if (pin) {
+    const r = await rpc("memory_owner", {p_code: code, p_pin: pin}).catch(() => null);
+    if (r?.ok) return ownerPanel(r.event, pin);
+    session.del(pinKey); store.del(pinKey);
+  }
+  app.innerHTML = `${brandHtml}<section class="hero"><div class="eyebrow">Etkinlik sahibi</div><h1>Albümünüze girin</h1>
+      <p>Size verilen 6 haneli PIN'i yazın.</p></section>
+    <form class="card" id="pf"><label for="pin">PIN</label>
+      <input type="password" id="pin" class="pin" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required>
+      <label class="switch"><input type="checkbox" id="rem" checked> Bu cihazda hatırla</label>
+      <div class="err" id="perr" hidden></div><button class="btn">Giriş</button></form>
+    <p class="hint" style="text-align:center"><a href="?e=${esc(code)}">Misafir sayfasına dön</a></p>${footerHtml()}`;
+  $("#pin").focus();
+  $("#pf").onsubmit = async e => {
+    e.preventDefault();
+    const p = $("#pin").value.trim(), err = $("#perr");
+    err.hidden = true;
+    const r = await rpc("memory_owner", {p_code: code, p_pin: p}).catch(() => ({ok: false, error: "net"}));
+    if (r.ok) {
+      session.set(pinKey, p);
+      if ($("#rem").checked) store.set(pinKey, p);
+      return ownerPanel(r.event, p);
+    }
+    err.hidden = false;
+    err.textContent = {bad_pin: "PIN yanlış.", not_found: "Albüm bulunamadı.", locked: `Çok fazla yanlış deneme. ${r.minutes || 15} dakika sonra tekrar deneyin.`,
+      net: "Bağlantı kurulamadı."}[r.error] || "Giriş yapılamadı.";
+  };
+}
+
+async function ownerPanel(ev, pin) {
+  app.className = "wide";
+  document.title = `${ev.title} · Albüm · MemoryQR`;
+  let files = [], guestFilter = "", selecting = false;
+  const sel = new Set();
+  const owner = {
+    async hide(ids, hidden) {
+      const r = await rpc("memory_owner_hide", {p_code: ev.code, p_pin: pin, p_ids: ids, p_hidden: hidden}).catch(() => null);
+      if (!r?.ok) { toast("Kaydedilemedi"); return false; }
+      return true;
+    },
+    async remove(ids) {
+      if (!await ask(ids.length > 1 ? `${ids.length} dosya silinsin mi?` : "Bu dosya silinsin mi?", "Silinen fotoğraf ve videolar geri getirilemez.", "Sil", true)) return false;
+      const r = await rpc("memory_owner_delete", {p_code: ev.code, p_pin: pin, p_ids: ids}).catch(() => null);
+      if (!r?.ok) { toast("Silinemedi"); return false; }
+      fetch(`${FILES_URL}/del`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(r.delete)}).catch(() => {});
+      files = files.filter(f => !ids.includes(f.id));
+      ev.files = Math.max(0, ev.files - ids.length);
+      toast("Silindi");
+      return true;
+    },
+  };
+
+  app.innerHTML = `<div class="row" style="justify-content:space-between">${brandHtml}<button class="linkbtn" id="out">Çıkış</button></div>
+    <section class="stack"><div class="eyebrow">${esc(KINDS[ev.kind] || "Etkinlik")} · ${esc(fmtDate(ev.event_date))}</div><h1>${esc(ev.title)}</h1></section>
+    <div class="stats">
+      <div class="stat"><b id="sF">${ev.files}</b><span>fotoğraf ve video</span></div>
+      <div class="stat"><b>${ev.guests}</b><span>misafir yükledi</span></div>
+      <div class="stat"><b>${fmtBytes(ev.bytes)}</b><span>toplam boyut</span></div>
+      <div class="stat"><b>${ev.active ? daysLeft(ev.expires_at) + " gün" : "Doldu"}</b><span>${esc(fmtDate(ev.expires_at))} silinir</span></div>
+    </div>
+    ${ev.active ? `<p class="hint">Albüm ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir. O tarihe kadar hepsini indirin.</p>` : `<p class="err">Albümün süresi doldu.</p>`}
+    <section class="row">
+      <button class="btn" id="zip">${ICON.download}Hepsini indir (ZIP)</button>
+      <a class="btn ghost" href="?e=${esc(ev.code)}&slayt" target="_blank" rel="noopener">${ICON.play}Slayt gösterisi</a>
+      <button class="btn ghost" id="share">${ICON.link}Misafir bağlantısı</button>
+      <button class="btn ghost" id="card">${ICON.print}QR kartı (PDF)</button>
+      <button class="btn ghost" id="wa">${ICON.wa}WhatsApp'ıma kaydet</button>
+    </section>
+    <section class="card" id="zipBox" hidden><div id="zipT">Hazırlanıyor…</div><div class="prog"><i id="zipP"></i></div></section>
+    <label class="switch"><input type="checkbox" id="gg" ${ev.guest_gallery ? "checked" : ""}> Misafirler birbirinin yüklediklerini görebilsin</label>
+    <div class="toolbar">
+      <select id="gf" style="max-width:240px;font-size:16px;padding:8px 10px"><option value="">Tüm misafirler</option></select>
+      <button class="btn small light" id="selBtn">Seç</button>
+      <span id="selActs" hidden class="row"><span id="selN" class="hint"></span>
+        <button class="btn small light" data-s="all">Tümü</button><button class="btn small light" data-s="dl">İndir</button>
+        <button class="btn small light" data-s="hide">Gizle</button><button class="btn small light" data-s="show">Göster</button>
+        <button class="btn small danger" data-s="del">Sil</button></span>
+    </div>
+    <div class="gal" id="gal"></div>
+    <p class="hint" id="empty" hidden style="text-align:center;padding:30px 0">Henüz yükleme yok. Misafir bağlantısını paylaşın ya da QR kartını masalara koyun.</p>
+    ${footerHtml()}`;
+
+  const view = () => guestFilter ? files.filter(f => f.guest === guestFilter) : files;
+  function draw() {
+    const v = view();
+    $("#gal").innerHTML = v.map((f, i) => thumbHtml(f, i, selecting ? sel : null)).join("");
+    $("#empty").hidden = files.length > 0;
+    $("#sF").textContent = files.length;
+    $("#selActs").hidden = !selecting;
+    $("#selBtn").textContent = selecting ? "Bitti" : "Seç";
+    $("#selN").textContent = `${sel.size} seçili`;
+    const guests = [...new Set(files.map(f => f.guest))].sort((a, b) => a.localeCompare(b, "tr"));
+    $("#gf").innerHTML = `<option value="">Tüm misafirler (${files.length})</option>` +
+      guests.map(g => `<option ${g === guestFilter ? "selected" : ""}>${esc(g)}</option>`).join("");
+  }
+  async function load() {
+    files = [];
+    for (let before = null; ;) {
+      const r = await rpc("memory_owner_files", {p_code: ev.code, p_pin: pin, p_before: before, p_limit: 1000}).catch(() => null);
+      if (!r?.ok) break;
+      files = files.concat(r.files);
+      if (r.files.length < 1000) break;
+      before = r.files[r.files.length - 1].created_at;
+    }
+    draw();
+  }
+
+  $("#gal").onclick = e => {
+    const b = e.target.closest(".gi");
+    if (!b) return;
+    const f = view()[+b.dataset.i];
+    if (selecting) { sel.has(f.id) ? sel.delete(f.id) : sel.add(f.id); return draw(); }
+    lightbox(view(), +b.dataset.i, {owner, onChange: draw});
+  };
+  $("#gf").onchange = e => { guestFilter = e.target.value; draw(); };
+  $("#selBtn").onclick = () => { selecting = !selecting; sel.clear(); draw(); };
+  $("#selActs").onclick = async e => {
+    const a = e.target.closest("[data-s]")?.dataset.s;
+    if (!a) return;
+    if (a === "all") { view().forEach(f => sel.add(f.id)); return draw(); }
+    const ids = [...sel];
+    if (!ids.length) return toast("Önce fotoğraf seçin");
+    if (a === "dl") return downloadZip(files.filter(f => sel.has(f.id)));
+    if (a === "hide" || a === "show") {
+      if (await owner.hide(ids, a === "hide")) { files.forEach(f => { if (sel.has(f.id)) f.hidden = a === "hide"; }); sel.clear(); draw(); }
+    }
+    if (a === "del" && await owner.remove(ids)) { sel.clear(); draw(); }
+  };
+  $("#gg").onchange = async e => {
+    const r = await rpc("memory_owner_settings", {p_code: ev.code, p_pin: pin, p_guest_gallery: e.target.checked}).catch(() => null);
+    toast(r?.ok ? (e.target.checked ? "Misafirler albümü görebilir" : "Albüm yalnızca size açık") : "Kaydedilemedi");
+  };
+  $("#out").onclick = () => { session.del("pin_" + ev.code); store.del("pin_" + ev.code); location.href = `?e=${ev.code}`; };
+  $("#share").onclick = () => copy(guestLink(ev.code), "Misafir bağlantısı kopyalandı");
+  $("#card").onclick = () => tableCardPdf(ev);
+  $("#wa").onclick = () => {
+    const text = `MemoryQR · ${ev.title}\nMisafir bağlantısı: ${guestLink(ev.code)}\nAlbüm (yalnızca siz): ${ownerLink(ev.code)}\nPIN: ${pin}\nAlbüm ${fmtDate(ev.expires_at)} tarihinde silinir.`;
+    location.href = "https://wa.me/?text=" + encodeURIComponent(text);
+  };
+  $("#zip").onclick = () => downloadZip(files);
+
+  // ZIP: tarayıcı belleğini aşmamak için 400 MB'lık parçalar halinde
+  async function downloadZip(list) {
+    if (!list.length) return toast("İndirilecek dosya yok");
+    const parts = [];
+    let cur = [], size = 0;
+    for (const f of [...list].sort((a, b) => a.created_at.localeCompare(b.created_at))) {
+      if (cur.length && size + f.bytes > 400e6) { parts.push(cur); cur = []; size = 0; }
+      cur.push(f); size += Number(f.bytes);
+    }
+    if (cur.length) parts.push(cur);
+    if (parts.length > 1 && !await ask("İndirme parçalara bölünecek", `${list.length} dosya (${fmtBytes(list.reduce((s, f) => s + Number(f.bytes), 0))}) ${parts.length} ZIP dosyası halinde inecek. Hepsi bitene kadar sayfayı açık tutun.`, "Başlat")) return;
+    try { await loadScript("vendor/jszip.min.js"); } catch (e) { return toast("ZIP aracı yüklenemedi"); }
+    const box = $("#zipBox"), txt = $("#zipT"), bar = $("#zipP");
+    box.hidden = false; $("#zip").disabled = true;
+    let doneN = 0, failN = 0;
+    try {
+      for (let p = 0; p < parts.length; p++) {
+        const zip = new JSZip();
+        const items = parts[p];
+        let next = 0;
+        const worker = async () => {
+          while (next < items.length) {
+            const f = items[next++];
+            try {
+              const r = await withRetry(async () => { const r = await fetch(fileUrl(f.key)); if (!r.ok) throw Object.assign(new Error(), {status: r.status}); return r; }, 3);
+              zip.file(fileName(f), await r.blob(), {binary: true, date: new Date(f.created_at)});
+            } catch (e) { failN++; }
+            doneN++;
+            txt.textContent = `${parts.length > 1 ? `Parça ${p + 1}/${parts.length} · ` : ""}${doneN}/${list.length} dosya indiriliyor…`;
+            bar.style.width = (doneN / list.length * 100) + "%";
+          }
+        };
+        await Promise.all([worker(), worker(), worker(), worker()]);
+        txt.textContent = "ZIP hazırlanıyor…";
+        const blob = await zip.generateAsync({type: "blob", compression: "STORE", streamFiles: true});
+        saveBlob(blob, `${slug(ev.title)}-memoryqr${parts.length > 1 ? `-${p + 1}` : ""}.zip`);
+      }
+      txt.innerHTML = `<span class="ok">İndirme tamamlandı.</span>${failN ? ` <span class="err">${failN} dosya indirilemedi, tekrar deneyin.</span>` : ""}`;
+    } catch (e) {
+      txt.innerHTML = `<span class="err">İndirme yarıda kaldı: ${esc(e.message)}. Daha az dosya seçip tekrar deneyin.</span>`;
+    } finally { $("#zip").disabled = false; }
+  }
+
+  draw();
+  load();
+}
+
+// ---------------------------------------------------------------- slayt gösterisi (salondaki ekran / projeksiyon)
+async function slideView(code) {
+  const ev = await rpc("memory_event", {p_code: code}).catch(() => null);
+  if (!ev) return fail("Albüm bulunamadı", "Bağlantıyı kontrol edin.");
+  const pin = session.get("pin_" + ev.code) || store.get("pin_" + ev.code);
+  document.body.className = "slide";
+  document.title = `${ev.title} · Slayt`;
+  app.outerHTML = `<div class="sl" id="sl">
+      <div class="empty" id="slEmpty"><div class="eyebrow">${esc(KINDS[ev.kind] || "")}</div><h1>${esc(ev.title)}</h1>
+        <p>Fotoğraflar yüklendikçe burada görünecek. QR'ı okutun, siz de yükleyin.</p><p style="font-size:13px">Tam ekran için ekrana tıklayın.</p></div>
+      <img id="a" alt=""><img id="b" alt="">
+      <div class="cap" id="cap"></div>
+      <div class="qr">${qrSvg(guestLink(ev.code))}<span>Okutun, siz de yükleyin</span></div></div>`;
+  const sl = $("#sl"), imgs = [$("#a"), $("#b")];
+  let list = [], seen = new Set(), fresh = [], pos = 0, flip = 0;
+  sl.onclick = () => document.documentElement.requestFullscreen?.().catch(() => {});
+  try { await navigator.wakeLock?.request("screen"); } catch (e) {}
+
+  async function poll() {
+    let got;
+    if (pin) { const r = await rpc("memory_owner_files", {p_code: ev.code, p_pin: pin, p_limit: 1000}).catch(() => null); got = r?.ok ? r.files : null; }
+    else got = await rpc("memory_files", {p_code: ev.code, p_limit: 1000}).catch(() => null);
+    if (!got) return;
+    got = got.filter(f => f.kind === "photo" && !f.hidden).reverse();  // eskiden yeniye
+    const ids = new Set(got.map(f => f.id));
+    for (const f of got) if (!seen.has(f.id)) { if (seen.size) fresh.push(f); seen.add(f.id); }
+    list = got;
+    fresh = fresh.filter(f => ids.has(f.id));
+    if (!pin && !ev.guest_gallery) $("#slEmpty p").textContent = "Misafir galerisi kapalı. Slaytı albüm sayfasından (PIN ile girip) açın.";
+  }
+  function show() {
+    if (!list.length) return;
+    $("#slEmpty").hidden = true;
+    const f = fresh.shift() || list[pos++ % list.length];  // yeni yüklenenler öne geçer
+    const next = imgs[flip ^= 1], prev = imgs[flip ^ 1];
+    next.onload = () => { next.classList.add("on"); prev.classList.remove("on"); $("#cap").textContent = f.guest; };
+    next.src = fileUrl(f.key);
+  }
+  await poll(); show();
+  setInterval(poll, 20000);
+  setInterval(show, 7000);
+}
+
+// ---------------------------------------------------------------- QR masa kartı (Özalit'e gidecek PDF)
+// A6 dikey (105×148 mm). Tek kart PDF'i 3 mm taşma paylı; A4 PDF'inde 4 kart ve kesim çizgileri.
+async function cardCanvas(ev) {
+  const PXMM = 12, W = 105, H = 148, BL = 3;  // 12 px/mm ≈ 305 dpi
+  const c = document.createElement("canvas");
+  c.width = (W + 2 * BL) * PXMM; c.height = (H + 2 * BL) * PXMM;
+  const g = c.getContext("2d");
+  await Promise.all(['700 40px "Barlow Condensed"', '600 20px "Barlow"', '400 20px "Barlow"'].map(f => document.fonts.load(f)));
+  const mm = v => v * PXMM, X = v => mm(v + BL);
+  const center = (text, y, font, color) => { g.font = font; g.fillStyle = color; g.textAlign = "center"; g.fillText(text, X(W / 2), X(y)); };
+  const fit = (text, y, max, weight, family, color, sizeMm) => {
+    let s = sizeMm;
+    do { g.font = `${weight} ${mm(s)}px ${family}`; s -= .5; } while (g.measureText(text).width > mm(max) && s > 4);
+    g.fillStyle = color; g.textAlign = "center"; g.fillText(text, X(W / 2), X(y));
+  };
+  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+  g.strokeStyle = "#a8832f"; g.lineWidth = mm(.5); g.strokeRect(X(6), X(6), mm(W - 12), mm(H - 12));
+  g.lineWidth = mm(.2); g.strokeRect(X(7.5), X(7.5), mm(W - 15), mm(H - 15));
+  center("ANILARIMIZI PAYLAŞIN", 20, `600 ${mm(3.6)}px Barlow`, "#a8832f");
+  fit(ev.title, 33, W - 22, 700, '"Barlow Condensed"', "#1d1820", 11);
+  center(`${KINDS[ev.kind] || ""} · ${fmtDate(ev.event_date)}`, 40.5, `400 ${mm(3.6)}px Barlow`, "#6b6070");
+  // QR
+  const q = qrcode(0, "M"); q.addData(guestLink(ev.code)); q.make();
+  const n = q.getModuleCount(), size = 62, cell = mm(size) / n, x0 = X((W - size) / 2), y0 = X(47);
+  g.fillStyle = "#111";
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(x0 + col * cell, y0 + r * cell, Math.ceil(cell), Math.ceil(cell));
+  center(`Albüm kodu: ${ev.code}`, 114, `600 ${mm(3)}px Barlow`, "#6b6070");
+  const steps = [["1", "QR'ı okut"], ["2", "İsmini yaz"], ["3", "Fotoğraf yükle"]];
+  steps.forEach(([num, t], i) => {
+    const cx = X(20 + i * 32.5), cy = X(122);
+    g.fillStyle = "#8c2f52"; g.beginPath(); g.arc(cx, cy, mm(3.4), 0, Math.PI * 2); g.fill();
+    g.fillStyle = "#fff"; g.font = `700 ${mm(3.8)}px Barlow`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(num, cx, cy + mm(.2));
+    g.textBaseline = "alphabetic"; g.fillStyle = "#1d1820"; g.font = `600 ${mm(3.3)}px Barlow`; g.fillText(t, cx, cy + mm(8));
+  });
+  center("Uygulama gerekmez · telefon kamerasıyla okutun", 137.5, `400 ${mm(2.8)}px Barlow`, "#6b6070");
+  return {canvas: c, W, H, BL};
+}
+
+async function tableCardPdf(ev) {
+  toast("PDF hazırlanıyor…");
+  try { await loadScript("vendor/jspdf.umd.min.js"); } catch (e) { return toast("PDF aracı yüklenemedi"); }
+  const {canvas, W, H, BL} = await cardCanvas(ev);
+  const img = canvas.toDataURL("image/jpeg", .95);
+  const {jsPDF} = window.jspdf;
+  // 1) tek kart, taşma paylı
+  const one = new jsPDF({unit: "mm", format: [W + 2 * BL, H + 2 * BL], orientation: "portrait"});
+  one.addImage(img, "JPEG", 0, 0, W + 2 * BL, H + 2 * BL);
+  one.save(`${slug(ev.title)}-masa-karti-A6-tasmali.pdf`);
+  // 2) A4'e 4 kart (2×2), kesim çizgili
+  const a4 = new jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
+  const ox = (210 - 2 * W) / 2, oy = (297 - 2 * H) / 2;
+  for (let r = 0; r < 2; r++) for (let col = 0; col < 2; col++) {
+    a4.addImage(img, "JPEG", ox + col * W - BL, oy + r * H - BL, W + 2 * BL, H + 2 * BL);
+  }
+  // taşma payları birbirinin üstüne binmesin: kart sınırlarının dışını beyazla, kesim çizgisi çiz
+  a4.setFillColor(255, 255, 255);
+  a4.rect(0, 0, 210, oy, "F"); a4.rect(0, oy + 2 * H, 210, 297, "F"); a4.rect(0, 0, ox, 297, "F"); a4.rect(ox + 2 * W, 0, 210, 297, "F");
+  a4.setDrawColor(150); a4.setLineWidth(.15);
+  for (const x of [ox, ox + W, ox + 2 * W]) { a4.line(x, 0, x, oy - 1); a4.line(x, oy + 2 * H + 1, x, 297); }
+  for (const y of [oy, oy + H, oy + 2 * H]) { a4.line(0, y, ox - 1, y); a4.line(ox + 2 * W + 1, y, 210, y); }
+  a4.save(`${slug(ev.title)}-masa-karti-A4-4lu.pdf`);
+}
+
+// ---------------------------------------------------------------- yönetim (?admin)
+async function adminView() {
+  app.className = "wide";
+  document.title = "Yönetim · MemoryQR";
+  let key = session.get("admin");
+  if (key) { try { return adminPanel(key, await rpc("memory_admin_events", {p_key: key})); } catch (e) { session.del("admin"); } }
+  app.innerHTML = `${brandHtml}<form class="card" id="af" style="max-width:420px"><h2>Yönetim</h2><label for="ak">Şifre</label>
+    <input type="password" id="ak" autocomplete="current-password" required><div class="err" id="aerr" hidden></div><button class="btn">Giriş</button></form>`;
+  $("#af").onsubmit = async e => {
+    e.preventDefault();
+    const k = $("#ak").value;
+    try { const list = await rpc("memory_admin_events", {p_key: k}); session.set("admin", k); adminPanel(k, list); }
+    catch (err) {
+      $("#aerr").hidden = false;
+      $("#aerr").textContent = err.status === 404 ? "Veritabanı kurulmamış: kurulum.sql dosyasını Supabase SQL Editor'da çalıştırın." : "Şifre yanlış.";
+    }
+  };
+}
+
+function adminPanel(key, list) {
+  const total = list.reduce((s, e) => s + Number(e.bytes), 0);
+  const today = new Date().toISOString().slice(0, 10);
+  app.innerHTML = `<div class="row" style="justify-content:space-between">${brandHtml}<button class="linkbtn" id="aout">Çıkış</button></div>
+    <h1>Etkinlikler</h1>
+    ${FILES_URL.includes("BURAYA") ? `<p class="err">index.html başındaki FILES_URL henüz ayarlanmadı: misafirler yükleme yapamaz. Kurulum: README.md</p>` : ""}
+    <div class="stats"><div class="stat"><b>${list.length}</b><span>etkinlik</span></div>
+      <div class="stat"><b>${list.filter(e => new Date(e.expires_at) > new Date() && !e.files_purged).length}</b><span>aktif</span></div>
+      <div class="stat"><b>${list.reduce((s, e) => s + e.files, 0)}</b><span>dosya</span></div>
+      <div class="stat"><b>${fmtBytes(total)}</b><span>depolama</span></div></div>
+    <form class="card" id="ef"><h2 id="efT">Yeni etkinlik</h2><input type="hidden" id="eCode">
+      <div class="grid2">
+        <div class="stack"><label for="eTitle">Başlık (kartta büyük yazar)</label><input type="text" id="eTitle" maxlength="60" placeholder="Ayşe & Mehmet" required></div>
+        <div class="stack"><label for="eKind">Tür</label><select id="eKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
+        <div class="stack"><label for="eDate">Etkinlik tarihi</label><input type="date" id="eDate" value="${today}" required></div>
+        <div class="stack"><label for="eDays">Saklama (etkinlikten sonra gün)</label><input type="number" id="eDays" value="30" min="1" max="365"></div>
+        <div class="stack"><label for="eOwner">Müşteri adı</label><input type="text" id="eOwner"></div>
+        <div class="stack"><label for="ePhone">Müşteri telefonu</label><input type="tel" id="ePhone" placeholder="05xx xxx xx xx"></div>
+      </div>
+      <label for="eNote">Not (paket, ödeme, baskı; yalnızca burada görünür)</label><textarea id="eNote" rows="2"></textarea>
+      <div class="row"><button class="btn" id="eSave">Etkinliği oluştur</button><button type="button" class="btn light" id="eCancel" hidden>Vazgeç</button></div>
+    </form>
+    <section class="stack" id="evs">${list.length ? "" : `<p class="hint">Henüz etkinlik yok.</p>`}</section>`;
+
+  const evs = $("#evs");
+  list.forEach((e, i) => {
+    const active = new Date(e.expires_at) > new Date() && !e.files_purged;
+    const card = document.createElement("div");
+    card.className = "card ev";
+    card.innerHTML = `<div class="row" style="justify-content:space-between"><h3>${esc(e.title)}</h3>
+        <span class="pill ${active ? "on" : "off"}">${e.files_purged ? "Dosyalar silindi" : active ? `${daysLeft(e.expires_at)} gün kaldı` : "Süresi doldu"}</span></div>
+      <div class="meta"><span class="code">${esc(e.code)}</span><span>PIN <b>${esc(e.pin)}</b></span><span>${esc(KINDS[e.kind])} · ${esc(fmtDate(e.event_date))}</span>
+        <span>${e.files} dosya · ${e.guests} misafir · ${fmtBytes(e.bytes)}</span>${e.owner_name ? `<span>${esc(e.owner_name)}</span>` : ""}
+        ${e.owner_phone ? `<span>${esc(e.owner_phone)}</span>` : ""}${e.last_upload ? `<span>son yükleme ${esc(fmtTime(e.last_upload))}</span>` : ""}</div>
+      ${e.note ? `<p class="hint">${esc(e.note)}</p>` : ""}
+      <div class="row">
+        <a class="btn small light" href="?e=${esc(e.code)}" target="_blank" rel="noopener">Misafir sayfası</a>
+        <button class="btn small light" data-a="owner">Albümü aç</button>
+        <button class="btn small light" data-a="card">Masa kartı PDF</button>
+        <button class="btn small light" data-a="copy">Bağlantıyı kopyala</button>
+        <button class="btn small light" data-a="wa">Müşteriye WhatsApp</button>
+        <button class="btn small light" data-a="edit">Düzenle</button>
+        <button class="btn small light" data-a="purge">Dosyaları sil</button>
+        <button class="btn small danger" data-a="drop">Etkinliği sil</button>
+      </div>`;
+    card.onclick = async ev => {
+      const a = ev.target.closest("[data-a]")?.dataset.a;
+      if (!a) return;
+      if (a === "owner") { session.set("pin_" + e.code, e.pin); window.open(`?e=${e.code}&sahip`, "_blank"); }
+      if (a === "card") tableCardPdf(e);
+      if (a === "copy") copy(guestLink(e.code));
+      if (a === "wa") {
+        const text = `Merhaba${e.owner_name ? " " + e.owner_name : ""}, MemoryQR albümünüz hazır.\n\nMisafir bağlantısı (QR bunu açar): ${guestLink(e.code)}\n` +
+          `Albümünüz (yalnızca siz): ${ownerLink(e.code)}\nPIN: ${e.pin}\n\nFotoğraflar ${fmtDate(e.expires_at)} tarihinde silinir, o tarihe kadar "Hepsini indir" ile indirin.`;
+        const p = String(e.owner_phone || "").replace(/\D/g, "").replace(/^0/, "90");
+        window.open(`https://wa.me/${p.length >= 11 ? p : ""}?text=${encodeURIComponent(text)}`, "_blank");
+      }
+      if (a === "edit") {
+        $("#efT").textContent = `Düzenle: ${e.code}`; $("#eSave").textContent = "Kaydet"; $("#eCancel").hidden = false;
+        $("#eCode").value = e.code; $("#eTitle").value = e.title; $("#eKind").value = e.kind; $("#eDate").value = e.event_date;
+        $("#eDays").value = Math.round((new Date(e.expires_at) - new Date(e.event_date + "T00:00:00+03:00")) / 864e5) - 1;
+        $("#eOwner").value = e.owner_name || ""; $("#ePhone").value = e.owner_phone || ""; $("#eNote").value = e.note || "";
+        $("#ef").scrollIntoView({behavior: "smooth"});
+      }
+      if (a === "purge" || a === "drop") {
+        const drop = a === "drop";
+        if (!await ask(drop ? "Etkinlik tamamen silinsin mi?" : "Tüm dosyalar silinsin mi?",
+          `${e.title}: ${e.files} dosya kalıcı olarak silinecek${drop ? " ve etkinlik listeden kalkacak. QR artık çalışmaz" : ""}.`, "Sil", true)) return;
+        const r = await rpc("memory_admin_purge", {p_key: key, p_code: e.code, p_drop: drop}).catch(() => null);
+        if (!r?.ok) return toast("Silinemedi");
+        await fetch(`${FILES_URL}/delp`, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(r)}).catch(() => {});
+        toast("Silindi");
+        adminPanel(key, await rpc("memory_admin_events", {p_key: key}));
+      }
+    };
+    evs.append(card);
+  });
+
+  $("#aout").onclick = () => { session.del("admin"); adminView(); };
+  $("#eCancel").onclick = () => adminPanel(key, list);
+  $("#ef").onsubmit = async ev => {
+    ev.preventDefault();
+    const r = await rpc("memory_admin_save", {p_key: key, p_code: $("#eCode").value || null, p_title: $("#eTitle").value, p_kind: $("#eKind").value,
+      p_event_date: $("#eDate").value, p_days: +$("#eDays").value || 30, p_owner_name: $("#eOwner").value, p_owner_phone: $("#ePhone").value,
+      p_note: $("#eNote").value}).catch(err => ({ok: false, error: err.message}));
+    if (!r.ok) return toast("Kaydedilemedi: " + (r.error || ""));
+    toast($("#eCode").value ? "Kaydedildi" : `Oluşturuldu: ${r.code} · PIN ${r.pin}`, 5000);
+    adminPanel(key, await rpc("memory_admin_events", {p_key: key}));
+  };
+}
+
+// ---------------------------------------------------------------- giriş sayfası (kod ile)
+function homeView() {
+  app.innerHTML = `${brandHtml}
+    <section class="hero"><div class="eyebrow">Düğün · Nişan · Kına · Mezuniyet</div><h1>Anılarınız için tek QR</h1>
+      <p>Misafirleriniz QR'ı okutur, adını yazar, fotoğraf ve videolarını yükler. Hepsi tek albümde toplanır. Uygulama indirmek gerekmez.</p></section>
+    <form class="card" id="cf"><label for="cc">Albüm kodu</label><input type="text" id="cc" maxlength="12" autocapitalize="characters" placeholder="Ör. K7M2QX" required>
+      <button class="btn">Albümü aç</button><span class="hint">Kod, QR kartının altında ya da size gönderilen bağlantıda yazar.</span></form>
+    ${footerHtml()}`;
+  $("#cf").onsubmit = e => { e.preventDefault(); const c = $("#cc").value.replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (c) location.href = `?e=${c}`; };
+}
+
+// ---------------------------------------------------------------- yönlendirme
+(function route() {
+  if (SUPABASE_URL.includes("BURAYA")) return fail("Kurulum eksik", "index.html başındaki SUPABASE_URL ve SUPABASE_KEY değerlerini doldurun.");
+  const code = (params.get("e") || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (code || params.has("admin")) document.head.insertAdjacentHTML("beforeend", `<meta name="robots" content="noindex">`);
+  if (params.has("admin")) return adminView();
+  if (!code) return homeView();
+  if (params.has("slayt")) return slideView(code);
+  if (params.has("sahip")) return ownerView(code);
+  guestView(code);
+})();
+</script>
+</body>
+</html>

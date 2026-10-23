@@ -1,0 +1,14 @@
+# MemoryQR dosya sunucusu. Kurulum adımları: ../README.md
+name = "memoryqr-dosya"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "memoryqr"
+
+[vars]
+# Sitenin adresi (virgülle birden fazla). Boş bırakılırsa her yerden istek kabul edilir.
+ALLOWED_ORIGINS = ""
+
+# UPLOAD_SECRET gizli olarak eklenir (dosyaya yazmayın):  npx wrangler secret put UPLOAD_SECRET

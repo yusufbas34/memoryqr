@@ -13,6 +13,7 @@ dosyalar kalıcı olarak silinir. Bul QR ailesinin ürünüdür (Tasma QR, Araç
 | (adres yalın) | **Tanıtım sayfası**: nasıl çalışır, özellikler, kart tasarımları (canlı çizilir), paketler, yorumlar, SSS, albüm koduyla giriş. Yorumlar veritabanından gelir |
 | `?e=KOD` | **Misafir sayfası** (QR bunu açar): ad, çoklu fotoğraf/video yükleme, kameradan çekim, ortak galeri |
 | `?e=KOD&sahip` | **Etkinlik sahibi**: PIN ile giriş, istatistik, gizle/sil, misafire göre süzme, ZIP indirme (400 MB'lık parçalar), QR kartı PDF, WhatsApp'a kaydet, "misafirler galeriyi görsün" anahtarı |
+| `?e=KOD&kart` | **Kart tasarımı (müşteriye gönderilen link, PIN ile)**: hazır tasarım seçme ya da kendi tasarımını yükleme (QR'ın yeri ve boyutu seçilir), kart yazısı; masa kartı, kartvizit ve ayaklı pano önizlemesi ve PDF'leri. Seçilen tasarım misafir sayfasının başında görünür, vurgu rengi tasarımdan gelir. Yönetimde **Tasarım linkini gönder** ile WhatsApp'tan gönderilir |
 | `?tasarimlar` | **Tasarım seçme**: müşteri kendi isimleriyle bütün kartları görür, seçip WhatsApp'tan gönderir |
 | `?e=KOD&slayt` | Slayt gösterisi (şimdilik satılmıyor; panelde düğmesi yok, adresle açılır) |
 | `?admin` | **Yönetim**: etkinlik oluştur/düzenle (kod + 6 haneli PIN üretilir), masa kartı PDF'i, müşteriye WhatsApp, dosyaları/etkinliği sil |
@@ -22,6 +23,11 @@ Modern & renkli). Süslemeler kodla çizilir; çocuk ve retro kartlardaki çizim
 Çiçek Bahçesi'nin madalyonu `kart/cicek.webp`. Kart yazısı değiştirilebilir; boş bırakılırsa tasarımın kendi metni kullanılır.
 İsimler, baş harfler ve tarih etkinlik bilgilerinden gelir. A6 (105×148 mm); iki PDF iner: 3 mm taşma paylı tek kart
 (Özalit'e matbaa baskısı için) ve A4'e 4'lü kesim çizgili. Seçilen tasarım etkinliğe kaydedilir.
+
+**Ürünler ve PDF'ler:** masa kartı (A6, 3 mm taşma + A4'e 4'lü), kartvizit (85 × 55 mm, 3 mm taşma + A4'e 10'lu), ayaklı pano
+(50 × 70 ya da 35 × 50 cm, 5 mm taşma, ~150 dpi; masa kartı tasarımı büyütülür). Kendi tasarımı yüklenen etkinliklerde görsel
+kartı kaplar, QR beyaz kutuda seçilen yere basılır. Yüklenen tasarımlar R2'de `t/KOD/` altında durur (31 gün kuralına girmez,
+etkinlik silinince silinir).
 
 **Tasarım seçme sayfası (`?tasarimlar`):** müşteri isimlerini, etkinliği ve tarihi yazar, bütün tasarımları kendi kartı
 olarak görür, beğendiğini seçip WhatsApp'tan gönderir (tasarım adı ve kodu mesajda yazar). Müşteriye gönderilecek bağlantı:
@@ -71,6 +77,7 @@ Tasma QR ile aynı projeyi kullanabilirsiniz; tablolar `memory_` ile başlar.
 Panelden (kurulum gerekmez):
 1. Cloudflare > **Workers & Pages** > **Create** > **Worker**, ad: `memoryqr-dosya`, **Deploy**.
 2. **Edit code**: içeriği silin, `worker/worker.js` dosyasını yapıştırın, **Deploy**.
+   Worker kodu güncellendiğinde (ör. `t/` öneki için) aynı yolla yeniden yapıştırıp **Deploy** edin.
 3. Worker > **Settings** > **Bindings** > **Add** > **R2 bucket**: değişken adı `BUCKET`, bucket `memoryqr`.
 4. Worker > **Settings** > **Variables and Secrets** > **Add**: tür **Secret**, ad `UPLOAD_SECRET`, değer 1. adımda kopyaladığınız anahtar.
    İsteğe bağlı: `ALLOWED_ORIGINS` = sitenin adresi (ör. `https://memoryqr.bulqr.com.tr`).

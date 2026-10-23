@@ -21,12 +21,12 @@ function initials(title) {
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 // ---------------------------------------------------------------- çizim araçları (ölçüler mm)
-function cardKit(g, pxmm) {
+function cardKit(g, pxmm, W = CARD_W, H = CARD_H) {
   const mm = v => v * pxmm, X = v => mm(v + CARD_BL);
   const k = {
     mm, X,
     font: (f, s) => f.replace("{s}", mm(s)),
-    text(str, x, y, f, size, color, {align = "center", upper = false, sp = 0, max = CARD_W - 20} = {}) {
+    text(str, x, y, f, size, color, {align = "center", upper = false, sp = 0, max = W - 20} = {}) {
       str = upper ? String(str).toLocaleUpperCase("tr-TR") : String(str);
       if ("letterSpacing" in g) g.letterSpacing = sp ? `${mm(sp)}px` : "0px";
       let s = size;
@@ -116,10 +116,10 @@ function cardKit(g, pxmm) {
     },
     specks(n, color, seed, alpha = .5) {
       const r = rng(seed); g.fillStyle = color; g.globalAlpha = alpha;
-      for (let i = 0; i < n; i++) { g.beginPath(); g.arc(X(r() * CARD_W), X(r() * CARD_H), mm(.12 + r() * .35), 0, 7); g.fill(); }
+      for (let i = 0; i < n; i++) { g.beginPath(); g.arc(X(r() * W), X(r() * H), mm(.12 + r() * .35), 0, 7); g.fill(); }
       g.globalAlpha = 1;
     },
-    bg(color) { g.fillStyle = color; g.fillRect(0, 0, mm(CARD_W + 2 * CARD_BL), mm(CARD_H + 2 * CARD_BL)); },
+    bg(color) { g.fillStyle = color; g.fillRect(0, 0, mm(W + 2 * CARD_BL), mm(H + 2 * CARD_BL)); },
     // Twemoji çizimi (kart/emoji/<kod>.svg), merkezden; flip: yatay ayna
     emoji(code, x, y, size, rot = 0, flip = false) {
       const im = CARD_IMAGES[`kart/emoji/${code}.svg`];
@@ -138,7 +138,7 @@ function cardKit(g, pxmm) {
     confetti(n, colors, seed) {
       const r = rng(seed);
       for (let i = 0; i < n; i++) {
-        const x = r() * CARD_W, y = r() * CARD_H;
+        const x = r() * W, y = r() * H;
         g.fillStyle = colors[i % colors.length];
         if (r() < .5) { g.beginPath(); g.arc(X(x), X(y), mm(.5 + r() * .7), 0, 7); g.fill(); }
         else { g.save(); g.translate(X(x), X(y)); g.rotate(r() * 6); g.fillRect(-mm(.9), -mm(.35), mm(1.8), mm(.7)); g.restore(); }
@@ -147,7 +147,7 @@ function cardKit(g, pxmm) {
     sparkles(n, color, seed) {
       const r = rng(seed); g.fillStyle = color;
       for (let i = 0; i < n; i++) {
-        const x = X(r() * CARD_W), y = X(r() * CARD_H), s = mm(.4 + r() * 1.1);
+        const x = X(r() * W), y = X(r() * H), s = mm(.4 + r() * 1.1);
         g.beginPath(); g.moveTo(x, y - s); g.quadraticCurveTo(x, y, x + s, y); g.quadraticCurveTo(x, y, x, y + s); g.quadraticCurveTo(x, y, x - s, y); g.quadraticCurveTo(x, y, x, y - s); g.fill();
       }
     },
@@ -167,17 +167,17 @@ function cardKit(g, pxmm) {
       }
     },
     waves(colors, band) {
-      const W = CARD_W + 2 * CARD_BL;
-      for (let i = -2, j = 0; i * band < CARD_H + 10; i++, j++) {
+      const W = W + 2 * CARD_BL;
+      for (let i = -2, j = 0; i * band < H + 10; i++, j++) {
         g.fillStyle = colors[j % colors.length]; g.beginPath(); g.moveTo(0, X(i * band));
         for (let x = 0; x <= W; x += 1) g.lineTo(mm(x), X(i * band + Math.sin(x / 9 + i * .7) * 4));
-        g.lineTo(mm(W), X(CARD_H + 10)); g.lineTo(0, X(CARD_H + 10)); g.closePath(); g.fill();
+        g.lineTo(mm(W), X(H + 10)); g.lineTo(0, X(H + 10)); g.closePath(); g.fill();
       }
     },
     halftone(color, step) {
       g.fillStyle = color;
-      for (let y = -2; y < CARD_H + 3; y += step) for (let x = -2; x < CARD_W + 3; x += step) {
-        const d = Math.hypot(x - CARD_W / 2, y - CARD_H / 2) / 90;
+      for (let y = -2; y < H + 3; y += step) for (let x = -2; x < W + 3; x += step) {
+        const d = Math.hypot(x - W / 2, y - H / 2) / 90;
         g.beginPath(); g.arc(X(x + (Math.round(y / step) % 2) * step / 2), X(y), mm(step * .42 * Math.min(1, d)), 0, 7); g.fill();
       }
     },
@@ -200,7 +200,7 @@ function cardKit(g, pxmm) {
     },
     decoPattern(color) {
       g.strokeStyle = color; g.lineWidth = mm(.3);
-      for (let y = -6; y < CARD_H + 6; y += 9) for (let x = -6 + (Math.round(y / 9) % 2) * 6; x < CARD_W + 6; x += 12)
+      for (let y = -6; y < H + 6; y += 9) for (let x = -6 + (Math.round(y / 9) % 2) * 6; x < W + 6; x += 12)
         for (const r of [2, 4, 6]) { g.beginPath(); g.arc(X(x), X(y), mm(r), Math.PI, 2 * Math.PI); g.stroke(); }
     },
   };
@@ -211,7 +211,7 @@ const BRAND = (k, ev, y, color, x = CARD_W / 2, align = "center") => k.text(`Mem
 
 // ---------------------------------------------------------------- tasarımlar
 const CARD_DESIGNS = [
-  {id: "yaprak", cat: "dugun", name: "Yeşil Yapraklar",
+  {id: "yaprak", cat: "dugun", theme: {bg: "#ffffff", ink: "#2b2b2b", accent: "#577a52", font: '400 {s}px "Great Vibes"'}, name: "Yeşil Yapraklar",
     text: ev => `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları bizimle paylaşmak için karekodu tarayın!`,
     draw(k, g, ev, text) {
       k.bg("#ffffff");
@@ -229,7 +229,7 @@ const CARD_DESIGNS = [
       k.text(ev.title, 52.5, Math.max(end + 15, 124), '400 {s}px "Great Vibes"', 10, "#2b2b2b", {max: 70});
       BRAND(k, ev, 143, "#9a9a9a");
     }},
-  {id: "bordo", cat: "dugun", name: "Bordo Monogram",
+  {id: "bordo", cat: "dugun", theme: {bg: "#f7f1ec", ink: "#7a1a24", accent: "#7a1a24", font: '400 {s}px "Bodoni Moda"'}, name: "Bordo Monogram",
     text: () => "Lütfen QR kodu tarayarak fotoğraf ve videolarınızı albüme ekleyin.",
     draw(k, g, ev, text) {
       const B = "#7a1a24";
@@ -261,7 +261,7 @@ const CARD_DESIGNS = [
       k.flower(52.5, 126.8, 1.5, B, .2); k.leafLine(50, 128.3, 2.6, 2.2, .7, B, .2); k.leafLine(55, 128.3, .55, 2.2, .7, B, .2);
       BRAND(k, ev, 135.3, "#9b7d79");
     }},
-  {id: "yakala", cat: "dugun", name: "Aşkı Yakala",
+  {id: "yakala", cat: "dugun", theme: {bg: "#ffffff", ink: "#2a2a2a", accent: "#b23a3a", font: '400 {s}px "Great Vibes"'}, name: "Aşkı Yakala",
     text: () => "Fotoğraflarınızı bizimle paylaşın!",
     draw(k, g, ev, text) {
       const R = "#b23a3a", INK = "#2a2a2a";
@@ -282,7 +282,7 @@ const CARD_DESIGNS = [
       k.heartPath(52.5, 136, 4.5); g.lineWidth = k.mm(.25); g.stroke();
       BRAND(k, ev, 143.5, "#a0a0a0");
     }},
-  {id: "halka", cat: "dugun", name: "Altın Halka",
+  {id: "halka", cat: "dugun", theme: {bg: "#faf8f3", ink: "#1d1d1d", accent: "#a8832f", font: '400 {s}px "Bodoni Moda"'}, name: "Altın Halka",
     text: () => "Bize güzel anlar bırakmak için QR kodu okutup bizimle paylaşır mısın?",
     draw(k, g, ev, text) {
       const G = "#c4a052";
@@ -306,7 +306,7 @@ const CARD_DESIGNS = [
       k.qr(guestLink(ev.code), 37.5, 94, 30, "#111111", {bg: "#faf8f3"});
       BRAND(k, ev, 141, "#a39a86", 97, "right");
     }},
-  {id: "cini", cat: "dugun", name: "Mavi Çini",
+  {id: "cini", cat: "dugun", theme: {bg: "#f8f5ee", ink: "#2f4f9a", accent: "#2f4f9a", font: '400 {s}px "Great Vibes"'}, name: "Mavi Çini",
     text: () => "Bu kodu okutun ve çektiğiniz fotoğraf ve videoları bizimle paylaşın!",
     draw(k, g, ev, text) {
       const BL = "#2f4f9a";
@@ -334,7 +334,7 @@ const CARD_DESIGNS = [
       k.camera(81, 120, 7.5, BL, .25);
       BRAND(k, ev, 131.5, "#7d8bb0");
     }},
-  {id: "cicek", cat: "dugun", name: "Çiçek Bahçesi", img: "kart/cicek.webp",
+  {id: "cicek", cat: "dugun", theme: {bg: "#fdf7e7", ink: "#b8325a", accent: "#b8325a", font: '400 {s}px "Great Vibes"'}, name: "Çiçek Bahçesi", img: "kart/cicek.webp",
     text: () => "Anılarımızı paylaşın",
     draw(k, g, ev, text) {
       k.bg("#fdf7e7");
@@ -365,10 +365,19 @@ const F = {play: '400 {s}px "Playfair Display"', mont: '400 {s}px "Montserrat"',
   kid: '600 {s}px "Fredoka"', bungee: '400 {s}px "Bungee"', corm: '600 {s}px "Cormorant Garamond"', bod: '400 {s}px "Bodoni Moda"'};
 const KIDS = {hf: F.kid, h: ["Doğum Günü"], hs: [12], L: {h: [36]}, mf: F.montB, ms: 2.9, nf: F.kid, ns: 8.5};
 
+// renk açıklığı (0 koyu … 1 açık): koyu zeminde yazı rengi, misafir sayfası vurgu rengi için
+function lum(hex) {
+  const n = parseInt(String(hex).replace("#", "").slice(0, 6), 16);
+  return isNaN(n) ? 1 : (.299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255)) / 255;
+}
+
 // o: bg, deco(k, g, ev), h (başlık satırları), hf/hs/hc, mf/ms/mc (mesaj), qc (QR rengi), box (QR'a beyaz zemin),
 //    nf/ns/nc (isimler; name: false gizler), bc (alt yazı rengi), L (yerleşim: h[], msg, qrY, qr, name, brand), after(k, g, ev)
 function poster(o) {
+  const dark = c => lum(c) < .45;
+  const accent = [o.nc, o.hc, o.bg].find(c => c && c.startsWith("#") && dark(c)) || "#8c2f52";
   return {id: o.id, name: o.name, cat: o.cat, emojis: o.emojis || [], text: () => o.text || POSTER_TEXT,
+    theme: {bg: o.bg, ink: o.hc || "#222222", accent, font: o.nf || F.vibes, emojis: (o.emojis || []).slice(0, 2)},
     draw(k, g, ev, text) {
       const L = {h: [31, 43], msg: 54, qrY: 69, qr: 31, name: 117, brand: 141.5, ...o.L};
       k.bg(o.bg);
@@ -537,65 +546,116 @@ async function cardPdf(ev, designId, text) {
   a4.save(`${slug(ev.title)}-masa-karti-A4-4lu.pdf`);
 }
 
-// ---------------------------------------------------------------- seçim ekranı
-// save(design, text): seçimi kaydeder (yönetim ya da etkinlik sahibi); text boşsa tasarımın kendi yazısı kullanılır.
-async function openCardPicker(ev, save) {
-  let design = cardDesign(ev.card_design).id, custom = ev.card_text || "";
-  if (custom === "Anılarımızı paylaşın" && design !== "cicek") custom = "";  // eski sürümün varsayılanı
-  const m = document.createElement("div");
-  m.className = "modal cardpick";
-  m.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="Masa kartı tasarımı">
-      <div class="row" style="justify-content:space-between"><h2>Masa kartı tasarımı</h2><button class="linkbtn" data-x>Kapat</button></div>
-      <div class="cp-body">
-        <div class="cp-prev"><img id="cpBig" alt="Seçili tasarımın önizlemesi"></div>
-        <div class="stack" style="min-width:0">
-          <label for="cpText">Kart yazısı</label>
-          <textarea id="cpText" rows="2" maxlength="120"></textarea>
-          <span class="hint">Boş bırakırsanız tasarımın kendi yazısı kullanılır. İsimler ve tarih etkinlik bilgilerinden gelir.</span>
-          <div class="cp-cats" id="cpCats"></div>
-          <div class="cp-grid" id="cpGrid"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
-        </div>
-      </div>
-      <div class="row"><button class="btn" id="cpDl">PDF indir (A6 + A4'e 4'lü)</button></div>
-      <p class="hint">A6 kart 3 mm taşma paylıdır; matbaaya bu dosyayı gönderin. A4 dosyası evde basıp kesmek için.</p>
-    </div>`;
-  document.body.append(m);
-  m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-x]")) m.remove(); });
-  const ta = $("#cpText", m);
-  const syncText = () => { ta.value = custom; ta.placeholder = cardDesign(design).text(ev); };
-  syncText();
-  await cardFontsReady();
-  const big = $("#cpBig", m), grid = $("#cpGrid", m);
-  const drawBig = () => { big.src = drawCard(ev, design, custom, 5).toDataURL("image/jpeg", .9); };
-  let cat = cardDesign(design).cat || "";
-  const drawCats = () => {
-    $("#cpCats", m).innerHTML = [["", "Tümü"], ...Object.entries(CARD_CATS)].map(([k, v]) => `<button type="button" class="chip${cat === k ? " on" : ""}" data-c="${k}">${esc(v)}</button>`).join("");
-  };
-  drawCats();
-  $("#cpCats", m).onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; cat = b.dataset.c; drawCats(); drawGrid(); };
-  const drawGrid = () => {
-    grid.innerHTML = CARD_DESIGNS.filter(d => !cat || d.cat === cat).map(d => `<button class="cp-item${d.id === design ? " on" : ""}" data-d="${d.id}">
-      <img src="${drawCard(ev, d.id, custom, 1.6).toDataURL("image/jpeg", .85)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
-  };
-  drawBig(); drawGrid();
-  grid.onclick = e => {
-    const b = e.target.closest("[data-d]");
-    if (!b) return;
-    design = b.dataset.d;
-    grid.querySelectorAll(".cp-item").forEach(x => x.classList.toggle("on", x === b));
-    syncText(); drawBig();
-  };
-  let t;
-  ta.oninput = () => { custom = ta.value.trim(); clearTimeout(t); t = setTimeout(() => { drawBig(); drawGrid(); }, 300); };
-  $("#cpDl", m).onclick = async () => {
-    const btn = $("#cpDl", m);
-    btn.disabled = true; btn.textContent = "Hazırlanıyor…";
-    try {
-      await save?.(design, custom);
-      ev.card_design = design; ev.card_text = custom;
-      await cardPdf(ev, design, custom);
-      toast("PDF indirildi");
-    } catch (e) { toast("PDF hazırlanamadı: " + e.message, 5000); }
-    btn.disabled = false; btn.textContent = "PDF indir (A6 + A4'e 4'lü)";
-  };
+// ---------------------------------------------------------------- ürünler: masa kartı, kartvizit, ayaklı pano
+// sel = {design, text, custom: null | {img, pos, size}}: hazır tasarım ya da etkinlik sahibinin yüklediği görsel
+const CARD_PRODUCTS = {
+  kart: {name: "Masa kartı", note: "A6 · 10,5 × 14,8 cm"},
+  kartvizit: {name: "Kartvizit", note: "8,5 × 5,5 cm"},
+  pano: {name: "Ayaklı pano", note: "Düğün girişi · 50 × 70 cm"},
+};
+const PANO_SIZES = {"50x70": [500, 700], "35x50": [350, 500]};
+const QR_SIZES = {kucuk: 26, orta: 32, buyuk: 40};
+const cardTheme = sel => sel.custom ? {bg: "#ffffff", ink: "#222222", accent: "#8c2f52", font: '400 {s}px "Great Vibes"'} : cardDesign(sel.design).theme;
+
+function coverImage(g, img, x, y, w, h) {
+  const k = Math.max(w / img.width, h / img.height), iw = img.width * k, ih = img.height * k;
+  g.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+}
+
+// kendi tasarımı: görsel kartı kaplar, QR beyaz kutuda seçilen yerde
+function drawCustomCard(ev, custom, pxmm) {
+  const c = document.createElement("canvas");
+  c.width = Math.round((CARD_W + 2 * CARD_BL) * pxmm); c.height = Math.round((CARD_H + 2 * CARD_BL) * pxmm);
+  const g = c.getContext("2d"), k = cardKit(g, pxmm);
+  k.bg("#ffffff");
+  if (custom.img) coverImage(g, custom.img, 0, 0, c.width, c.height);
+  const q = QR_SIZES[custom.size] || QR_SIZES.orta, pad = 3, bw = q + 2 * pad, bh = q + 2 * pad + 4.5;
+  const pos = {orta: [(CARD_W - bw) / 2, (CARD_H - bh) / 2], alt: [(CARD_W - bw) / 2, CARD_H - bh - 12],
+    sag_alt: [CARD_W - bw - 9, CARD_H - bh - 10], sol_alt: [9, CARD_H - bh - 10]}[custom.pos] || [(CARD_W - bw) / 2, CARD_H - bh - 12];
+  g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(pos[0]), k.X(pos[1]), k.mm(bw), k.mm(bh), k.mm(2)); g.fill();
+  k.qr(guestLink(ev.code), pos[0] + pad, pos[1] + pad, q, "#111111");
+  k.text("Okut · fotoğraflarını yükle", pos[0] + bw / 2, pos[1] + bh - 2.2, '600 {s}px "Barlow"', 2.4, "#444444", {max: bw - 2});
+  return c;
+}
+
+function drawKart(ev, sel, pxmm) { return sel.custom ? drawCustomCard(ev, sel.custom, pxmm) : drawCard(ev, sel.design, sel.text, pxmm); }
+
+// kartvizit (yatay): solda isimler ve yönlendirme, sağda QR
+function drawBiz(ev, sel, pxmm) {
+  const W = 85, H = 55, BL = CARD_BL;
+  const c = document.createElement("canvas");
+  c.width = Math.round((W + 2 * BL) * pxmm); c.height = Math.round((H + 2 * BL) * pxmm);
+  const g = c.getContext("2d"), k = cardKit(g, pxmm, W, H), t = cardTheme(sel);
+  k.bg(t.bg);
+  if (sel.custom?.img) { coverImage(g, sel.custom.img, 0, 0, k.X(46), c.height); g.fillStyle = "#ffffff"; g.fillRect(k.X(46), 0, c.width, c.height); }
+  else {
+    const d = cardDesign(sel.design);
+    if (d.img && CARD_IMAGES[d.img]) { const im = CARD_IMAGES[d.img]; g.drawImage(im, k.X(31), k.X(3), k.mm(14), k.mm(14 * im.height / im.width)); }
+    (t.emojis || []).forEach((e, i) => k.emoji(e, 7 + i * 9, 49, 8, (i - .5) * .3));
+    g.fillStyle = t.accent; g.fillRect(k.X(6), k.X(9), k.mm(10), k.mm(.6));
+  }
+  const ink = sel.custom ? "#ffffff" : t.ink, x0 = 6, colW = 38;
+  if (!sel.custom) {
+    k.text("Anılarımızı paylaşın", x0, 15, '600 {s}px "Montserrat"', 2.1, t.accent, {align: "left", upper: true, sp: .25, max: colW});
+    k.text(ev.title, x0, 26, t.font, 7.5, ink, {align: "left", max: colW});
+    k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, x0, 32, '400 {s}px "Montserrat"', 2.4, ink, {align: "left", max: colW});
+    k.wrap("QR kodu okutun, fotoğraf ve videolarınızı albümümüze yükleyin.", x0, 39, colW, '400 {s}px "Montserrat"', 2.1, ink, 3, {align: "left"});
+  }
+  g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(50), k.X(9), k.mm(29), k.mm(36), k.mm(2)); g.fill();
+  if (!sel.custom && lum(t.bg) > .85) { g.strokeStyle = "rgba(0,0,0,.12)"; g.lineWidth = k.mm(.2); g.stroke(); }
+  k.qr(guestLink(ev.code), 52, 11, 25, "#111111");
+  k.text(`Albüm kodu ${ev.code}`, 64.5, 41.5, '600 {s}px "Barlow"', 2.2, "#555555", {max: 27});
+  k.text("MemoryQR", 64.5, 50, '600 {s}px "Barlow"', 2, sel.custom ? "#999999" : (lum(t.bg) < .45 ? "rgba(255,255,255,.6)" : "rgba(0,0,0,.4)"));
+  return c;
+}
+
+const pdfName = (ev, s) => `${slug(ev.title)}-${s}.pdf`;
+function cutMarks(pdf, xs, ys, pageW, pageH) {
+  pdf.setDrawColor(150); pdf.setLineWidth(.15);
+  const x0 = xs[0], x1 = xs[xs.length - 1], y0 = ys[0], y1 = ys[ys.length - 1];
+  for (const x of xs) { pdf.line(x, 0, x, y0 - 1); pdf.line(x, y1 + 1, x, pageH); }
+  for (const y of ys) { pdf.line(0, y, x0 - 1, y); pdf.line(x1 + 1, y, pageW, y); }
+}
+// tek ürün (taşma paylı) + A4'e çoklu dizilim
+function gridPdf(img, w, h, cols, rows) {
+  const {jsPDF} = window.jspdf, BL = CARD_BL;
+  const a4 = new jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
+  const ox = (210 - cols * w) / 2, oy = (297 - rows * h) / 2;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) a4.addImage(img, "JPEG", ox + c * w - BL, oy + r * h - BL, w + 2 * BL, h + 2 * BL);
+  a4.setFillColor(255, 255, 255);
+  a4.rect(0, 0, 210, oy, "F"); a4.rect(0, oy + rows * h, 210, 297, "F"); a4.rect(0, 0, ox, 297, "F"); a4.rect(ox + cols * w, 0, 210, 297, "F");
+  cutMarks(a4, [...Array(cols + 1)].map((_, i) => ox + i * w), [...Array(rows + 1)].map((_, i) => oy + i * h), 210, 297);
+  return a4;
+}
+
+async function productPdf(product, ev, sel, panoSize = "50x70") {
+  await Promise.all([loadScript("vendor/jspdf.umd.min.js"), cardFontsReady()]);
+  const {jsPDF} = window.jspdf, BL = CARD_BL;
+  if (product === "kart") {
+    const img = drawKart(ev, sel, 12).toDataURL("image/jpeg", .95);
+    const one = new jsPDF({unit: "mm", format: [CARD_W + 2 * BL, CARD_H + 2 * BL], orientation: "portrait"});
+    one.addImage(img, "JPEG", 0, 0, CARD_W + 2 * BL, CARD_H + 2 * BL);
+    one.save(pdfName(ev, "masa-karti-A6-tasmali"));
+    gridPdf(img, CARD_W, CARD_H, 2, 2).save(pdfName(ev, "masa-karti-A4-4lu"));
+  } else if (product === "kartvizit") {
+    const img = drawBiz(ev, sel, 14).toDataURL("image/jpeg", .95);
+    const one = new jsPDF({unit: "mm", format: [85 + 2 * BL, 55 + 2 * BL], orientation: "landscape"});
+    one.addImage(img, "JPEG", 0, 0, 85 + 2 * BL, 55 + 2 * BL);
+    one.save(pdfName(ev, "kartvizit-tasmali"));
+    gridPdf(img, 85, 55, 2, 5).save(pdfName(ev, "kartvizit-A4-10lu"));
+  } else {
+    // pano: masa kartı tasarımı büyütülür (oranlar neredeyse aynı); 5 mm taşma, ~150 dpi (geniş format baskı)
+    const [W, H] = PANO_SIZES[panoSize] || PANO_SIZES["50x70"], PB = 5, s = Math.max((W + 2 * PB) / CARD_W, (H + 2 * PB) / CARD_H);
+    const cv = drawKart(ev, sel, Math.min(5.9 * s, 30));
+    const pdf = new jsPDF({unit: "mm", format: [W + 2 * PB, H + 2 * PB], orientation: "portrait"});
+    const iw = (CARD_W + 2 * BL) * s, ih = (CARD_H + 2 * BL) * s;
+    pdf.addImage(cv.toDataURL("image/jpeg", .92), "JPEG", (W + 2 * PB - iw) / 2, (H + 2 * PB - ih) / 2, iw, ih);
+    pdf.save(pdfName(ev, `ayakli-pano-${panoSize}-5mm-tasmali`));
+  }
+}
+
+// önizleme: ürün tuvali (taşma payı dahil)
+function drawProduct(product, ev, sel, pxmm) {
+  if (product === "kartvizit") return drawBiz(ev, sel, pxmm);
+  return drawKart(ev, sel, pxmm);
 }

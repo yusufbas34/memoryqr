@@ -230,6 +230,22 @@ html{scroll-behavior:smooth}
 .dz-item:hover img{transform:translateY(-3px)}
 .dz-item img{transition:transform .2s}
 
+.gcard{width:118px;height:auto;margin:0 auto 6px;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.18);transform:rotate(-2deg)}
+/* kart tasarımı sayfası */
+.kp{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:28px;align-items:start;padding:16px 0 20px}
+.kp-prev{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:grid;gap:12px}
+.kp-img{background:var(--soft);border-radius:14px;padding:18px;display:flex;justify-content:center;align-items:center;min-height:200px}
+.kp-img img{width:min(100%,300px);height:auto;border-radius:4px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.kp-img img.wide{width:100%}
+.kp-grid{grid-template-columns:repeat(auto-fill,minmax(112px,1fr))}
+.seg{display:flex;background:var(--soft);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:none;border-radius:9px;padding:10px 8px;font:inherit;font-weight:600;font-size:15px;color:var(--ink);cursor:pointer}
+.seg button.on{background:var(--card);box-shadow:0 1px 4px rgba(0,0,0,.12);color:var(--accent)}
+.kbar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.14);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-top:10px}
+#dlRow select{width:auto;font-size:16px;padding:10px}
+@media (max-width:760px){.kp{grid-template-columns:1fr}.kp-prev{position:static}.kp-img img{width:min(70%,260px)}}
+
 /* masa kartı seçici */
 .cardpick{place-items:start center;overflow-y:auto}
 .cardpick>.card{max-width:980px;width:100%}
@@ -260,6 +276,7 @@ const params = new URLSearchParams(location.search);
 const BASE = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : SITE_URL;
 const guestLink = code => `${SITE_URL}?e=${encodeURIComponent(code)}`;
 const ownerLink = code => `${SITE_URL}?e=${encodeURIComponent(code)}&sahip`;
+const cardLink = code => `${SITE_URL}?e=${encodeURIComponent(code)}&kart`;
 const fileUrl = key => `${FILES_URL}/f/${key}`;
 
 async function rpc(fn, args = {}) {
@@ -540,7 +557,7 @@ async function guestView(code) {
   let files = [], more = true, loading = false;
 
   app.innerHTML = `${brandHtml}
-    <section class="hero"><div class="eyebrow">${esc(KINDS[ev.kind] || "Etkinlik")} · ${esc(fmtDate(ev.event_date))}</div>
+    <section class="hero"><img id="gcard" class="gcard" alt="" hidden><div class="eyebrow">${esc(KINDS[ev.kind] || "Etkinlik")} · ${esc(fmtDate(ev.event_date))}</div>
       <h1>${esc(ev.title)}</h1>
       <p>${ev.active ? "Bu güne ait fotoğraf ve videolarınızı buraya yükleyin. Hepsi tek albümde toplanır." : "Bu albümün süresi doldu."}</p></section>
     <section class="card" id="nameCard"></section>
@@ -563,6 +580,7 @@ async function guestView(code) {
     <p class="hint" style="text-align:center">${ev.guest_gallery ? "Yüklediğiniz fotoğraf ve videolar etkinlik sahibiyle ve diğer misafirlerle paylaşılır."
       : "Yüklediklerinizi yalnızca siz ve etkinlik sahibi görür."} Hepsi ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir.</p>
     ${footerHtml(ev.code)}`;
+  applyGuestTheme(ev);
 
   function drawName() {
     const c = $("#nameCard");
@@ -679,12 +697,12 @@ function fail(title, text) {
 }
 
 // ---------------------------------------------------------------- etkinlik sahibi
-async function ownerView(code) {
+async function ownerView(code, then = ownerPanel) {
   const pinKey = "pin_" + code.toUpperCase();
   let pin = session.get(pinKey) || store.get(pinKey);
   if (pin) {
     const r = await rpc("memory_owner", {p_code: code, p_pin: pin}).catch(() => null);
-    if (r?.ok) return ownerPanel(r.event, pin);
+    if (r?.ok) return then(r.event, pin);
     session.del(pinKey); store.del(pinKey);
   }
   app.innerHTML = `${brandHtml}<section class="hero"><div class="eyebrow">Etkinlik sahibi</div><h1>Albümünüze girin</h1>
@@ -703,7 +721,7 @@ async function ownerView(code) {
     if (r.ok) {
       session.set(pinKey, p);
       if ($("#rem").checked) store.set(pinKey, p);
-      return ownerPanel(r.event, p);
+      return then(r.event, p);
     }
     err.hidden = false;
     err.textContent = {bad_pin: "PIN yanlış.", not_found: "Albüm bulunamadı.", locked: `Çok fazla yanlış deneme. ${r.minutes || 15} dakika sonra tekrar deneyin.`,
@@ -749,7 +767,7 @@ async function ownerPanel(ev, pin) {
     <section class="row">
       <button class="btn" id="zip">${ICON.download}Hepsini indir (ZIP)</button>
       <button class="btn ghost" id="share">${ICON.link}Misafir bağlantısı</button>
-      <button class="btn ghost" id="card">${ICON.print}QR kartı (PDF)</button>
+      <a class="btn ghost" href="?e=${esc(ev.code)}&kart">${ICON.print}Kart tasarımı ve PDF</a>
       <button class="btn ghost" id="wa">${ICON.wa}WhatsApp'ıma kaydet</button>
     </section>
     <section class="card" id="zipBox" hidden><div id="zipT">Hazırlanıyor…</div><div class="prog"><i id="zipP"></i></div></section>
@@ -818,10 +836,6 @@ async function ownerPanel(ev, pin) {
   };
   $("#out").onclick = () => { session.del("pin_" + ev.code); store.del("pin_" + ev.code); location.href = `?e=${ev.code}`; };
   $("#share").onclick = () => copy(guestLink(ev.code), "Misafir bağlantısı kopyalandı");
-  $("#card").onclick = () => cardPicker(ev, async (design, text) => {
-    const r = await rpc("memory_owner_card", {p_code: ev.code, p_pin: pin, p_design: design, p_text: text}).catch(() => null);
-    if (!r?.ok) toast("Tasarım kaydedilemedi, PDF yine de iniyor");
-  });
   $("#wa").onclick = () => {
     const text = `MemoryQR · ${ev.title}\nMisafir bağlantısı: ${guestLink(ev.code)}\nAlbüm (yalnızca siz): ${ownerLink(ev.code)}\nPIN: ${pin}\nAlbüm ${fmtDate(ev.expires_at)} tarihinde silinir.`;
     location.href = "https://wa.me/?text=" + encodeURIComponent(text);
@@ -918,10 +932,154 @@ async function slideView(code) {
   setInterval(show, 7000);
 }
 
-// ---------------------------------------------------------------- QR masa kartı (kart.js: 10 tasarım, Özalit'e gidecek PDF)
-async function cardPicker(ev, save) {
-  try { await loadScript("kart.js"); } catch (e) { return toast("Kart aracı yüklenemedi"); }
-  openCardPicker(ev, save);
+// ---------------------------------------------------------------- kart tasarımı sayfası (?e=KOD&kart, PIN ile): müşteriye gönderilen link
+const loadImg = src => new Promise((res, rej) => { const im = new Image(); im.crossOrigin = "anonymous"; im.onload = () => res(im); im.onerror = rej; im.src = src; });
+const KIND_CAT = {dugun: "dugun", nisan: "dugun", kina: "dugun", soz: "dugun", mezuniyet: "mezuniyet"};
+const QR_POS_TR = {alt: "Altta", orta: "Ortada", sag_alt: "Sağ altta", sol_alt: "Sol altta"};
+const QR_SIZE_TR = {kucuk: "Küçük", orta: "Orta", buyuk: "Büyük"};
+
+async function kartPanel(ev, pin) {
+  app.className = "home";
+  document.title = `Kart tasarımı · ${ev.title} · MemoryQR`;
+  app.innerHTML = `<nav class="lnav">${brandHtml}<div class="row"><a class="btn small light" href="?e=${esc(ev.code)}&sahip">Albüme dön</a></div></nav>
+    <section class="stack" style="padding:18px 0 4px"><div class="eyebrow">${esc(KINDS[ev.kind] || "Etkinlik")} · ${esc(fmtDate(ev.event_date))}</div>
+      <h1 style="font-size:clamp(34px,6vw,50px)">Kart tasarımınız</h1>
+      <p class="lede">Hazır tasarımlardan birini seçin ya da kendi tasarımınızı yükleyin. Seçiminiz masa kartında, kartvizitte, giriş panosunda ve misafirlerin fotoğraf yükleme sayfasında kullanılır.</p></section>
+    <div class="kp">
+      <aside class="kp-prev">
+        <div class="seg" id="prodTabs"></div>
+        <div class="kp-img"><img id="prev" alt="Önizleme"></div>
+        <p class="hint" id="prodNote" style="text-align:center"></p>
+        <div class="row" id="dlRow"><select id="panoSize" hidden><option value="50x70">50 × 70 cm</option><option value="35x50">35 × 50 cm</option></select>
+          <button class="btn ghost" id="dl">${ICON.download}PDF indir</button></div>
+      </aside>
+      <section class="stack" style="min-width:0">
+        <div class="seg" id="modeTabs"><button type="button" data-m="hazir">Hazır tasarımlar</button><button type="button" data-m="kendi">Kendi tasarımım</button></div>
+        <div id="hazir" class="stack">
+          <div class="cp-cats" id="cats" style="padding:4px 0"></div>
+          <div class="cp-grid kp-grid" id="grid"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
+          <label for="ktext">Kart yazısı <span class="opt">(isteğe bağlı)</span></label>
+          <textarea id="ktext" rows="2" maxlength="120"></textarea>
+          <span class="hint">Boş bırakırsanız tasarımın kendi yazısı kullanılır. İsimler ve tarih etkinlik bilgilerinizden gelir.</span>
+        </div>
+        <div id="kendi" class="stack" hidden>
+          <label class="btn" for="kfile">${ICON.image}Tasarım dosyanızı seçin</label>
+          <input type="file" id="kfile" accept="image/jpeg,image/png,image/webp" hidden>
+          <span class="hint">Dikey (A6 oranında) JPG ya da PNG, en az 1240 × 1748 piksel önerilir. QR kod için boş bir alan bırakın; QR'ı biz ekleriz.</span>
+          <div id="kstat"></div>
+          <label>QR'ın yeri</label><div class="cp-cats" id="qpos" style="padding:0"></div>
+          <label>QR'ın boyutu</label><div class="cp-cats" id="qsize" style="padding:0"></div>
+        </div>
+      </section>
+    </div>
+    <div class="kbar"><span id="kstate" class="hint"></span><span class="row"><a class="btn ghost" id="kwa" hidden target="_blank" rel="noopener">${ICON.wa}MemoryQR'a haber verin</a>
+      <button class="btn" id="ksave">Seçimi kaydet</button></span></div>`;
+  try { await loadScript("kart.js"); await cardFontsReady(); } catch (e) { return toast("Tasarımlar yüklenemedi, sayfayı yenileyin", 5000); }
+  $("#prodTabs").innerHTML = Object.entries(CARD_PRODUCTS).map(([k, v]) => `<button type="button" data-p="${k}">${esc(v.name)}</button>`).join("");
+
+  const sel = {design: cardDesign(ev.card_design || CARD_DESIGNS.find(d => d.cat === (KIND_CAT[ev.kind] || "dugun"))?.id).id, text: ev.card_text || ""};
+  const custom = {key: ev.card_custom_key || null, img: null, pos: ev.card_qr_pos || "alt", size: ev.card_qr_size || "orta"};
+  let mode = custom.key ? "kendi" : "hazir", product = "kart", cat = KIND_CAT[ev.kind] || "", dirty = false;
+  if (custom.key) custom.img = await loadImg(fileUrl(custom.key)).catch(() => null);
+  const cur = () => ({design: sel.design, text: sel.text, custom: mode === "kendi" ? custom : null});
+  const designName = () => mode === "kendi" ? "kendi tasarımım" : cardDesign(sel.design).name;
+  const setDirty = v => {
+    dirty = v;
+    $("#kstate").textContent = v ? "Kaydedilmemiş değişiklik var" : `Kayıtlı: ${designName()}`;
+    $("#kwa").hidden = v || !WHATSAPP;
+    $("#kwa").href = waLink(`Merhaba, ${ev.title} (${ev.code}) için kart tasarımımı seçtim: ${designName()}.`);
+  };
+  window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+  const drawPrev = () => {
+    $("#prev").src = drawProduct(product, ev, cur(), product === "kartvizit" ? 7 : 4.4).toDataURL("image/jpeg", .9);
+    $("#prev").className = product === "kartvizit" ? "wide" : "";
+    $("#prodNote").textContent = CARD_PRODUCTS[product].note + (product === "pano" ? " · masa kartı tasarımınız büyütülür" : "");
+    $("#panoSize").hidden = product !== "pano";
+    $("#prodTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.p === product));
+  };
+  const drawCats = () => {
+    $("#cats").innerHTML = [["", "Tümü"], ...Object.entries(CARD_CATS)].map(([k, v]) => `<button type="button" class="chip${cat === k ? " on" : ""}" data-c="${k}">${esc(v)}</button>`).join("");
+  };
+  const drawGrid = () => {
+    $("#grid").innerHTML = CARD_DESIGNS.filter(d => !cat || d.cat === cat).map(d => `<button type="button" class="cp-item${d.id === sel.design && mode === "hazir" ? " on" : ""}" data-d="${d.id}">
+      <img src="${drawCard(ev, d.id, sel.text, 1.5).toDataURL("image/jpeg", .82)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
+  };
+  const drawCustomUi = () => {
+    $("#qpos").innerHTML = Object.entries(QR_POS_TR).map(([k, v]) => `<button type="button" class="chip${custom.pos === k ? " on" : ""}" data-q="${k}">${v}</button>`).join("");
+    $("#qsize").innerHTML = Object.entries(QR_SIZE_TR).map(([k, v]) => `<button type="button" class="chip${custom.size === k ? " on" : ""}" data-s="${k}">${v}</button>`).join("");
+    $("#kstat").innerHTML = custom.img ? `<span class="ok">Tasarımınız yüklendi.</span> <span class="hint">Değiştirmek için yeni dosya seçin.</span>` : `<span class="hint">Henüz dosya yüklenmedi.</span>`;
+  };
+  const drawMode = () => {
+    $("#modeTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.m === mode));
+    $("#hazir").hidden = mode !== "hazir"; $("#kendi").hidden = mode !== "kendi";
+  };
+  $("#ktext").value = sel.text; $("#ktext").placeholder = cardDesign(sel.design).text(ev);
+  drawCats(); drawGrid(); drawCustomUi(); drawMode(); drawPrev(); setDirty(false);
+
+  $("#prodTabs").onclick = e => { const b = e.target.closest("[data-p]"); if (b) { product = b.dataset.p; drawPrev(); } };
+  $("#modeTabs").onclick = e => { const b = e.target.closest("[data-m]"); if (b && b.dataset.m !== mode) { mode = b.dataset.m; drawMode(); drawGrid(); drawPrev(); setDirty(true); } };
+  $("#cats").onclick = e => { const b = e.target.closest("[data-c]"); if (b) { cat = b.dataset.c; drawCats(); drawGrid(); } };
+  $("#grid").onclick = e => {
+    const b = e.target.closest("[data-d]"); if (!b) return;
+    sel.design = b.dataset.d; $("#ktext").placeholder = cardDesign(sel.design).text(ev);
+    $("#grid").querySelectorAll(".cp-item").forEach(x => x.classList.toggle("on", x === b));
+    drawPrev(); setDirty(true);
+    if (innerWidth < 760) $("#prev").scrollIntoView({behavior: "smooth", block: "center"});
+  };
+  let tm;
+  $("#ktext").oninput = e => { sel.text = e.target.value.trim(); setDirty(true); clearTimeout(tm); tm = setTimeout(() => { drawPrev(); drawGrid(); }, 350); };
+  $("#qpos").onclick = e => { const b = e.target.closest("[data-q]"); if (b) { custom.pos = b.dataset.q; drawCustomUi(); drawPrev(); setDirty(true); } };
+  $("#qsize").onclick = e => { const b = e.target.closest("[data-s]"); if (b) { custom.size = b.dataset.s; drawCustomUi(); drawPrev(); setDirty(true); } };
+  $("#kfile").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) return toast("JPG, PNG ya da WebP dosyası seçin", 4000);
+    if (f.size > 25e6) return toast("Dosya çok büyük (en çok 25 MB)", 4000);
+    $("#kstat").innerHTML = `<span class="hint">Yükleniyor… <b id="kpct">0%</b></span>`;
+    try {
+      const t = await rpc("memory_owner_design_begin", {p_code: ev.code, p_pin: pin, p_mime: f.type, p_bytes: f.size});
+      if (!t.ok) throw new Error({bad_type: "Bu dosya türü desteklenmiyor.", too_big: "Dosya çok büyük."}[t.error] || "Yüklenemedi.");
+      await withRetry(() => put(t.key, t.max, t.exp, t.sig, f, f.type, p => { const el = $("#kpct"); if (el) el.textContent = Math.round(p * 100) + "%"; }));
+      custom.key = t.key;
+      custom.img = await loadImg(URL.createObjectURL(f));
+      drawCustomUi(); drawPrev(); setDirty(true);
+    } catch (err) { $("#kstat").innerHTML = `<span class="err">${esc(err.message || "Yüklenemedi")}</span>`; }
+  };
+  $("#dl").onclick = async () => {
+    if (mode === "kendi" && !custom.img) return toast("Önce tasarım dosyanızı yükleyin");
+    const b = $("#dl"); b.disabled = true; b.lastChild.textContent = "Hazırlanıyor…";
+    try { await productPdf(product, ev, cur(), $("#panoSize").value); toast("PDF indirildi"); }
+    catch (err) { toast("PDF hazırlanamadı: " + err.message, 5000); }
+    b.disabled = false; b.lastChild.textContent = "PDF indir";
+  };
+  $("#ksave").onclick = async () => {
+    if (mode === "kendi" && !custom.key) return toast("Önce tasarım dosyanızı yükleyin");
+    const r = await rpc("memory_owner_card", {p_code: ev.code, p_pin: pin, p_design: sel.design, p_text: sel.text,
+      p_custom_key: mode === "kendi" ? custom.key : null, p_qr_pos: custom.pos, p_qr_size: custom.size}).catch(() => null);
+    if (!r?.ok) return toast("Kaydedilemedi, tekrar deneyin");
+    setDirty(false); toast("Tasarımınız kaydedildi");
+  };
+}
+
+// Misafir sayfası: etkinliğin kart tasarımı başlıkta görünür, vurgu rengi tasarımdan gelir
+async function applyGuestTheme(ev) {
+  if (!ev.card_design && !ev.card_custom_key) return;
+  try { await loadScript("kart.js"); await cardFontsReady(); } catch (e) { return; }
+  const sel = {design: ev.card_design, text: ev.card_text || "", custom: null};
+  if (ev.card_custom_key) {
+    const img = await loadImg(fileUrl(ev.card_custom_key)).catch(() => null);
+    if (img) sel.custom = {img, pos: ev.card_qr_pos, size: ev.card_qr_size};
+  }
+  if (!sel.custom && !ev.card_design) return;
+  const t = cardTheme(sel);
+  if (!sel.custom && lum(t.accent) < .55) {
+    document.documentElement.style.setProperty("--accent", t.accent);
+    document.documentElement.style.setProperty("--accent2", t.accent);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", t.accent);
+  }
+  const im = $("#gcard");
+  if (im) { im.src = drawKart(ev, sel, 2.4).toDataURL("image/jpeg", .88); im.hidden = false; }
 }
 
 // ---------------------------------------------------------------- yönetim (?admin)
@@ -995,12 +1153,14 @@ function adminPanel(key, list) {
         <span class="pill ${active ? "on" : "off"}">${e.files_purged ? "Dosyalar silindi" : active ? `${daysLeft(e.expires_at)} gün kaldı` : "Süresi doldu"}</span></div>
       <div class="meta"><span class="code">${esc(e.code)}</span><span>PIN <b>${esc(e.pin)}</b></span><span>${esc(KINDS[e.kind])} · ${esc(fmtDate(e.event_date))}</span>
         <span>${e.files} dosya · ${e.guests} misafir · ${fmtBytes(e.bytes)}</span>${e.owner_name ? `<span>${esc(e.owner_name)}</span>` : ""}
-        ${e.owner_phone ? `<span>${esc(e.owner_phone)}</span>` : ""}${e.last_upload ? `<span>son yükleme ${esc(fmtTime(e.last_upload))}</span>` : ""}</div>
+        ${e.owner_phone ? `<span>${esc(e.owner_phone)}</span>` : ""}${e.last_upload ? `<span>son yükleme ${esc(fmtTime(e.last_upload))}</span>` : ""}
+        <span>Kart: <b>${e.card_custom_key ? "kendi tasarımı" : e.card_design ? esc(e.card_design) : "seçilmedi"}</b></span></div>
       ${e.note ? `<p class="hint">${esc(e.note)}</p>` : ""}
       <div class="row">
         <a class="btn small light" href="?e=${esc(e.code)}" target="_blank" rel="noopener">Misafir sayfası</a>
         <button class="btn small light" data-a="owner">Albümü aç</button>
-        <button class="btn small light" data-a="card">Masa kartı PDF</button>
+        <button class="btn small light" data-a="card">Kart tasarımı ve PDF</button>
+        <button class="btn small light" data-a="cardlink">Tasarım linkini gönder</button>
         <button class="btn small light" data-a="copy">Bağlantıyı kopyala</button>
         <button class="btn small light" data-a="wa">Müşteriye WhatsApp</button>
         <button class="btn small light" data-a="edit">Düzenle</button>
@@ -1011,13 +1171,17 @@ function adminPanel(key, list) {
       const a = ev.target.closest("[data-a]")?.dataset.a;
       if (!a) return;
       if (a === "owner") { session.set("pin_" + e.code, e.pin); window.open(`?e=${e.code}&sahip`, "_blank"); }
-      if (a === "card") cardPicker(e, async (design, text) => {
-        await rpc("memory_admin_card", {p_key: key, p_code: e.code, p_design: design, p_text: text}).catch(() => toast("Tasarım kaydedilemedi"));
-      });
+      if (a === "card") { session.set("pin_" + e.code, e.pin); window.open(`?e=${e.code}&kart`, "_blank"); }
+      if (a === "cardlink") {
+        const text = `Merhaba${e.owner_name ? " " + e.owner_name : ""}, MemoryQR kartlarınızın tasarımını buradan seçebilirsiniz:\n${cardLink(e.code)}\nPIN: ${e.pin}\n\n` +
+          `Hazır tasarımlardan birini seçebilir ya da kendi tasarımınızı yükleyebilirsiniz. Seçtiğiniz tasarım masa kartı, kartvizit, giriş panosu ve misafirlerin fotoğraf yükleme sayfasında kullanılır.`;
+        const p = String(e.owner_phone || "").replace(/\D/g, "").replace(/^0/, "90");
+        window.open(`https://wa.me/${p.length >= 11 ? p : ""}?text=${encodeURIComponent(text)}`, "_blank");
+      }
       if (a === "copy") copy(guestLink(e.code));
       if (a === "wa") {
         const text = `Merhaba${e.owner_name ? " " + e.owner_name : ""}, MemoryQR albümünüz hazır.\n\nMisafir bağlantısı (QR bunu açar): ${guestLink(e.code)}\n` +
-          `Albümünüz (yalnızca siz): ${ownerLink(e.code)}\nPIN: ${e.pin}\n\nFotoğraflar ${fmtDate(e.expires_at)} tarihinde silinir, o tarihe kadar "Hepsini indir" ile indirin.`;
+          `Albümünüz (yalnızca siz): ${ownerLink(e.code)}\nKart tasarımınızı seçin: ${cardLink(e.code)}\nPIN: ${e.pin}\n\nFotoğraflar ${fmtDate(e.expires_at)} tarihinde silinir, o tarihe kadar "Hepsini indir" ile indirin.`;
         const p = String(e.owner_phone || "").replace(/\D/g, "").replace(/^0/, "90");
         window.open(`https://wa.me/${p.length >= 11 ? p : ""}?text=${encodeURIComponent(text)}`, "_blank");
       }
@@ -1108,7 +1272,7 @@ function homeView() {
       <div class="lfeat">${FEATURES.map(([h, t]) => `<div><h3>${esc(h)}</h3><p>${esc(t)}</p></div>`).join("")}</div></section>
 
     <section class="lsec" id="kartlar"><div class="eyebrow">Masa kartları</div><h2>Size uygun tasarımı seçin</h2>
-      <p class="lede">İsimleriniz, tarihiniz ve size özel QR ile hazırlanır. A6 boyutunda, matbaa baskısına hazır.</p>
+      <p class="lede">İsimleriniz, tarihiniz ve size özel QR ile hazırlanır. Aynı tasarım masa kartı, kartvizit ve düğün girişi için ayaklı pano olarak basılır. İsterseniz kendi tasarımınızı da kullanabilirsiniz.</p>
       <div class="lcards" id="lcards"><p class="hint">Tasarımlar yükleniyor…</p></div>
       <div class="row"><a class="btn" href="?tasarimlar" id="allDesigns">Tüm tasarımları görün ve seçin</a></div></section>
 
@@ -1247,6 +1411,7 @@ async function designsView() {
   if (!code) return homeView();
   if (params.has("slayt")) return slideView(code);
   if (params.has("sahip")) return ownerView(code);
+  if (params.has("kart")) return ownerView(code, kartPanel);
   guestView(code);
 })();
 </script>

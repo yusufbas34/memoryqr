@@ -8,8 +8,9 @@
 //   GET  /durum                         kurulum kontrolü (R2 bağlantısı ve UPLOAD_SECRET var mı; gizli değer gösterilmez)
 // Ortam: BUCKET (R2 bağlantısı), UPLOAD_SECRET (gizli), ALLOWED_ORIGINS (virgüllü; boşsa her yer)
 
-const KEY_RE = /^e\/[A-Z0-9]{4,12}\/[0-9a-f-]{36}(_t)?\.[a-z0-9]{2,5}$/;
-const PREFIX_RE = /^e\/[A-Z0-9]{4,12}\/$/;
+// e/: misafir yüklemeleri (R2 kuralıyla 31 günde silinir), t/: etkinlik sahibinin yüklediği kart tasarımı (kurala girmez)
+const KEY_RE = /^[et]\/[A-Z0-9]{4,12}\/[0-9a-f-]{36}(_t)?\.[a-z0-9]{2,5}$/;
+const PREFIX_RE = /^[et]\/[A-Z0-9]{4,12}\/$/;
 const enc = new TextEncoder();
 
 function cors(req, env) {

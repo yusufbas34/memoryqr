@@ -104,6 +104,10 @@ alter table public.memory_events add column if not exists card_design text;
 alter table public.memory_events add column if not exists card_text text;
 -- sürüm 3: 1 yıl arşiv paketi (albüm Google Drive'a taşınır, bağlantısı etkinlik sahibine gösterilir)
 alter table public.memory_events add column if not exists archive_url text;
+-- sürüm 4: etkinlik sahibinin kendi kart tasarımı (R2'de t/KOD/…, 31 gün kuralına girmez) ve üstüne basılacak QR'ın yeri/boyutu
+alter table public.memory_events add column if not exists card_custom_key text;
+alter table public.memory_events add column if not exists card_qr_pos text;
+alter table public.memory_events add column if not exists card_qr_size text;
 alter table public.memory_events alter column guest_gallery set default false;
 do $$
 declare v integer;
@@ -163,6 +167,7 @@ as $$
     'files', (select count(*) from memory_files f where f.event_code = e.code and f.ready and (p_owner or not f.hidden)),
     'guests', (select count(distinct lower(f.guest)) from memory_files f where f.event_code = e.code and f.ready),
     'card_design', e.card_design, 'card_text', e.card_text,
+    'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size,
     'archive_url', case when p_owner then e.archive_url end,
     'owner_name', case when p_owner then e.owner_name end,
     'bytes', case when p_owner then (select coalesce(sum(bytes), 0) from memory_files f where f.event_code = e.code and f.ready) end);
@@ -349,18 +354,46 @@ begin
 end $$;
 grant execute on function public.memory_owner_settings(text, text, boolean) to anon, authenticated;
 
-create or replace function public.memory_owner_card(p_code text, p_pin text, p_design text, p_text text)
+-- Kart seçimi: hazır tasarım (p_design + p_text) ya da kendi tasarımı (p_custom_key, memory_owner_design_begin ile yüklenen).
+drop function if exists public.memory_owner_card(text, text, text, text);
+create or replace function public.memory_owner_card(p_code text, p_pin text, p_design text, p_text text,
+  p_custom_key text default null, p_qr_pos text default null, p_qr_size text default null)
 returns json
 language plpgsql security definer set search_path = public
 as $$
-declare v_err text := memory_check_pin(p_code, p_pin);
+declare v_err text := memory_check_pin(p_code, p_pin); v_code text := memory_norm(p_code);
 begin
   if v_err is not null then return memory_pin_error(p_code, v_err); end if;
-  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 120), '')
-    where code = memory_norm(p_code);
+  if p_custom_key is not null and p_custom_key !~ ('^t/' || v_code || '/[0-9a-f-]{36}\.(jpg|png|webp)$') then
+    return json_build_object('ok', false, 'error', 'bad_key');
+  end if;
+  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 120), ''),
+      card_custom_key = p_custom_key,
+      card_qr_pos = case when p_qr_pos in ('orta', 'alt', 'sag_alt', 'sol_alt') then p_qr_pos end,
+      card_qr_size = case when p_qr_size in ('kucuk', 'orta', 'buyuk') then p_qr_size end
+    where code = v_code;
   return json_build_object('ok', true);
 end $$;
-grant execute on function public.memory_owner_card(text, text, text, text) to anon, authenticated;
+grant execute on function public.memory_owner_card(text, text, text, text, text, text, text) to anon, authenticated;
+
+-- Kendi tasarımını yüklemek için imzalı izin (en çok 25 MB, JPG/PNG/WebP)
+create or replace function public.memory_owner_design_begin(p_code text, p_pin text, p_mime text, p_bytes bigint)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_err text := memory_check_pin(p_code, p_pin);
+  v_ext text := case lower(coalesce(p_mime, '')) when 'image/jpeg' then 'jpg' when 'image/png' then 'png' when 'image/webp' then 'webp' end;
+  v_key text;
+  v_exp bigint := extract(epoch from now())::bigint + 3600;
+begin
+  if v_err is not null then return memory_pin_error(p_code, v_err); end if;
+  if v_ext is null then return json_build_object('ok', false, 'error', 'bad_type'); end if;
+  if coalesce(p_bytes, 0) <= 0 or p_bytes > 25000000 then return json_build_object('ok', false, 'error', 'too_big'); end if;
+  v_key := 't/' || memory_norm(p_code) || '/' || gen_random_uuid() || '.' || v_ext;
+  return json_build_object('ok', true, 'key', v_key, 'max', p_bytes, 'exp', v_exp, 'sig', memory_sign('PUT|' || v_key || '|' || p_bytes || '|' || v_exp));
+end $$;
+grant execute on function public.memory_owner_design_begin(text, text, text, bigint) to anon, authenticated;
 
 -- ---------------------------------------------------------------- yönetim
 create or replace function public.memory_admin_events(p_key text)
@@ -373,6 +406,7 @@ begin
       'event_date', e.event_date, 'expires_at', e.expires_at, 'guest_gallery', e.guest_gallery,
       'owner_name', e.owner_name, 'owner_phone', e.owner_phone, 'note', e.note, 'files_purged', e.files_purged,
       'card_design', e.card_design, 'card_text', e.card_text, 'archive_url', e.archive_url,
+      'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size,
       'created_at', e.created_at, 'files', s.n, 'bytes', s.b, 'guests', s.g, 'last_upload', s.last)
       order by e.event_date desc, e.created_at desc), '[]'::json)
     from memory_events e
@@ -448,7 +482,9 @@ begin
   if p_drop then delete from memory_events where code = v_code;
   else update memory_events set files_purged = true where code = v_code; end if;
   return json_build_object('ok', true, 'prefix', 'e/' || v_code || '/', 'exp', v_exp,
-    'sig', memory_sign('DELP|e/' || v_code || '/|' || v_exp));
+    'sig', memory_sign('DELP|e/' || v_code || '/|' || v_exp),
+    'designs', case when p_drop then json_build_object('prefix', 't/' || v_code || '/', 'exp', v_exp,
+      'sig', memory_sign('DELP|t/' || v_code || '/|' || v_exp)) end);
 end $$;
 grant execute on function public.memory_admin_purge(text, text, boolean) to anon, authenticated;
 
@@ -520,4 +556,4 @@ begin
 end $$;
 grant execute on function public.memory_admin_review_set(text, uuid, boolean) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 3';
+create or replace function public.memory_version() returns integer language sql immutable as 'select 4';

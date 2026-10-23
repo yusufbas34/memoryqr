@@ -11,6 +11,8 @@
 <meta property="og:site_name" content="MemoryQR">
 <meta property="og:title" content="MemoryQR | Anılarınız için tek QR">
 <meta property="og:description" content="Okut, yükle, tüm anılar tek yerde toplansın. Uygulama indirmek gerekmez.">
+<meta property="og:url" content="https://memoryqr.bulqr.com.tr/">
+<link rel="canonical" href="https://memoryqr.bulqr.com.tr/">
 <link rel="stylesheet" href="fonts.css">
 <script src="vendor/qrcode.js"></script>
 <script>
@@ -21,7 +23,20 @@
   // Cloudflare Worker adresi (worker/): dosyalar buraya yüklenir ve buradan açılır. Sonunda / olmadan.
   const FILES_URL = "https://memoryqr-dosya.yusufbas34.workers.dev";
   // QR kartlara basılan adres. QR'lar basıldıktan sonra bu adres değişmemeli.
-  const SITE_URL = "https://yusufbas34.github.io/memoryqr/";
+  const SITE_URL = "https://memoryqr.bulqr.com.tr/";
+  // Tanıtım sayfasındaki iletişim: WhatsApp numarası (ülke koduyla, ör. "905321234567") ve Instagram kullanıcı adı.
+  // Boş bırakılan buton görünmez.
+  const WHATSAPP = "";
+  const INSTAGRAM = "";
+  // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
+  const PAKETLER = [
+    {ad: "Dijital", fiyat: "499 TL", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
+    {ad: "Standart", fiyat: "899 TL", one: true, ozellik: ["Dijital paketteki her şey", "20 basılı masa kartı", "1 pleksi masa standı", "Salonda canlı slayt gösterisi"]},
+    {ad: "Aile paketi", fiyat: "1.490 TL", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "40 basılı masa kartı, 2 stand", "60 gün saklama", "Canlı slayt gösterisi"]},
+  ];
+  // Müşteri yorumları: gerçek yorumları buraya ekleyin ({ad: "Selin & Berk", etkinlik: "Düğün, Kasım 2026", yorum: "..."}).
+  // Liste boşken sayfada yorum bölümü görünmez.
+  const YORUMLAR = [];
   // =================================================
 </script>
 <style>
@@ -153,6 +168,51 @@ body.slide{background:#000;padding:0;overflow:hidden;cursor:none}
 /* iletişim kutuları */
 .modal{position:fixed;inset:0;background:rgba(20,14,20,.55);z-index:60;display:grid;place-items:center;padding:20px}
 .modal .card{max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+/* tanıtım sayfası */
+main.home{max-width:1080px;gap:0}
+html{scroll-behavior:smooth}
+.lnav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:8px}
+.lnav .row{gap:18px}
+.lnav .row a:not(.btn){color:var(--ink);text-decoration:none;font-weight:600;font-size:15px}
+.lnav .row a:not(.btn):hover{color:var(--accent)}
+@media (max-width:640px){.lnav .row a:not(.btn){display:none}}
+.lhero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:40px;align-items:center;padding:44px 0 56px}
+.lhero h1{font-size:clamp(42px,7vw,68px);line-height:1}
+.lede{font-size:18px;max-width:52ch}
+.lhero-card{display:flex;justify-content:center}
+.lhero-card img{width:min(320px,100%);aspect-ratio:111/154;height:auto;border-radius:6px;box-shadow:0 24px 60px rgba(60,20,30,.22);transform:rotate(2.5deg);background:var(--soft)}
+@media (max-width:760px){.lhero{grid-template-columns:1fr;padding:24px 0 36px;gap:28px}.lhero-card img{width:min(240px,70%)}}
+.lsec{padding:48px 0;border-top:1px solid var(--line);display:grid;gap:14px}
+.lsec h2{font-family:"Barlow Condensed","Barlow",sans-serif;font-size:clamp(30px,5vw,42px);font-weight:700}
+.lsteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;margin-top:10px}
+.lsteps>div{display:grid;gap:8px;align-content:start}
+.lsteps b{width:40px;height:40px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:19px}
+.lfeat{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:10px}
+.lfeat>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:6px;align-content:start}
+@media (max-width:760px){.lsteps,.lfeat{grid-template-columns:1fr}}
+@media (min-width:761px) and (max-width:960px){.lfeat{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px;margin-top:10px}
+.lcards figure{margin:0;display:grid;gap:8px;text-align:center;font-weight:600;font-size:14px}
+.lcards img{width:100%;height:auto;border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
+.lpack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:10px;align-items:start}
+.lpack>div{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:10px}
+.lpack>div.on{border:2px solid var(--accent)}
+.lpack .price{font-family:"Barlow Condensed","Barlow",sans-serif;font-size:36px;font-weight:700;color:var(--accent)}
+.lpack ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--muted)}
+.tagp{position:absolute;top:-12px;left:18px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+@media (max-width:760px){.lpack{grid-template-columns:1fr}}
+.lrev{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.lrev figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:10px}
+.lrev blockquote{margin:0;font-size:16px;line-height:1.5}
+.lrev figcaption{font-size:14px;color:var(--muted)}
+.lfaq{display:grid;gap:8px;max-width:760px}
+.lfaq details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.lfaq summary{font-weight:600;cursor:pointer;font-size:16px}
+.lfaq details p{margin-top:8px}
+.lsplit{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:28px}
+@media (max-width:760px){.lsplit{grid-template-columns:1fr}}
+.lcta{text-align:center;justify-items:center;background:var(--soft);border-radius:16px;border-top:0;padding:40px 20px;margin-bottom:20px}
+
 /* masa kartı seçici */
 .cardpick{place-items:start center;overflow-y:auto}
 .cardpick>.card{max-width:980px;width:100%}
@@ -958,14 +1018,89 @@ function adminPanel(key, list) {
 }
 
 // ---------------------------------------------------------------- giriş sayfası (kod ile)
+const waLink = text => WHATSAPP ? `https://wa.me/${WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
+const FEATURES = [
+  ["Uygulama yok", "Misafir telefon kamerasıyla okutur, tarayıcıda açılır. Kayıt, şifre, indirme yok."],
+  ["Orijinal kalite", "Fotoğraflar küçültülmeden, çekildiği kalitede albüme gelir. Videolar da."],
+  ["Kim neyi yükledi", "Her fotoğrafın altında yükleyen misafirin adı yazar; misafire göre süzebilirsiniz."],
+  ["Salonda canlı slayt", "Yüklenen fotoğraflar projeksiyonda anında akar. Misafirler kendini görünce daha çok yükler."],
+  ["Gizlilik sizde", "Misafirler yalnızca kendi yüklediklerini görür; albümün tamamını yalnızca siz görürsünüz."],
+  ["Tek tıkla indir", "Hepsini ZIP olarak indirin. 30 gün sonra albüm kendiliğinden ve kalıcı olarak silinir."],
+];
+const FAQ = [
+  ["Misafirlerin uygulama indirmesi gerekiyor mu?", "Hayır. Telefon kamerasıyla QR okutulur, sayfa tarayıcıda açılır. Adını yazar ve yükler."],
+  ["Fotoğraflar kalitesini kaybediyor mu?", "Hayır, fotoğraflar orijinal haliyle yüklenir. Yalnızca iPhone'un HEIC dosyaları her telefonda açılabilsin diye aynı çözünürlükte JPEG'e çevrilir."],
+  ["Kaç fotoğraf ve video yüklenebilir?", "Etkinlik başına 5.000 dosyaya kadar. Video başına en çok 300 MB (telefonla birkaç dakikalık kayıt)."],
+  ["Misafirler birbirinin fotoğraflarını görür mü?", "Varsayılan olarak hayır: herkes yalnızca kendi yüklediklerini görür. İsterseniz panelden herkese açabilirsiniz."],
+  ["Fotoğraflar ne kadar saklanıyor?", "Etkinlikten sonra 30 gün. Bu sürede hepsini tek tıkla indirirsiniz; süre dolunca dosyalar kalıcı olarak silinir."],
+  ["Uygunsuz bir fotoğraf yüklenirse?", "Panelden tek dokunuşla gizler ya da silersiniz. Gizlenen fotoğraf slaytta ve misafir galerisinde görünmez."],
+  ["Kartları kim basıyor?", "Basılı paketlerde masa kartlarını biz bastırıp gönderiyoruz. Dijital pakette PDF'i alıp istediğiniz yerde bastırabilirsiniz."],
+];
+
 function homeView() {
-  app.innerHTML = `${brandHtml}
-    <section class="hero"><div class="eyebrow">Düğün · Nişan · Kına · Mezuniyet</div><h1>Anılarınız için tek QR</h1>
-      <p>Misafirleriniz QR'ı okutur, adını yazar, fotoğraf ve videolarını yükler. Hepsi tek albümde toplanır. Uygulama indirmek gerekmez.</p></section>
-    <form class="card" id="cf"><label for="cc">Albüm kodu</label><input type="text" id="cc" maxlength="12" autocapitalize="characters" placeholder="Ör. K7M2QX" required>
-      <button class="btn">Albümü aç</button><span class="hint">Kod, QR kartının altında ya da size gönderilen bağlantıda yazar.</span></form>
+  app.className = "home";
+  const wa = waLink("Merhaba, MemoryQR hakkında bilgi almak istiyorum.");
+  const contact = (wa ? `<a class="btn" href="${esc(wa)}" target="_blank" rel="noopener">${ICON.wa}WhatsApp'tan bilgi alın</a>` : "") +
+    (INSTAGRAM ? `<a class="btn ghost" href="https://www.instagram.com/${esc(INSTAGRAM)}" target="_blank" rel="noopener">Instagram'da görün</a>` : "");
+  app.innerHTML = `
+    <nav class="lnav">${brandHtml}<div class="row">
+      <a href="#nasil">Nasıl çalışır</a><a href="#kartlar">Kartlar</a><a href="#paketler">Paketler</a><a href="#sss">SSS</a>
+      <a class="btn small" href="#albumum">Albümüme gir</a></div></nav>
+
+    <section class="lhero">
+      <div class="stack">
+        <div class="eyebrow">Düğün · Nişan · Kına · Mezuniyet</div>
+        <h1>Anılarınız için tek QR</h1>
+        <p class="lede">Misafirleriniz masadaki QR'ı okutur, adını yazar, fotoğraf ve videolarını yükler. Gecenin bütün anları tek albümde toplanır. Uygulama indirmek gerekmez.</p>
+        <div class="row">${contact || `<a class="btn" href="#paketler">Paketleri görün</a>`}<a class="btn light" href="#nasil">Nasıl çalışır?</a></div>
+      </div>
+      <div class="lhero-card"><img id="heroCard" alt="Örnek MemoryQR masa kartı"></div>
+    </section>
+
+    <section class="lsec" id="nasil"><div class="eyebrow">Nasıl çalışır</div><h2>Üç adımda bütün anılar sizde</h2>
+      <div class="lsteps">
+        <div><b>1</b><h3>QR kartlar masalarda</h3><p>Seçtiğiniz tasarımda, isimleriniz ve tarihinizle basılmış kartlar masalara konur.</p></div>
+        <div><b>2</b><h3>Misafirler okutup yükler</h3><p>Telefon kamerasıyla okutur, adını yazar, galeriden seçer ya da anında çeker.</p></div>
+        <div><b>3</b><h3>Hepsini tek tıkla indirin</h3><p>Albümünüzde kim ne yüklediyse görünür. Hepsini ZIP olarak indirirsiniz.</p></div>
+      </div></section>
+
+    <section class="lsec"><div class="eyebrow">Neden MemoryQR</div><h2>Fotoğrafçının göremediği anlar</h2>
+      <p class="lede">Gece boyunca yüzlerce telefon çekim yapar ama o fotoğrafların çoğu size hiç ulaşmaz. MemoryQR hepsini tek yerde toplar.</p>
+      <div class="lfeat">${FEATURES.map(([h, t]) => `<div><h3>${esc(h)}</h3><p>${esc(t)}</p></div>`).join("")}</div></section>
+
+    <section class="lsec" id="kartlar"><div class="eyebrow">Masa kartları</div><h2>Size uygun tasarımı seçin</h2>
+      <p class="lede">İsimleriniz, tarihiniz ve size özel QR ile hazırlanır. A6 boyutunda, matbaa baskısına hazır.</p>
+      <div class="lcards" id="lcards"><p class="hint">Tasarımlar yükleniyor…</p></div></section>
+
+    <section class="lsec" id="paketler"><div class="eyebrow">Paketler</div><h2>Tek seferlik ödeme, abonelik yok</h2>
+      <div class="lpack">${PAKETLER.map(pk => `<div class="${pk.one ? "on" : ""}">${pk.one ? `<span class="tagp">En çok tercih edilen</span>` : ""}
+        <h3>${esc(pk.ad)}</h3><div class="price">${esc(pk.fiyat || "Fiyat için yazın")}</div>
+        <ul>${pk.ozellik.map(o => `<li>${esc(o)}</li>`).join("")}</ul>
+        ${wa ? `<a class="btn ${pk.one ? "" : "ghost"}" href="${esc(waLink(`Merhaba, MemoryQR ${pk.ad} paketi hakkında bilgi almak istiyorum.`))}" target="_blank" rel="noopener">Bu paketi isteyin</a>` : ""}</div>`).join("")}</div></section>
+
+    ${YORUMLAR.length ? `<section class="lsec"><div class="eyebrow">Tecrübeler</div><h2>Kullananlar ne diyor</h2>
+      <div class="lrev">${YORUMLAR.map(y => `<figure><blockquote>${esc(y.yorum)}</blockquote><figcaption><b>${esc(y.ad)}</b>${y.etkinlik ? ` · ${esc(y.etkinlik)}` : ""}</figcaption></figure>`).join("")}</div></section>` : ""}
+
+    <section class="lsec" id="sss"><div class="eyebrow">Sık sorulanlar</div><h2>Merak edilenler</h2>
+      <div class="lfaq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</div></section>
+
+    <section class="lsec lsplit" id="albumum">
+      <div class="stack"><div class="eyebrow">Albümünüz hazır mı?</div><h2>Albümünüze girin</h2>
+        <p>QR kartın altındaki kodu yazın. Etkinlik sahibiyseniz albüm sayfasındaki "Etkinlik sahibi girişi"nden PIN'inizle girersiniz.</p></div>
+      <form class="card" id="cf"><label for="cc">Albüm kodu</label><input type="text" id="cc" maxlength="12" autocapitalize="characters" placeholder="Ör. K7M2QX" required>
+        <button class="btn">Albümü aç</button></form>
+    </section>
+
+    ${contact ? `<section class="lsec lcta"><h2>Sizin gününüz için de hazırlayalım</h2><p>Tarihinizi ve isimlerinizi yazın, kart tasarımınızı birlikte seçelim.</p><div class="row">${contact}</div></section>` : ""}
     ${footerHtml()}`;
   $("#cf").onsubmit = e => { e.preventDefault(); const c = $("#cc").value.replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (c) location.href = `?e=${c}`; };
+
+  // kart örnekleri gerçek tasarım kodundan çizilir
+  loadScript("kart.js").then(() => cardFontsReady()).then(() => {
+    const ex = {code: "ORNEK1", title: "Selin & Berk", kind: "dugun", event_date: "2026-06-14"};
+    $("#heroCard").src = drawCard(ex, "bordo", "", 5).toDataURL("image/jpeg", .9);
+    $("#lcards").innerHTML = CARD_DESIGNS.map(d => `<figure><img src="${drawCard(ex, d.id, "", 3).toDataURL("image/jpeg", .85)}" alt="${esc(d.name)} masa kartı" loading="lazy"><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
+  }).catch(() => { $("#lcards").innerHTML = ""; });
 }
 
 // ---------------------------------------------------------------- yönlendirme

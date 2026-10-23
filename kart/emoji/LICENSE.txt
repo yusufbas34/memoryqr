@@ -1,0 +1,3 @@
+Bu klasördeki SVG çizimler Twemoji projesindendir (https://github.com/jdecked/twemoji).
+Grafikler: Copyright Twitter, Inc ve diğer katkıda bulunanlar, CC-BY 4.0 lisansı (https://creativecommons.org/licenses/by/4.0/).
+Masa kartlarında süsleme olarak kullanılır; dosyalara yalnızca width/height öznitelikleri eklenmiştir.

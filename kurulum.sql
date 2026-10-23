@@ -102,10 +102,16 @@ create table if not exists public.memory_files (
 -- sürüm 2: masa kartı tasarımı; misafirler varsayılan olarak yalnızca kendi yüklediklerini görür
 alter table public.memory_events add column if not exists card_design text;
 alter table public.memory_events add column if not exists card_text text;
+-- sürüm 3: 1 yıl arşiv paketi (albüm Google Drive'a taşınır, bağlantısı etkinlik sahibine gösterilir)
+alter table public.memory_events add column if not exists archive_url text;
 alter table public.memory_events alter column guest_gallery set default false;
-do $$ begin
-  if to_regprocedure('public.memory_version()') is not null and public.memory_version() < 2 then
-    update public.memory_events set guest_gallery = false;
+do $$
+declare v integer;
+begin
+  -- sürüm fonksiyonu ilk kurulumda henüz yok: dinamik çağrı (doğrudan çağrı plan aşamasında hata verir)
+  if to_regprocedure('public.memory_version()') is not null then
+    execute 'select public.memory_version()' into v;
+    if v < 2 then update public.memory_events set guest_gallery = false; end if;
   end if;
 end $$;
 
@@ -157,6 +163,7 @@ as $$
     'files', (select count(*) from memory_files f where f.event_code = e.code and f.ready and (p_owner or not f.hidden)),
     'guests', (select count(distinct lower(f.guest)) from memory_files f where f.event_code = e.code and f.ready),
     'card_design', e.card_design, 'card_text', e.card_text,
+    'archive_url', case when p_owner then e.archive_url end,
     'owner_name', case when p_owner then e.owner_name end,
     'bytes', case when p_owner then (select coalesce(sum(bytes), 0) from memory_files f where f.event_code = e.code and f.ready) end);
 $$;
@@ -365,7 +372,7 @@ begin
   return (select coalesce(json_agg(json_build_object('code', e.code, 'pin', e.pin, 'title', e.title, 'kind', e.kind,
       'event_date', e.event_date, 'expires_at', e.expires_at, 'guest_gallery', e.guest_gallery,
       'owner_name', e.owner_name, 'owner_phone', e.owner_phone, 'note', e.note, 'files_purged', e.files_purged,
-      'card_design', e.card_design, 'card_text', e.card_text,
+      'card_design', e.card_design, 'card_text', e.card_text, 'archive_url', e.archive_url,
       'created_at', e.created_at, 'files', s.n, 'bytes', s.b, 'guests', s.g, 'last_upload', s.last)
       order by e.event_date desc, e.created_at desc), '[]'::json)
     from memory_events e
@@ -376,8 +383,10 @@ end $$;
 grant execute on function public.memory_admin_events(text) to anon, authenticated;
 
 -- Yeni etkinlik (p_code boşsa) ya da mevcut etkinliği günceller. Süre: etkinlik gününden sonra p_days gün (varsayılan 30).
+drop function if exists public.memory_admin_save(text, text, text, text, date, integer, text, text, text);
 create or replace function public.memory_admin_save(p_key text, p_code text, p_title text, p_kind text, p_event_date date,
-  p_days integer default 30, p_owner_name text default null, p_owner_phone text default null, p_note text default null)
+  p_days integer default 30, p_owner_name text default null, p_owner_phone text default null, p_note text default null,
+  p_archive_url text default null)
 returns json
 language plpgsql security definer set search_path = public
 as $$
@@ -386,28 +395,31 @@ declare
   v_title text := left(trim(coalesce(p_title, '')), 60);
   v_exp timestamptz := ((p_event_date + greatest(coalesce(p_days, 30), 1) + 1)::timestamp at time zone 'Europe/Istanbul');
   v_alphabet text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  v_archive text := nullif(trim(coalesce(p_archive_url, '')), '');
   i integer;
 begin
   perform memory_admin_check(p_key);
   if v_title = '' or p_event_date is null then return json_build_object('ok', false, 'error', 'missing'); end if;
+  if v_archive is not null and v_archive !~ '^https://' then return json_build_object('ok', false, 'error', 'bad_url'); end if;
   if v_code is null then
     loop
       v_code := '';
       for i in 1..6 loop v_code := v_code || substr(v_alphabet, 1 + floor(random() * length(v_alphabet))::int, 1); end loop;
       exit when not exists (select 1 from memory_events where code = v_code);
     end loop;
-    insert into memory_events (code, pin, title, kind, event_date, expires_at, owner_name, owner_phone, note)
+    insert into memory_events (code, pin, title, kind, event_date, expires_at, owner_name, owner_phone, note, archive_url)
       values (v_code, lpad(floor(random() * 1000000)::int::text, 6, '0'), v_title, coalesce(p_kind, 'dugun'), p_event_date, v_exp,
-        nullif(trim(p_owner_name), ''), nullif(trim(p_owner_phone), ''), nullif(trim(p_note), ''));
+        nullif(trim(p_owner_name), ''), nullif(trim(p_owner_phone), ''), nullif(trim(p_note), ''), v_archive);
   else
     update memory_events set title = v_title, kind = coalesce(p_kind, kind), event_date = p_event_date, expires_at = v_exp,
-        owner_name = nullif(trim(p_owner_name), ''), owner_phone = nullif(trim(p_owner_phone), ''), note = nullif(trim(p_note), '')
+        owner_name = nullif(trim(p_owner_name), ''), owner_phone = nullif(trim(p_owner_phone), ''), note = nullif(trim(p_note), ''),
+        archive_url = v_archive
       where code = v_code;
     if not found then return json_build_object('ok', false, 'error', 'not_found'); end if;
   end if;
   return json_build_object('ok', true, 'code', v_code, 'pin', (select pin from memory_events where code = v_code));
 end $$;
-grant execute on function public.memory_admin_save(text, text, text, text, date, integer, text, text, text) to anon, authenticated;
+grant execute on function public.memory_admin_save(text, text, text, text, date, integer, text, text, text, text) to anon, authenticated;
 
 create or replace function public.memory_admin_card(p_key text, p_code text, p_design text, p_text text)
 returns json
@@ -440,4 +452,72 @@ begin
 end $$;
 grant execute on function public.memory_admin_purge(text, text, boolean) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 2';
+-- ---------------------------------------------------------------- müşteri yorumları (tanıtım sayfası)
+-- Herkes yorum yazabilir; yönetimden onaylanan yorumlar sayfada görünür.
+create table if not exists public.memory_reviews (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  event_text text,              -- "Düğün, Kasım 2026"
+  rating integer not null default 5 check (rating between 1 and 5),
+  body text not null,
+  approved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists memory_reviews_idx on public.memory_reviews (approved, created_at desc);
+alter table public.memory_reviews enable row level security;
+revoke all on public.memory_reviews from anon, authenticated;
+
+create or replace function public.memory_review_add(p_name text, p_event text, p_rating integer, p_body text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_name text := left(regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'), 40);
+  v_body text := left(trim(coalesce(p_body, '')), 600);
+begin
+  if length(v_name) < 2 or length(v_body) < 10 then return json_build_object('ok', false, 'error', 'short'); end if;
+  -- onay bekleyen yorumlar sınırsız birikmesin
+  if (select count(*) from memory_reviews where not approved and created_at > now() - interval '1 hour') >= 30 then
+    return json_build_object('ok', false, 'error', 'busy');
+  end if;
+  insert into memory_reviews (name, event_text, rating, body)
+    values (v_name, nullif(left(trim(coalesce(p_event, '')), 60), ''), least(greatest(coalesce(p_rating, 5), 1), 5), v_body);
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.memory_review_add(text, text, integer, text) to anon, authenticated;
+
+create or replace function public.memory_reviews_public()
+returns json
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(json_agg(json_build_object('name', name, 'event_text', event_text, 'rating', rating, 'body', body, 'created_at', created_at)
+    order by created_at desc), '[]'::json)
+  from (select * from memory_reviews where approved order by created_at desc limit 30) r;
+$$;
+grant execute on function public.memory_reviews_public() to anon, authenticated;
+
+create or replace function public.memory_admin_reviews(p_key text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform memory_admin_check(p_key);
+  return (select coalesce(json_agg(json_build_object('id', id, 'name', name, 'event_text', event_text, 'rating', rating, 'body', body,
+    'approved', approved, 'created_at', created_at) order by approved, created_at desc), '[]'::json) from memory_reviews);
+end $$;
+grant execute on function public.memory_admin_reviews(text) to anon, authenticated;
+
+-- p_approved: true yayınla, false yayından kaldır, null sil
+create or replace function public.memory_admin_review_set(p_key text, p_id uuid, p_approved boolean)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform memory_admin_check(p_key);
+  if p_approved is null then delete from memory_reviews where id = p_id;
+  else update memory_reviews set approved = p_approved where id = p_id; end if;
+  return json_build_object('ok', found);
+end $$;
+grant execute on function public.memory_admin_review_set(text, uuid, boolean) to anon, authenticated;
+
+create or replace function public.memory_version() returns integer language sql immutable as 'select 3';

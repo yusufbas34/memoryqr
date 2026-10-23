@@ -120,6 +120,89 @@ function cardKit(g, pxmm) {
       g.globalAlpha = 1;
     },
     bg(color) { g.fillStyle = color; g.fillRect(0, 0, mm(CARD_W + 2 * CARD_BL), mm(CARD_H + 2 * CARD_BL)); },
+    // Twemoji çizimi (kart/emoji/<kod>.svg), merkezden; flip: yatay ayna
+    emoji(code, x, y, size, rot = 0, flip = false) {
+      const im = CARD_IMAGES[`kart/emoji/${code}.svg`];
+      if (!im) return;
+      g.save(); g.translate(X(x), X(y)); g.rotate(rot); if (flip) g.scale(-1, 1);
+      g.drawImage(im, -mm(size) / 2, -mm(size) / 2, mm(size), mm(size)); g.restore();
+    },
+    bunting(y, colors, n) {
+      g.strokeStyle = "#8a7a9a"; g.lineWidth = mm(.25);
+      g.beginPath(); g.moveTo(X(-2), X(y)); g.quadraticCurveTo(X(52.5), X(y + 8), X(107), X(y)); g.stroke();
+      for (let i = 0; i < n; i++) {
+        const t = (i + .5) / n, x = -2 + 109 * t, yy = y + 16 * t * (1 - t);  // eğrinin üstündeki nokta
+        g.fillStyle = colors[i % colors.length]; g.beginPath(); g.moveTo(X(x - 4.5), X(yy)); g.lineTo(X(x + 4.5), X(yy)); g.lineTo(X(x), X(yy + 8)); g.closePath(); g.fill();
+      }
+    },
+    confetti(n, colors, seed) {
+      const r = rng(seed);
+      for (let i = 0; i < n; i++) {
+        const x = r() * CARD_W, y = r() * CARD_H;
+        g.fillStyle = colors[i % colors.length];
+        if (r() < .5) { g.beginPath(); g.arc(X(x), X(y), mm(.5 + r() * .7), 0, 7); g.fill(); }
+        else { g.save(); g.translate(X(x), X(y)); g.rotate(r() * 6); g.fillRect(-mm(.9), -mm(.35), mm(1.8), mm(.7)); g.restore(); }
+      }
+    },
+    sparkles(n, color, seed) {
+      const r = rng(seed); g.fillStyle = color;
+      for (let i = 0; i < n; i++) {
+        const x = X(r() * CARD_W), y = X(r() * CARD_H), s = mm(.4 + r() * 1.1);
+        g.beginPath(); g.moveTo(x, y - s); g.quadraticCurveTo(x, y, x + s, y); g.quadraticCurveTo(x, y, x, y + s); g.quadraticCurveTo(x, y, x - s, y); g.quadraticCurveTo(x, y, x, y - s); g.fill();
+      }
+    },
+    vines(color, n) {
+      g.strokeStyle = color; g.lineWidth = mm(.5);
+      for (let i = 0; i < n; i++) {
+        const x0 = 8 + i * 22;
+        g.beginPath(); g.moveTo(X(x0), X(-3)); g.bezierCurveTo(X(x0 + 6), X(6), X(x0 - 4), X(10 + i % 2 * 4), X(x0 + 3), X(14 + i % 3 * 3)); g.stroke();
+        for (let j = 0; j < 3; j++) k.leaf(x0 + (j % 2 ? 2 : -1), 3 + j * 4, j % 2 ? .6 : 2.4, 3, 1, color, .9);
+      }
+    },
+    rays(cx, cy, colors, n) {
+      for (let i = 0; i < n; i++) {
+        const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2;
+        g.fillStyle = colors[i % colors.length]; g.beginPath(); g.moveTo(X(cx), X(cy));
+        g.lineTo(X(cx) + Math.cos(a0) * mm(200), X(cy) + Math.sin(a0) * mm(200)); g.lineTo(X(cx) + Math.cos(a1) * mm(200), X(cy) + Math.sin(a1) * mm(200)); g.closePath(); g.fill();
+      }
+    },
+    waves(colors, band) {
+      const W = CARD_W + 2 * CARD_BL;
+      for (let i = -2, j = 0; i * band < CARD_H + 10; i++, j++) {
+        g.fillStyle = colors[j % colors.length]; g.beginPath(); g.moveTo(0, X(i * band));
+        for (let x = 0; x <= W; x += 1) g.lineTo(mm(x), X(i * band + Math.sin(x / 9 + i * .7) * 4));
+        g.lineTo(mm(W), X(CARD_H + 10)); g.lineTo(0, X(CARD_H + 10)); g.closePath(); g.fill();
+      }
+    },
+    halftone(color, step) {
+      g.fillStyle = color;
+      for (let y = -2; y < CARD_H + 3; y += step) for (let x = -2; x < CARD_W + 3; x += step) {
+        const d = Math.hypot(x - CARD_W / 2, y - CARD_H / 2) / 90;
+        g.beginPath(); g.arc(X(x + (Math.round(y / step) % 2) * step / 2), X(y), mm(step * .42 * Math.min(1, d)), 0, 7); g.fill();
+      }
+    },
+    burst(cx, cy, r1, r2, n, fill, stroke) {
+      g.beginPath();
+      for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * Math.PI * 2, r = i % 2 ? r2 : r1; g.lineTo(X(cx + Math.cos(a) * r), X(cy + Math.sin(a) * r * .8)); }
+      g.closePath(); g.fillStyle = fill; g.fill(); g.strokeStyle = stroke; g.lineWidth = mm(.6); g.stroke();
+    },
+    blob(cx, cy, r, color, seed) {
+      const q = rng(seed), pts = [];
+      for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, rr = r * (.75 + q() * .5); pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+      g.fillStyle = color; g.beginPath();
+      pts.forEach((p, i) => { const n = pts[(i + 1) % 8], mx = (p[0] + n[0]) / 2, my = (p[1] + n[1]) / 2; i ? g.quadraticCurveTo(X(p[0]), X(p[1]), X(mx), X(my)) : g.moveTo(X(mx), X(my)); });
+      const p = pts[0], n = pts[1]; g.quadraticCurveTo(X(p[0]), X(p[1]), X((p[0] + n[0]) / 2), X((p[1] + n[1]) / 2)); g.fill();
+    },
+    polaroid(x, y, w, ang, color) {
+      g.save(); g.translate(X(x), X(y)); g.rotate(ang);
+      g.shadowColor = "rgba(0,0,0,.18)"; g.shadowBlur = mm(1); g.fillStyle = "#ffffff"; g.fillRect(-mm(w / 2), -mm(w * .6), mm(w), mm(w * 1.2));
+      g.shadowBlur = 0; g.fillStyle = color; g.fillRect(-mm(w / 2 - 1.2), -mm(w * .6 - 1.2), mm(w - 2.4), mm(w - 2.4)); g.restore();
+    },
+    decoPattern(color) {
+      g.strokeStyle = color; g.lineWidth = mm(.3);
+      for (let y = -6; y < CARD_H + 6; y += 9) for (let x = -6 + (Math.round(y / 9) % 2) * 6; x < CARD_W + 6; x += 12)
+        for (const r of [2, 4, 6]) { g.beginPath(); g.arc(X(x), X(y), mm(r), Math.PI, 2 * Math.PI); g.stroke(); }
+    },
   };
   return k;
 }
@@ -128,7 +211,7 @@ const BRAND = (k, ev, y, color, x = CARD_W / 2, align = "center") => k.text(`Mem
 
 // ---------------------------------------------------------------- tasarımlar
 const CARD_DESIGNS = [
-  {id: "yaprak", name: "Yeşil Yapraklar",
+  {id: "yaprak", cat: "dugun", name: "Yeşil Yapraklar",
     text: ev => `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları bizimle paylaşmak için karekodu tarayın!`,
     draw(k, g, ev, text) {
       k.bg("#ffffff");
@@ -146,7 +229,7 @@ const CARD_DESIGNS = [
       k.text(ev.title, 52.5, Math.max(end + 15, 124), '400 {s}px "Great Vibes"', 10, "#2b2b2b", {max: 70});
       BRAND(k, ev, 143, "#9a9a9a");
     }},
-  {id: "bordo", name: "Bordo Monogram",
+  {id: "bordo", cat: "dugun", name: "Bordo Monogram",
     text: () => "Lütfen QR kodu tarayarak fotoğraf ve videolarınızı albüme ekleyin.",
     draw(k, g, ev, text) {
       const B = "#7a1a24";
@@ -178,7 +261,7 @@ const CARD_DESIGNS = [
       k.flower(52.5, 126.8, 1.5, B, .2); k.leafLine(50, 128.3, 2.6, 2.2, .7, B, .2); k.leafLine(55, 128.3, .55, 2.2, .7, B, .2);
       BRAND(k, ev, 135.3, "#9b7d79");
     }},
-  {id: "yakala", name: "Aşkı Yakala",
+  {id: "yakala", cat: "dugun", name: "Aşkı Yakala",
     text: () => "Fotoğraflarınızı bizimle paylaşın!",
     draw(k, g, ev, text) {
       const R = "#b23a3a", INK = "#2a2a2a";
@@ -199,7 +282,7 @@ const CARD_DESIGNS = [
       k.heartPath(52.5, 136, 4.5); g.lineWidth = k.mm(.25); g.stroke();
       BRAND(k, ev, 143.5, "#a0a0a0");
     }},
-  {id: "halka", name: "Altın Halka",
+  {id: "halka", cat: "dugun", name: "Altın Halka",
     text: () => "Bize güzel anlar bırakmak için QR kodu okutup bizimle paylaşır mısın?",
     draw(k, g, ev, text) {
       const G = "#c4a052";
@@ -223,7 +306,7 @@ const CARD_DESIGNS = [
       k.qr(guestLink(ev.code), 37.5, 94, 30, "#111111", {bg: "#faf8f3"});
       BRAND(k, ev, 141, "#a39a86", 97, "right");
     }},
-  {id: "cini", name: "Mavi Çini",
+  {id: "cini", cat: "dugun", name: "Mavi Çini",
     text: () => "Bu kodu okutun ve çektiğiniz fotoğraf ve videoları bizimle paylaşın!",
     draw(k, g, ev, text) {
       const BL = "#2f4f9a";
@@ -251,7 +334,7 @@ const CARD_DESIGNS = [
       k.camera(81, 120, 7.5, BL, .25);
       BRAND(k, ev, 131.5, "#7d8bb0");
     }},
-  {id: "cicek", name: "Çiçek Bahçesi", img: "kart/cicek.webp",
+  {id: "cicek", cat: "dugun", name: "Çiçek Bahçesi", img: "kart/cicek.webp",
     text: () => "Anılarımızı paylaşın",
     draw(k, g, ev, text) {
       k.bg("#fdf7e7");
@@ -271,6 +354,133 @@ const CARD_DESIGNS = [
       BRAND(k, ev, 139, "#a08f7b");
     }},
 ];
+
+// ---------------------------------------------------------------- afiş tasarımları (ortak yerleşim, süsleme tasarıma özel)
+const CARD_CATS = {dugun: "Düğün · Nişan · Kına", dogum_kiz: "Doğum günü · kız", dogum_erkek: "Doğum günü · erkek",
+  mezuniyet: "Mezuniyet", retro: "Retro & eğlenceli", modern: "Modern & renkli"};
+const POSTER_TEXT = "Bu güzel günden kalan fotoğraf ve videoları QR kodu okutarak bizimle paylaşır mısınız?";
+const KIDS_TEXT = "Doğum günü anılarını QR kodu okutarak bizimle paylaşır mısınız?";
+const GRAD_TEXT = "Bu güzel günün fotoğraf ve videolarını QR kodu okutarak bizimle paylaşın!";
+const F = {play: '400 {s}px "Playfair Display"', mont: '400 {s}px "Montserrat"', montB: '600 {s}px "Montserrat"', vibes: '400 {s}px "Great Vibes"',
+  kid: '600 {s}px "Fredoka"', bungee: '400 {s}px "Bungee"', corm: '600 {s}px "Cormorant Garamond"', bod: '400 {s}px "Bodoni Moda"'};
+const KIDS = {hf: F.kid, h: ["Doğum Günü"], hs: [12], L: {h: [36]}, mf: F.montB, ms: 2.9, nf: F.kid, ns: 8.5};
+
+// o: bg, deco(k, g, ev), h (başlık satırları), hf/hs/hc, mf/ms/mc (mesaj), qc (QR rengi), box (QR'a beyaz zemin),
+//    nf/ns/nc (isimler; name: false gizler), bc (alt yazı rengi), L (yerleşim: h[], msg, qrY, qr, name, brand), after(k, g, ev)
+function poster(o) {
+  return {id: o.id, name: o.name, cat: o.cat, emojis: o.emojis || [], text: () => o.text || POSTER_TEXT,
+    draw(k, g, ev, text) {
+      const L = {h: [31, 43], msg: 54, qrY: 69, qr: 31, name: 117, brand: 141.5, ...o.L};
+      k.bg(o.bg);
+      o.deco?.(k, g, ev);
+      const lines = typeof o.h === "function" ? o.h(ev) : (o.h || ["ANI", "PAYLAŞ!"]);
+      lines.forEach((t, i) => k.text(t, 52.5, L.h[i], o.hf || F.play, (o.hs || [])[i] || 11.5, o.hc || "#222222", {upper: o.hUpper, sp: o.hsp || 0, max: 80}));
+      k.wrap(text, 52.5, L.msg, o.mw || 70, o.mf || F.mont, o.ms || 3, o.mc || o.hc || "#333333", (o.ms || 3) * 1.42, {upper: o.mUpper});
+      if (o.box !== false) { g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(52.5 - L.qr / 2 - 3), k.X(L.qrY - 3), k.mm(L.qr + 6), k.mm(L.qr + 6), k.mm(2)); g.fill(); }
+      k.qr(guestLink(ev.code), 52.5 - L.qr / 2, L.qrY, L.qr, o.qc || "#111111", {bg: o.box === false ? o.bg : "#ffffff"});
+      if (o.name !== false) k.text(ev.title, 52.5, L.name, o.nf || F.vibes, o.ns || 9, o.nc || o.hc || "#222222", {max: 76});
+      o.after?.(k, g, ev);
+      BRAND(k, ev, L.brand, o.bc || "rgba(0,0,0,.45)");
+    }};
+}
+
+const POSTERS = [
+  // ---- doğum günü (kız)
+  poster({id: "safari_pembe", name: "Pembe Safari", cat: "dogum_kiz", ...KIDS, text: KIDS_TEXT, emojis: ["1f338", "1f33a", "1f992", "1f418", "1f33c"],
+    bg: "#fdeef3", hc: "#7a2a55", mc: "#5a3a4a",
+    deco(k) { [8, 20, 33, 72, 86, 98].forEach((x, i) => k.emoji(i % 2 ? "1f33a" : "1f338", x, 7 + (i % 3) * 2, 11, i * .4));
+      k.emoji("1f418", 16, 134, 22); k.emoji("1f992", 90, 133, 24); }}),
+  poster({id: "unicorn", name: "Unicorn", cat: "dogum_kiz", ...KIDS, text: KIDS_TEXT, emojis: ["1f984", "2b50"],
+    bg: "#efe6fa", hc: "#5b3b8c", mc: "#4a3a66",
+    deco(k) { k.bunting(4, ["#f7a8c8", "#c7a8f0", "#ffd36e", "#9fd8f0"], 9); k.sparkles(30, "#ffffff", 4);
+      k.emoji("1f984", 17, 132, 24); k.emoji("1f984", 88, 132, 24, 0, true); k.emoji("2b50", 52.5, 141, 6); }}),
+  poster({id: "peri", name: "Peri Bahçesi", cat: "dogum_kiz", ...KIDS, text: KIDS_TEXT, emojis: ["1f9da", "1f98b", "1f338"],
+    bg: "#fff2f7", hc: "#a2386c", mc: "#5a3a4a",
+    deco(k) { k.confetti(70, ["#f7a8c8", "#ffd36e", "#c7a8f0"], 9); k.emoji("1f98b", 14, 14, 12, -.3); k.emoji("1f98b", 92, 18, 9, .4);
+      k.emoji("1f9da", 15, 130, 24); k.emoji("1f338", 90, 136, 14); }}),
+  poster({id: "balon", name: "Balon ve Pasta", cat: "dogum_kiz", ...KIDS, text: KIDS_TEXT, emojis: ["1f388", "1f9c1", "1f382", "1f389"],
+    bg: "#fff6ec", hc: "#c2416b", mc: "#5a4040",
+    deco(k) { k.confetti(60, ["#ff8fab", "#ffc857", "#7bd3ea", "#b8e0a0"], 13); k.emoji("1f388", 88, 14, 16, .2); k.emoji("1f388", 78, 22, 12, -.2);
+      k.emoji("1f389", 15, 14, 12); k.emoji("1f9c1", 16, 134, 18); k.emoji("1f382", 89, 133, 20); }}),
+  // ---- doğum günü (erkek)
+  poster({id: "dinozor", name: "Dinozorlar", cat: "dogum_erkek", ...KIDS, text: KIDS_TEXT, emojis: ["1f996", "1f995", "1f334", "1f33f"],
+    bg: "#d9f0d0", hc: "#2f5d2a", mc: "#2f4a2a",
+    deco(k, g) { const gr = g.createLinearGradient(0, 0, 0, k.mm(CARD_H)); gr.addColorStop(0, "#d6efff"); gr.addColorStop(.62, "#e8f7df"); gr.addColorStop(.63, "#a8d48a"); gr.addColorStop(1, "#7fbf62");
+      g.fillStyle = gr; g.fillRect(0, 0, k.mm(CARD_W + 6), k.mm(CARD_H + 6));
+      k.emoji("1f334", 10, 18, 18, -.1); k.emoji("1f334", 95, 14, 16, .1); k.emoji("1f996", 18, 130, 26); k.emoji("1f995", 88, 128, 26, 0, true); k.emoji("1f33f", 52, 142, 8); }}),
+  poster({id: "uzay", name: "Uzay", cat: "dogum_erkek", ...KIDS, text: KIDS_TEXT, emojis: ["1f680", "1fa90", "1f6f8", "2b50"],
+    bg: "#14214a", hc: "#ffffff", mc: "#dfe6ff", nc: "#ffd36e", bc: "rgba(255,255,255,.55)",
+    deco(k) { k.sparkles(80, "#ffffff", 8); k.emoji("1f680", 90, 16, 16, .5); k.emoji("1fa90", 14, 18, 14); k.emoji("1f6f8", 88, 132, 18, -.2); k.emoji("2b50", 16, 134, 10); }}),
+  poster({id: "safari_mavi", name: "Mavi Safari", cat: "dogum_erkek", ...KIDS, text: KIDS_TEXT, emojis: ["1f981", "1f412", "1f418", "1f33f"],
+    bg: "#e3f2fb", hc: "#1f4e79", mc: "#2a4058",
+    deco(k) { k.vines("#5c9b4a", 5); k.emoji("1f412", 16, 16, 14, -.2); k.emoji("1f412", 90, 18, 12, .2, true); k.emoji("1f981", 18, 132, 24); k.emoji("1f418", 88, 133, 22, 0, true); }}),
+  poster({id: "arabalar", name: "Arabalar", cat: "dogum_erkek", ...KIDS, text: KIDS_TEXT, emojis: ["1f697", "1f680", "1f9f8", "1f9e9"],
+    bg: "#ffffff", hc: "#1f5fa8", mc: "#2a3a50",
+    deco(k, g) { g.fillStyle = "#2b6cb0"; g.fillRect(0, 0, k.mm(CARD_W + 6), k.mm(CARD_H + 6)); g.fillStyle = "#eaf3fc"; g.fillRect(k.X(6), k.X(6), k.mm(CARD_W - 12), k.mm(CARD_H - 12));
+      k.emoji("1f680", 92, 13, 12, .6); k.emoji("1f9f8", 15, 134, 16); k.emoji("1f697", 86, 136, 16); k.emoji("1f9e9", 14, 14, 10); }}),
+  // ---- mezuniyet
+  poster({id: "mezun_beyaz", name: "Mezuniyet Klasik", cat: "mezuniyet", emojis: ["1f393", "1f4dc"], text: GRAD_TEXT,
+    bg: "#ffffff", h: ["MEZUNİYET", "ANILARINI", "PAYLAŞ!"], hs: [8.5, 8.5, 8.5], L: {h: [34, 44, 54], msg: 64, qrY: 78, qr: 28, name: 121}, hc: "#1d1d1d",
+    deco(k) { k.emoji("1f393", 52.5, 16, 15); }}),
+  poster({id: "mezun_lacivert", name: "Lacivert Mezuniyet", cat: "mezuniyet", emojis: ["1f393"], text: GRAD_TEXT,
+    bg: "#16244a", h: ["MEZUNİYET", "ANILARINI", "PAYLAŞ!"], hs: [8.5, 8.5, 8.5], L: {h: [34, 44, 54], msg: 64, qrY: 78, qr: 28, name: 121},
+    hc: "#d9b65c", mc: "#e6e9f2", nc: "#d9b65c", bc: "rgba(255,255,255,.5)",
+    deco(k, g) { g.strokeStyle = "#d9b65c"; g.lineWidth = k.mm(.4); g.strokeRect(k.X(6), k.X(6), k.mm(CARD_W - 12), k.mm(CARD_H - 12)); k.emoji("1f393", 52.5, 16, 14); }}),
+  poster({id: "mezun_bordo", name: "Bordo Mezuniyet", cat: "mezuniyet", emojis: ["1f393", "1f38a"], text: GRAD_TEXT,
+    bg: "#6e1f2e", h: ["MEZUNİYET", "ANILARINI", "PAYLAŞ!"], hs: [8.5, 8.5, 8.5], L: {h: [34, 44, 54], msg: 64, qrY: 78, qr: 28, name: 121},
+    hc: "#ffffff", mc: "#f3dfe2", nc: "#f1c96b", bc: "rgba(255,255,255,.5)",
+    deco(k) { k.confetti(45, ["#f1c96b", "#ffffff"], 21); k.emoji("1f393", 52.5, 16, 14); }}),
+  // ---- retro & eğlenceli
+  poster({id: "kaset", name: "Kaset", cat: "retro", emojis: ["1f4fc"], bg: "#e3a72f", hc: "#2b2118", mc: "#2b2118",
+    deco(k) { [[14, 14, -.3], [91, 18, .25], [12, 132, .2], [92, 130, -.3], [93, 74, .5], [12, 76, -.4]].forEach(([x, y, r]) => k.emoji("1f4fc", x, y, 15, r)); }}),
+  poster({id: "radyo", name: "Radyo", cat: "retro", emojis: ["1f4fb"], bg: "#2f7f86", hc: "#ffffff", mc: "#eaf6f6", nc: "#ffffff", bc: "rgba(255,255,255,.55)",
+    h: ["ANI PAYLAŞ!"], hs: [10], L: {h: [40], msg: 50, qrY: 66, name: 115}, deco(k) { k.emoji("1f4fb", 52.5, 20, 22); }}),
+  poster({id: "film", name: "Film Rulosu", cat: "retro", emojis: ["1f39e"], bg: "#b04a5a", hc: "#ffffff", mc: "#f6e3e6", nc: "#ffffff", bc: "rgba(255,255,255,.55)",
+    h: ["ANI PAYLAŞ!"], hs: [10], L: {h: [40], msg: 50, qrY: 66, name: 115}, deco(k) { k.emoji("1f39e", 52.5, 20, 22); }}),
+  poster({id: "tv80", name: "80'ler", cat: "retro", emojis: ["1f4fa"], hf: F.bungee, h: ["ANI PAYLAŞ!"], hs: [8], L: {h: [43], msg: 52, qrY: 68, name: 116},
+    bg: "#d9d9d9", hc: "#222222",
+    deco(k, g) { const gr = g.createLinearGradient(0, 0, 0, k.mm(CARD_H)); gr.addColorStop(0, "#f2f2f2"); gr.addColorStop(1, "#b9b9b9"); g.fillStyle = gr; g.fillRect(0, 0, k.mm(CARD_W + 6), k.mm(CARD_H + 6));
+      k.emoji("1f4fa", 52.5, 20, 26); k.text("80'S", 52.5, 23, F.bungee, 4.5, "#ffde59"); }}),
+  poster({id: "popart", name: "Pop Art", cat: "retro", hf: F.bungee, hs: [10, 10], hc: "#ffe14d", mc: "#111111", nc: "#111111", bg: "#29c4e8", L: {h: [32, 45], msg: 67, qrY: 79, qr: 28, name: 122},
+    deco(k, g) { k.halftone("#1a8fb0", 2.6); k.burst(52.5, 37, 30, 23, 18, "#e8336b", "#111111"); k.burst(88, 128, 12, 7, 10, "#ffe14d", "#111111"); k.burst(16, 126, 9, 5, 9, "#ffffff", "#111111"); }}),
+  poster({id: "gunes", name: "Güneş Işınları", cat: "retro", hf: F.bungee, hs: [9, 9], hc: "#c2412d", bg: "#f6efe2", L: {h: [33, 45]},
+    deco(k, g) { k.rays(52.5, 74, ["#e94e3c", "#f6a623", "#f7d046", "#3fb8af", "#2d6fb7", "#f6efe2"], 36); g.fillStyle = "#fbf6ec"; g.beginPath(); g.roundRect(k.X(10), k.X(20), k.mm(85), k.mm(108), k.mm(6)); g.fill(); }}),
+  poster({id: "dalga", name: "Retro Dalga", cat: "retro", hf: F.bungee, h: ["RETRO"], hs: [11], L: {h: [38], msg: 50, qrY: 66, name: 116}, hc: "#d6452f", bg: "#fdf3e1",
+    deco(k, g) { k.waves(["#d6452f", "#f39a2b", "#f6cf3f", "#3aa6a0", "#7b3fa0"], 7); g.fillStyle = "#fdf3e1"; g.beginPath(); g.roundRect(k.X(12), k.X(24), k.mm(81), k.mm(102), k.mm(5)); g.fill(); }}),
+  // ---- modern & renkli
+  poster({id: "gece", name: "Gece Mavisi", cat: "modern", bg: "#1f2a44", hc: "#ffffff", mc: "#d7dbe6", nc: "#ffffff", bc: "rgba(255,255,255,.5)"}),
+  poster({id: "gulkurusu", name: "Gül Kurusu", cat: "modern", bg: "#b4626f", hc: "#ffffff", mc: "#fbe9ec", nc: "#ffffff", bc: "rgba(255,255,255,.55)"}),
+  poster({id: "fistik", name: "Fıstık Yeşili", cat: "modern", bg: "#cbd83c", hc: "#1d1d1d", mc: "#1d1d1d",
+    deco(k) { k.text("“", 14, 28, F.play, 26, "#1d1d1d", {align: "left"}); k.text("”", 92, 136, F.play, 26, "#1d1d1d", {align: "right"}); }}),
+  poster({id: "lila", name: "Lila Çerçeve", cat: "modern", bg: "#9a86c4", hc: "#3d2e63", mc: "#3d2e63", nc: "#3d2e63",
+    deco(k, g) { g.fillStyle = "#e9e2f5"; g.fillRect(k.X(8), k.X(8), k.mm(CARD_W - 16), k.mm(CARD_H - 16)); }}),
+  poster({id: "soyut", name: "Soyut Şekiller", cat: "modern", bg: "#f6efe4", hc: "#2b2b2b", h: [], nf: F.play, ns: 9, L: {name: 30, msg: 44, qrY: 66, qr: 32},
+    deco(k) { k.blob(4, 6, 20, "#c96f53", 1); k.blob(100, 30, 14, "#86a39a", 2); k.blob(98, 140, 22, "#2d3a5c", 3); k.blob(6, 136, 16, "#e2b04a", 4); k.blob(18, 98, 6, "#86a39a", 5); }}),
+  poster({id: "neon", name: "Neon Kamera", cat: "modern", bg: "#1b1530", h: ["PAYLAŞ!"], hs: [11], L: {h: [47], msg: 56, qrY: 70, name: 117},
+    hc: "#ffffff", mc: "#d9d3ee", nc: "#ff6ec7", bc: "rgba(255,255,255,.5)",
+    deco(k, g) { g.save(); g.shadowColor = "#ff3fb4"; g.shadowBlur = k.mm(3); k.camera(36, 12, 33, "#ff6ec7", .7, "rgba(0,0,0,0)"); g.shadowColor = "#3fd2ff"; k.camera(36, 12, 33, "#7fe3ff", .25, "rgba(0,0,0,0)"); g.restore(); }}),
+  poster({id: "polaroid", name: "Polaroidler", cat: "modern", bg: "#f4efe6", hc: "#2b2b2b",
+    deco(k) { const r = rng(8), cols = ["#7fb7d6", "#e8a87c", "#9ccf9c", "#d98fa8", "#c9b2e0", "#f0d27a"];
+      for (const [x, y] of [[6, 6], [30, 2], [64, 3], [92, 8], [2, 34], [99, 40], [3, 70], [100, 76], [2, 104], [99, 108], [8, 138], [36, 142], [68, 141], [96, 136]])
+        k.polaroid(x, y, 17, (r() - .5) * .7, cols[Math.floor(r() * cols.length)]); }}),
+  poster({id: "bauhaus", name: "Bauhaus", cat: "modern", bg: "#ffffff", hc: "#1d1d1d",
+    deco(k, g) { g.fillStyle = "#23395d"; g.fillRect(k.X(0), k.X(0), k.mm(14), k.mm(20)); g.fillStyle = "#e4b363"; g.beginPath(); g.arc(k.X(98), k.X(14), k.mm(9), 0, 7); g.fill();
+      g.fillStyle = "#d1495b"; g.beginPath(); g.arc(k.X(10), k.X(140), k.mm(12), 0, 7); g.fill(); g.fillStyle = "#8aa6a3"; g.fillRect(k.X(84), k.X(126), k.mm(21), k.mm(22));
+      g.fillStyle = "#1d1d1d"; [[78, 8], [83, 8], [88, 8]].forEach(([x, y]) => { g.beginPath(); g.arc(k.X(x), k.X(y), k.mm(.9), 0, 7); g.fill(); }); }}),
+  poster({id: "deco_oval", name: "Altın Oval", cat: "dugun", bg: "#151515", hc: "#2b2b2b", mc: "#333333", nc: "#2b2b2b", box: false, bc: "rgba(255,255,255,.5)", L: {h: [36, 48], msg: 58, qrY: 72, qr: 28, name: 113}, 
+    deco(k, g) { k.decoPattern("#c9a54c"); g.fillStyle = "#fdfbf6"; g.beginPath(); g.ellipse(k.X(52.5), k.X(74), k.mm(41), k.mm(62), 0, 0, 7); g.fill(); g.strokeStyle = "#c9a54c"; g.lineWidth = k.mm(.8); g.stroke(); }}),
+  poster({id: "kemer", name: "Gül Kemer", cat: "dugun", bg: "#b56a6e", hc: "#3a2a2a", mc: "#4a3a3a", box: false, L: {h: [36, 48], msg: 58, qrY: 75, qr: 30, name: 120},
+    deco(k, g) { g.fillStyle = "#fbf3ee"; g.beginPath(); g.moveTo(k.X(10), k.X(140)); g.lineTo(k.X(10), k.X(52)); g.arc(k.X(52.5), k.X(52), k.mm(42.5), Math.PI, 0); g.lineTo(k.X(95), k.X(140)); g.closePath(); g.fill(); }}),
+  poster({id: "altin_geo", name: "Altın Geometrik", cat: "dugun", bg: "#f6dcdc", hc: "#3a2a2a", box: false, L: {h: [38, 50], msg: 60, qrY: 74, qr: 28, name: 117},
+    deco(k, g) { g.strokeStyle = "#c4a052"; g.lineWidth = k.mm(.4); for (const s of [0, 2.2]) { g.beginPath(); [[52.5, 12 + s], [94 - s, 34], [94 - s, 114], [52.5, 136 - s], [11 + s, 114], [11 + s, 34]].forEach(([x, y], i) => i ? g.lineTo(k.X(x), k.X(y)) : g.moveTo(k.X(x), k.X(y))); g.closePath(); g.stroke(); } }}),
+  poster({id: "konfeti", name: "Konfeti", cat: "dugun", bg: "#ffffff", hc: "#2b2b2b", deco(k) { k.confetti(110, ["#e94e77", "#f6c445", "#3fb8af", "#5b7bd5", "#f08a4b"], 17); }}),
+  poster({id: "tropik", name: "Tropik", cat: "dugun", emojis: ["1f33a", "1f334", "1f33f"], bg: "#14382c", hc: "#ffffff", mc: "#e3efe8", nc: "#ffffff", bc: "rgba(255,255,255,.5)",
+    deco(k) { const r = rng(4); for (let i = 0; i < 26; i++) { const t = i / 26, side = i % 4; const x = side === 0 ? t * 105 : side === 1 ? 105 - t * 105 : side === 2 ? 2 + r() * 8 : 103 - r() * 8;
+      const y = side === 0 ? 3 + r() * 7 : side === 1 ? 145 - r() * 7 : t * 148; k.emoji(["1f33a", "1f334", "1f33f"][i % 3], x, y, 9 + r() * 6, r() * 6); } }}),
+  poster({id: "kircicek", name: "Kır Çiçekleri", cat: "dugun", emojis: ["1f338", "1f33c", "1f337", "1f33f"], bg: "#fbf8f1", hc: "#4a3b2c", nf: F.play, ns: 8, h: [], L: {name: 34, msg: 46, qrY: 66, qr: 32},
+    deco(k) { const r = rng(12); for (let i = 0; i < 22; i++) { const x = 6 + r() * 93, y = r() < .5 ? 118 + r() * 26 : 4 + r() * 14; k.emoji(["1f338", "1f33c", "1f337", "1f33f"][i % 4], x, y, 6 + r() * 5, r() - .5); } }}),
+];
+CARD_DESIGNS.push(...POSTERS);
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
 // ---------------------------------------------------------------- yazı tipi ve görsel yükleme
@@ -285,10 +495,13 @@ function cardFontsReady() {
       document.head.append(l);
     });
     const faces = ['400 20px "Playfair Display"', '500 20px "Cormorant Garamond"', '600 20px "Cormorant Garamond"',
-      '400 20px "Great Vibes"', '400 20px "Montserrat"', '400 20px "Courier Prime"', '400 20px "Bodoni Moda"', '600 20px "Barlow"', '700 20px "Barlow"'];
-    const imgs = CARD_DESIGNS.filter(d => d.img).map(d => new Promise(res => {
+      '400 20px "Great Vibes"', '400 20px "Montserrat"', '600 20px "Montserrat"', '400 20px "Courier Prime"', '400 20px "Bodoni Moda"',
+      '600 20px "Fredoka"', '400 20px "Bungee"', '600 20px "Barlow"', '700 20px "Barlow"'];
+    const srcs = new Set();
+    for (const d of CARD_DESIGNS) { if (d.img) srcs.add(d.img); for (const e of d.emojis || []) srcs.add(`kart/emoji/${e}.svg`); }
+    const imgs = [...srcs].map(src => new Promise(res => {
       const im = new Image();
-      im.onload = () => { CARD_IMAGES[d.img] = im; res(); }; im.onerror = res; im.src = d.img;
+      im.onload = () => { CARD_IMAGES[src] = im; res(); }; im.onerror = res; im.src = src;
     }));
     cardAssetsPromise = css.then(() => Promise.all([...imgs, ...faces.map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))]));
   }
@@ -339,6 +552,7 @@ async function openCardPicker(ev, save) {
           <label for="cpText">Kart yazısı</label>
           <textarea id="cpText" rows="2" maxlength="120"></textarea>
           <span class="hint">Boş bırakırsanız tasarımın kendi yazısı kullanılır. İsimler ve tarih etkinlik bilgilerinden gelir.</span>
+          <div class="cp-cats" id="cpCats"></div>
           <div class="cp-grid" id="cpGrid"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
         </div>
       </div>
@@ -353,8 +567,14 @@ async function openCardPicker(ev, save) {
   await cardFontsReady();
   const big = $("#cpBig", m), grid = $("#cpGrid", m);
   const drawBig = () => { big.src = drawCard(ev, design, custom, 5).toDataURL("image/jpeg", .9); };
+  let cat = cardDesign(design).cat || "";
+  const drawCats = () => {
+    $("#cpCats", m).innerHTML = [["", "Tümü"], ...Object.entries(CARD_CATS)].map(([k, v]) => `<button type="button" class="chip${cat === k ? " on" : ""}" data-c="${k}">${esc(v)}</button>`).join("");
+  };
+  drawCats();
+  $("#cpCats", m).onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; cat = b.dataset.c; drawCats(); drawGrid(); };
   const drawGrid = () => {
-    grid.innerHTML = CARD_DESIGNS.map(d => `<button class="cp-item${d.id === design ? " on" : ""}" data-d="${d.id}">
+    grid.innerHTML = CARD_DESIGNS.filter(d => !cat || d.cat === cat).map(d => `<button class="cp-item${d.id === design ? " on" : ""}" data-d="${d.id}">
       <img src="${drawCard(ev, d.id, custom, 1.6).toDataURL("image/jpeg", .85)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
   };
   drawBig(); drawGrid();

@@ -83,6 +83,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
 .qi.fail .bar i{background:var(--err)}
 .qi .st{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
 .qi .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.qi .why{font-size:13px;line-height:1.35;margin-top:4px;color:var(--err);font-weight:600;white-space:normal}
 .summary{font-weight:600;font-size:15px}
 
 /* galeri */
@@ -360,11 +361,24 @@ function put(key, max, exp, sig, blob, mime, onProgress) {
     x.open("PUT", `${FILES_URL}/u/${key}?max=${max}&exp=${exp}&sig=${sig}`);
     x.setRequestHeader("Content-Type", mime);
     x.upload.onprogress = e => e.lengthComputable && onProgress?.(e.loaded / e.total);
-    x.onload = () => x.status >= 200 && x.status < 300 ? res() : rej(Object.assign(new Error("HTTP " + x.status), {status: x.status}));
-    x.onerror = () => rej(new Error("Bağlantı koptu"));
+    x.onload = () => {
+      if (x.status >= 200 && x.status < 300) return res();
+      let code = ""; try { code = JSON.parse(x.responseText).error || ""; } catch (e) {}
+      rej(Object.assign(new Error(putError(x.status, code)), {status: x.status}));
+    };
+    x.onerror = () => rej(new Error("Dosya sunucusuna ulaşılamadı. İnternet bağlantınızı kontrol edin. (Sürerse: Worker adresi ya da ALLOWED_ORIGINS ayarı)"));
     x.ontimeout = () => rej(new Error("Zaman aşımı"));
     x.send(blob);
   });
+}
+
+// Worker yanıtını anlaşılır mesaja çevirir (parantez içi: kurulumu yapan kişi için ipucu)
+function putError(status, code) {
+  if (status === 403) return "Dosya sunucusu yüklemeyi reddetti. (Worker'daki UPLOAD_SECRET, Supabase'deki upload_secret ile aynı değil)";
+  if (status === 413) return "Dosya çok büyük.";
+  if (status === 400) return `Geçersiz istek. (${code || "bad_request"})`;
+  if (status >= 500) return "Dosya sunucusu hata verdi. (Worker'da BUCKET adlı R2 bağlantısı eksik olabilir)";
+  return "Yüklenemedi (HTTP " + status + ").";
 }
 
 async function withRetry(fn, tries = 4) {
@@ -522,7 +536,8 @@ async function guestView(code) {
       set("Hazırlanıyor");
       const p = await prepare(item.file);
       if (p.thumb) $(".th", item.el).style.backgroundImage = `url(${URL.createObjectURL(p.thumb)})`;
-      const t = await rpc("memory_upload_begin", {p_code: ev.code, p_guest: name, p_kind: p.kind, p_mime: p.mime, p_bytes: p.blob.size, p_thumb: !!p.thumb});
+      const t = await rpc("memory_upload_begin", {p_code: ev.code, p_guest: name, p_kind: p.kind, p_mime: p.mime, p_bytes: p.blob.size, p_thumb: !!p.thumb})
+        .catch(e => { throw new Error(`Veritabanı hatası: ${e.message}. (kurulum.sql Supabase'de çalıştırıldı mı?)`); });
       if (!t.ok) throw new Error(UPLOAD_ERRORS[t.error] || "Yüklenemedi.");
       set("0%", 0);
       await withRetry(() => put(t.key, t.max, t.exp, t.sig, p.blob, p.mime, f => set(Math.round(f * 100) + "%", f * .97)));
@@ -536,7 +551,7 @@ async function guestView(code) {
       refreshSoon();
     } catch (e) {
       failCount++; item.el.classList.add("fail"); set("Hata", 1);
-      $(".nm", item.el).innerHTML = `${esc(item.file.name || "Dosya")} <span class="err">${esc(e.message || "Yüklenemedi")}</span>`;
+      $(".nm", item.el).insertAdjacentHTML("afterend", `<div class="why">${esc(e.message || "Yüklenemedi")}</div>`);
     }
   }
 

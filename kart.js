@@ -153,7 +153,15 @@ const CARD_DESIGNS = [
     f: {eye: '600 {s}px "Montserrat"', title: '800 {s}px "Montserrat"', date: '400 {s}px "Montserrat"', body: '600 {s}px "Montserrat"'},
     eyeSize: 2.8, eyeUpper: true, eyeSpacing: .35, titleSize: 10, titleUpper: true, dateSize: 3.2, bodySize: 2.9, stepStyle: "square",
     deco(o, g, u) { g.fillStyle = "#111"; g.fillRect(0, 0, u.mm(CARD_W + 2 * CARD_BL), u.X(42)); }},
+  {id: "cicek", name: "Çiçek Bahçesi", img: "kart/cicek.webp",
+    c: {bg: "#fdf7e7", eye: "#5b7f2e", title: "#b8325a", date: "#7a6a5a", muted: "#8a7a68", step: "#d9466f", stepText: "#4a3a30"},
+    f: {eye: 'italic 500 {s}px "Cormorant Garamond"', title: '400 {s}px "Great Vibes"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
+    eyeSize: 4.2, titleSize: 12, dateSize: 4.1, bodySize: 3.8,
+    // motif üstte madalyon: yazılar ve QR aşağı kayar, QR biraz küçülür
+    L: {eye: 33.5, title: 46.5, date: 53, qrY: 58.5, qrSize: 46, code: 113.5, steps: 122},
+    deco(o, g, u) { const im = CARD_IMAGES["kart/cicek.webp"]; if (im) g.drawImage(im, u.X(52.5 - 12.5), u.X(4), u.mm(25), u.mm(25 * im.height / im.width)); }},
 ];
+const CARD_IMAGES = {};
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
 // ---------------------------------------------------------------- çizim
@@ -170,7 +178,11 @@ function cardFontsReady() {
     const faces = new Set();
     for (const d of CARD_DESIGNS) for (const f of Object.values(d.f)) faces.add(f.replace("{s}", "20"));
     faces.add('700 20px "Barlow"');
-    cardFontsPromise = css.then(() => Promise.all([...faces].map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))));
+    const imgs = CARD_DESIGNS.filter(d => d.img).map(d => new Promise(res => {
+      const im = new Image();
+      im.onload = () => { CARD_IMAGES[d.img] = im; res(); }; im.onerror = res; im.src = d.img;
+    }));
+    cardFontsPromise = css.then(() => Promise.all([...imgs, ...[...faces].map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))]));
   }
   return cardFontsPromise;
 }
@@ -198,23 +210,26 @@ function drawCard(ev, designId, text, pxmm) {
   g.fillStyle = d.c.bg; g.fillRect(0, 0, c.width, c.height);
   d.deco?.(ornaments(g, u), g, u);
 
-  line(text || CARD_DEFAULT_TEXT, d.eyeY || 21, d.f.eye, d.eyeSize, d.c.eye, {upper: d.eyeUpper, sp: d.eyeSpacing});
-  line(ev.title, d.titleY || 33.5, d.f.title, d.titleSize, d.c.title, {upper: d.titleUpper, sp: d.titleSpacing, max: d.titleMax});
-  line(`${KINDS[ev.kind] || ""} · ${fmtDate(ev.event_date)}`, 40.5, d.f.date, d.dateSize, d.c.date);
+  const L = {eye: d.eyeY || 21, title: d.titleY || 33.5, date: 40.5, qrY: 48, qrSize: 56, code: 113.5, steps: 122, ...d.L};
+  line(text || CARD_DEFAULT_TEXT, L.eye, d.f.eye, d.eyeSize, d.c.eye, {upper: d.eyeUpper, sp: d.eyeSpacing});
+  line(ev.title, L.title, d.f.title, d.titleSize, d.c.title, {upper: d.titleUpper, sp: d.titleSpacing, max: d.titleMax});
+  line(`${KINDS[ev.kind] || ""} · ${fmtDate(ev.event_date)}`, L.date, d.f.date, d.dateSize, d.c.date);
 
   // QR her tasarımda beyaz zemin üstünde: koyu kartlarda da telefon kolay okusun
   const q = qrcode(0, "M"); q.addData(guestLink(ev.code)); q.make();
-  const n = q.getModuleCount(), size = 56, pad = 3.5, x0 = (CARD_W - size) / 2, y0 = 48;
+  const n = q.getModuleCount(), size = L.qrSize, pad = 3.5, x0 = (CARD_W - size) / 2, y0 = L.qrY;
   g.fillStyle = "#ffffff";
   g.beginPath(); g.roundRect ? g.roundRect(X(x0 - pad), X(y0 - pad), mm(size + 2 * pad), mm(size + 2 * pad), mm(2.5)) : g.rect(X(x0 - pad), X(y0 - pad), mm(size + 2 * pad), mm(size + 2 * pad)); g.fill();
   const cell = mm(size) / n;
   g.fillStyle = "#111111";
-  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(X(x0) + col * cell, X(y0) + r * cell, Math.ceil(cell), Math.ceil(cell));
+  // kareler tam piksele oturur: aralarında ince boşluk çizgisi kalmaz
+  const px = i => Math.round(X(x0) + i * cell), py = i => Math.round(X(y0) + i * cell);
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(px(col), py(r), px(col + 1) - px(col), py(r + 1) - py(r));
 
-  line(`Albüm kodu: ${ev.code}`, 113.5, '600 {s}px "Barlow"', 2.9, d.c.muted);  // kod her tasarımda net okunsun
+  line(`Albüm kodu: ${ev.code}`, L.code, '600 {s}px "Barlow"', 2.9, d.c.muted);  // kod her tasarımda net okunsun
 
   CARD_STEPS.forEach((t, i) => {
-    const cx = X(20 + i * 32.5), cy = X(122), r = mm(3.3);
+    const cx = X(20 + i * 32.5), cy = X(L.steps), r = mm(3.3);
     g.fillStyle = d.c.step;
     g.beginPath();
     if (d.stepStyle === "square") g.rect(cx - r, cy - r, 2 * r, 2 * r);

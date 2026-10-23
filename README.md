@@ -13,8 +13,8 @@ dosyalar kalıcı olarak silinir. Bul QR ailesinin ürünüdür (Tasma QR, Araç
 | `?e=KOD&slayt` | **Slayt gösterisi**: salondaki ekran/projeksiyon için; yeni yüklenenler öne geçer, köşede "siz de yükleyin" QR'ı |
 | `?admin` | **Yönetim**: etkinlik oluştur/düzenle (kod + 6 haneli PIN üretilir), masa kartı PDF'i, müşteriye WhatsApp, dosyaları/etkinliği sil |
 
-**Masa kartı:** 10 tasarım (Klasik Altın, Modern Minimal, Romantik Pembe, Zümrüt Gece, Lacivert Altın, Kına Gecesi, Botanik,
-Art Deco, Pastel Kemer, Cesur Siyah), düzenlenebilir üst yazı, canlı önizleme. A6 (105×148 mm); iki PDF iner: 3 mm taşma
+**Masa kartı:** 11 tasarım (Klasik Altın, Modern Minimal, Romantik Pembe, Zümrüt Gece, Lacivert Altın, Kına Gecesi, Botanik,
+Art Deco, Pastel Kemer, Cesur Siyah, Çiçek Bahçesi), düzenlenebilir üst yazı, canlı önizleme. A6 (105×148 mm); iki PDF iner: 3 mm taşma
 paylı tek kart (Özalit'e matbaa baskısı için) ve A4'e 4'lü kesim çizgili. Seçilen tasarım etkinliğe kaydedilir.
 
 **Misafir galerisi:** varsayılan olarak her misafir yalnızca kendi telefonundan yüklediklerini görür. Etkinlik sahibi

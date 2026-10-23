@@ -250,6 +250,10 @@ html{scroll-behavior:smooth}
 .opkg{display:flex;gap:8px;flex-wrap:wrap}
 @media (max-width:640px){.ord{grid-template-columns:1fr}.ord img{max-width:260px;margin:0 auto}}
 
+img[data-d]:not(.ready){aspect-ratio:111/154;background:linear-gradient(110deg,var(--soft) 40%,#fbf6f8 50%,var(--soft) 60%) 0 0/200% 100%;animation:shim 1.4s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){img[data-d]:not(.ready){animation:none}}
+
 /* masa kartı seçici */
 .cardpick{place-items:start center;overflow-y:auto}
 .cardpick>.card{max-width:980px;width:100%}
@@ -978,7 +982,7 @@ async function kartPanel(ev, pin) {
     </div>
     <div class="kbar"><span id="kstate" class="hint"></span><span class="row"><a class="btn ghost" id="kwa" hidden target="_blank" rel="noopener">${ICON.wa}MemoryQR'a haber verin</a>
       <button class="btn" id="ksave">Seçimi kaydet</button></span></div>`;
-  try { await loadScript("kart.js"); await cardFontsReady(); } catch (e) { return toast("Tasarımlar yüklenemedi, sayfayı yenileyin", 5000); }
+  try { await loadScript("kart.js"); } catch (e) { return toast("Tasarımlar yüklenemedi, sayfayı yenileyin", 5000); }
   $("#prodTabs").innerHTML = Object.entries(CARD_PRODUCTS).map(([k, v]) => `<button type="button" data-p="${k}">${esc(v.name)}</button>`).join("");
 
   const sel = {design: cardDesign(ev.card_design || CARD_DESIGNS.find(d => d.cat === (KIND_CAT[ev.kind] || "dugun"))?.id).id, text: ev.card_text || ""};
@@ -995,7 +999,11 @@ async function kartPanel(ev, pin) {
   };
   window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-  const drawPrev = () => {
+  let prevTok = 0;
+  const drawPrev = async () => {
+    const tok = ++prevTok;
+    await (mode === "kendi" ? cardFonts() : designReady(sel.design));
+    if (tok !== prevTok) return;
     $("#prev").src = drawProduct(product, ev, cur(), product === "kartvizit" ? 7 : 4.4).toDataURL("image/jpeg", .9);
     $("#prev").className = product === "kartvizit" ? "wide" : "";
     $("#prodNote").textContent = CARD_PRODUCTS[product].note + (product === "pano" ? " · masa kartı tasarımınız büyütülür" : "");
@@ -1007,7 +1015,8 @@ async function kartPanel(ev, pin) {
   };
   const drawGrid = () => {
     $("#grid").innerHTML = CARD_DESIGNS.filter(d => !cat || d.cat === cat).map(d => `<button type="button" class="cp-item${d.id === sel.design && mode === "hazir" ? " on" : ""}" data-d="${d.id}">
-      <img src="${drawCard(ev, d.id, sel.text, 1.5).toDataURL("image/jpeg", .82)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
+      <img data-d="${d.id}" alt=""><span>${esc(d.name)}</span></button>`).join("");
+    lazyThumbs($("#grid"), id => drawCard(ev, id, sel.text, 1.6).toDataURL("image/jpeg", .82));
   };
   const drawCustomUi = () => {
     $("#qpos").innerHTML = Object.entries(QR_POS_TR).map(([k, v]) => `<button type="button" class="chip${custom.pos === k ? " on" : ""}" data-q="${k}">${v}</button>`).join("");
@@ -1069,7 +1078,7 @@ async function kartPanel(ev, pin) {
 // Misafir sayfası: etkinliğin kart tasarımı başlıkta görünür, vurgu rengi tasarımdan gelir
 async function applyGuestTheme(ev) {
   if (!ev.card_design && !ev.card_custom_key) return;
-  try { await loadScript("kart.js"); await cardFontsReady(); } catch (e) { return; }
+  try { await loadScript("kart.js"); await (ev.card_custom_key ? cardFonts() : designReady(ev.card_design)); } catch (e) { return; }
   const sel = {design: ev.card_design, text: ev.card_text || "", custom: null};
   if (ev.card_custom_key) {
     const img = await loadImg(fileUrl(ev.card_custom_key)).catch(() => null);
@@ -1334,12 +1343,13 @@ function homeView() {
   };
 
   // kart örnekleri gerçek tasarım kodundan çizilir
-  loadScript("kart.js").then(() => cardFontsReady()).then(() => {
+  loadScript("kart.js").then(() => {
     const ex = {code: "ORNEK1", title: "Selin & Berk", kind: "dugun", event_date: "2026-06-14"};
-    $("#heroCard").src = drawCard(ex, "bordo", "", 5).toDataURL("image/jpeg", .9);
+    designReady("bordo").then(() => { $("#heroCard").src = drawCard(ex, "bordo", "", 5).toDataURL("image/jpeg", .9); });
     $("#allDesigns").textContent = `Tüm tasarımları görün ve seçin (${CARD_DESIGNS.length})`;
     const pick = ["bordo", "yaprak", "cicek", "halka", "unicorn", "dinozor", "mezun_lacivert", "gunes"].map(cardDesign);
-    $("#lcards").innerHTML = pick.map(d => `<figure><img src="${drawCard(ex, d.id, "", 3).toDataURL("image/jpeg", .85)}" alt="${esc(d.name)} masa kartı" loading="lazy"><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
+    $("#lcards").innerHTML = pick.map(d => `<figure><img data-d="${d.id}" alt="${esc(d.name)} masa kartı"><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
+    lazyThumbs($("#lcards"), id => drawCard(ex, id, "", 3).toDataURL("image/jpeg", .85));
   }).catch(() => { $("#lcards").innerHTML = ""; });
 }
 
@@ -1361,7 +1371,7 @@ async function designsView() {
     <div class="cp-cats" id="dzC"></div>
     <div class="lcards" id="dzG" style="padding:6px 0 30px"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
     ${footerHtml()}`;
-  try { await loadScript("kart.js"); await cardFontsReady(); } catch (e) { $("#dzG").innerHTML = `<p class="err">Tasarımlar yüklenemedi, sayfayı yenileyin.</p>`; return; }
+  try { await loadScript("kart.js"); } catch (e) { $("#dzG").innerHTML = `<p class="err">Tasarımlar yüklenemedi, sayfayı yenileyin.</p>`; return; }
   const ev = () => ({code: "ORNEK1", title: st.title || sample[st.kind], kind: st.kind, event_date: st.date || new Date().toISOString().slice(0, 10)});
   const cats = () => {
     $("#dzC").innerHTML = [["", `Tümü (${CARD_DESIGNS.length})`], ...Object.entries(CARD_CATS).map(([k, v]) => [k, `${v} (${CARD_DESIGNS.filter(d => d.cat === k).length})`])]
@@ -1370,7 +1380,8 @@ async function designsView() {
   const grid = () => {
     const e = ev();
     $("#dzG").innerHTML = CARD_DESIGNS.filter(d => !st.cat || d.cat === st.cat).map(d => `<figure><button class="dz-item" data-d="${d.id}" aria-label="${esc(d.name)} tasarımını aç">
-      <img src="${drawCard(e, d.id, "", 2.4).toDataURL("image/jpeg", .85)}" alt=""></button><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
+      <img data-d="${d.id}" alt=""></button><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
+    lazyThumbs($("#dzG"), id => drawCard(e, id, "", 2.4).toDataURL("image/jpeg", .85));
   };
   cats(); grid();
   let t;
@@ -1388,8 +1399,9 @@ async function designsView() {
 
   // seçim penceresi: paket, ek, kart yazısı, not → WhatsApp mesajı + birebir açılan önizleme linki + görsel
   const order = {pkg: (PAKETLER.find(p => p.one) || PAKETLER[0])?.ad, archive: false, text: "", note: ""};
-  function openOrder(id) {
+  async function openOrder(id) {
     const d = cardDesign(id);
+    await designReady(id);
     const m = document.createElement("div");
     m.className = "modal cardpick";
     m.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:820px">

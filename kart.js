@@ -5,6 +5,7 @@
 
 const CARD_W = 105, CARD_H = 148, CARD_BL = 3;
 const CARD_IMAGES = {};
+const QR_CACHE = new Map();  // aynı bağlantının QR'ı her kartta yeniden hesaplanmasın
 
 // "Düğünümüzde", "Kına gecemizde"…: varsayılan kart yazılarında etkinlik türüne göre
 const KIND_IN = {dugun: "Düğünümüzde", nisan: "Nişanımızda", kina: "Kına gecemizde", soz: "Söz törenimizde",
@@ -52,7 +53,8 @@ function cardKit(g, pxmm, W = CARD_W, H = CARD_H) {
     },
     // QR: kareler piksel ızgarasına oturur; round: köşe gözleri yuvarlatılmış
     qr(link, x, y, size, color, {round = false, bg = "#ffffff"} = {}) {
-      const q = qrcode(0, "M"); q.addData(link); q.make();
+      let q = QR_CACHE.get(link);
+      if (!q) { q = qrcode(0, "M"); q.addData(link); q.make(); QR_CACHE.set(link, q); }
       const n = q.getModuleCount(), cell = mm(size) / n;
       const px = i => Math.round(X(x) + i * cell), py = i => Math.round(X(y) + i * cell);
       const eye = (r, c) => round && ((r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7));
@@ -493,9 +495,11 @@ CARD_DESIGNS.push(...POSTERS);
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
 // ---------------------------------------------------------------- yazı tipi ve görsel yükleme
-let cardAssetsPromise;
-function cardFontsReady() {
-  if (!cardAssetsPromise) {
+// Yazı tipleri bir kez yüklenir; görseller (Twemoji, çiçek) yalnızca çizilecek tasarım için indirilir.
+let cardFontsPromise;
+const IMG_PROMISES = {};
+function cardFonts() {
+  if (!cardFontsPromise) {
     // önce stil dosyası (@font-face tanımları) yüklenmeli, yoksa fonts.load hiçbir şey indirmeden biter
     const css = new Promise(res => {
       if (document.querySelector('link[href="kart.css"]')) return res();
@@ -506,15 +510,44 @@ function cardFontsReady() {
     const faces = ['400 20px "Playfair Display"', '500 20px "Cormorant Garamond"', '600 20px "Cormorant Garamond"',
       '400 20px "Great Vibes"', '400 20px "Montserrat"', '600 20px "Montserrat"', '400 20px "Courier Prime"', '400 20px "Bodoni Moda"',
       '600 20px "Fredoka"', '400 20px "Bungee"', '600 20px "Barlow"', '700 20px "Barlow"'];
-    const srcs = new Set();
-    for (const d of CARD_DESIGNS) { if (d.img) srcs.add(d.img); for (const e of d.emojis || []) srcs.add(`kart/emoji/${e}.svg`); }
-    const imgs = [...srcs].map(src => new Promise(res => {
-      const im = new Image();
-      im.onload = () => { CARD_IMAGES[src] = im; res(); }; im.onerror = res; im.src = src;
-    }));
-    cardAssetsPromise = css.then(() => Promise.all([...imgs, ...faces.map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))]));
+    cardFontsPromise = css.then(() => Promise.all(faces.map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))));
   }
-  return cardAssetsPromise;
+  return cardFontsPromise;
+}
+function cardImage(src) {
+  return IMG_PROMISES[src] ||= new Promise(res => {
+    const im = new Image();
+    im.onload = () => { CARD_IMAGES[src] = im; res(); }; im.onerror = res; im.src = src;
+  });
+}
+const designSrcs = d => [...(d.img ? [d.img] : []), ...(d.emojis || []).map(e => `kart/emoji/${e}.svg`)];
+// tek tasarım için gerekenler
+function designReady(id) { const d = cardDesign(id); return Promise.all([cardFonts(), ...designSrcs(d).map(cardImage)]); }
+// hepsi (PDF ve eski çağrılar için)
+function cardFontsReady() { return Promise.all([cardFonts(), ...CARD_DESIGNS.flatMap(designSrcs).map(cardImage)]); }
+
+// Küçük önizlemeler ekranda göründükçe sırayla çizilir (img[data-d]); sayfa donmaz, ilk kartlar hemen gelir.
+// render(id) → resim adresi. Aynı kapsayıcıda yeniden çağrılınca eski sıra iptal edilir.
+function lazyThumbs(root, render) {
+  root._lazy?.();
+  let alive = true, busy = false;
+  const queue = [];
+  const pump = async () => {
+    if (busy) return;
+    busy = true;
+    while (alive && queue.length) {
+      const img = queue.shift();
+      try { await designReady(img.dataset.d); if (alive) { img.src = render(img.dataset.d); img.classList.add("ready"); } } catch (e) {}
+      await new Promise(r => setTimeout(r, 0));
+    }
+    busy = false;
+  };
+  const io = new IntersectionObserver(es => {
+    for (const e of es) if (e.isIntersecting) { io.unobserve(e.target); queue.push(e.target); }
+    pump();
+  }, {rootMargin: "300px"});
+  root.querySelectorAll("img[data-d]").forEach(i => io.observe(i));
+  root._lazy = () => { alive = false; io.disconnect(); };
 }
 
 // pxmm: mm başına piksel (baskı için 12 ≈ 305 dpi). Kenarlarda CARD_BL taşma payı vardır. text boşsa tasarımın kendi yazısı.
@@ -528,7 +561,7 @@ function drawCard(ev, designId, text, pxmm) {
 }
 
 async function cardPdf(ev, designId, text) {
-  await Promise.all([loadScript("vendor/jspdf.umd.min.js"), cardFontsReady()]);
+  await Promise.all([loadScript("vendor/jspdf.umd.min.js"), designReady(designId)]);
   const img = drawCard(ev, designId, text, 12).toDataURL("image/jpeg", .95);
   const {jsPDF} = window.jspdf, W = CARD_W, H = CARD_H, BL = CARD_BL;
   const one = new jsPDF({unit: "mm", format: [W + 2 * BL, H + 2 * BL], orientation: "portrait"});
@@ -629,7 +662,7 @@ function gridPdf(img, w, h, cols, rows) {
 }
 
 async function productPdf(product, ev, sel, panoSize = "50x70") {
-  await Promise.all([loadScript("vendor/jspdf.umd.min.js"), cardFontsReady()]);
+  await Promise.all([loadScript("vendor/jspdf.umd.min.js"), sel.custom ? cardFonts() : designReady(sel.design)]);
   const {jsPDF} = window.jspdf, BL = CARD_BL;
   if (product === "kart") {
     const img = drawKart(ev, sel, 12).toDataURL("image/jpeg", .95);

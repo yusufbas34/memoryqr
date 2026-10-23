@@ -246,6 +246,10 @@ html{scroll-behavior:smooth}
 #dlRow select{width:auto;font-size:16px;padding:10px}
 @media (max-width:760px){.kp{grid-template-columns:1fr}.kp-prev{position:static}.kp-img img{width:min(70%,260px)}}
 
+.ord{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px;align-items:start}
+.opkg{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:640px){.ord{grid-template-columns:1fr}.ord img{max-width:260px;margin:0 auto}}
+
 /* masa kartı seçici */
 .cardpick{place-items:start center;overflow-y:auto}
 .cardpick>.card{max-width:980px;width:100%}
@@ -1380,25 +1384,90 @@ async function designsView() {
     cats(); grid();
   };
   $("#dzC").onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; st.cat = b.dataset.c; cats(); grid(); };
-  $("#dzG").onclick = e => {
-    const b = e.target.closest("[data-d]");
-    if (!b) return;
-    const d = cardDesign(b.dataset.d), e2 = ev();
-    const msg = `Merhaba, MemoryQR masa kartı için bu tasarımı seçtim:\nTasarım: ${d.name} (${d.id})\nİsimler: ${e2.title}\nEtkinlik: ${KINDS[e2.kind]}\nTarih: ${fmtDate(e2.event_date)}`;
+  $("#dzG").onclick = e => { const b = e.target.closest("[data-d]"); if (b) openOrder(b.dataset.d); };
+
+  // seçim penceresi: paket, ek, kart yazısı, not → WhatsApp mesajı + birebir açılan önizleme linki + görsel
+  const order = {pkg: (PAKETLER.find(p => p.one) || PAKETLER[0])?.ad, archive: false, text: "", note: ""};
+  function openOrder(id) {
+    const d = cardDesign(id);
     const m = document.createElement("div");
     m.className = "modal cardpick";
-    m.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:460px">
+    m.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:820px">
       <div class="row" style="justify-content:space-between"><h2>${esc(d.name)}</h2><button class="linkbtn" data-x>Kapat</button></div>
-      <img src="${drawCard(e2, d.id, "", 5).toDataURL("image/jpeg", .9)}" alt="${esc(d.name)} önizleme" style="width:100%;height:auto;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18)">
-      <p class="hint">Kartınızdaki QR sizin albümünüzü açar; buradaki QR örnektir. Kart yazısını da birlikte değiştirebiliriz.</p>
-      ${WHATSAPP ? `<a class="btn" href="${esc(waLink(msg))}" target="_blank" rel="noopener">${ICON.wa}Bu tasarımı seç, WhatsApp'tan gönder</a>`
-        : `<button class="btn" data-copy>Seçimi kopyala</button>`}</div>`;
+      <div class="ord">
+        <div class="stack"><img id="oImg" alt="${esc(d.name)} önizleme" style="width:100%;height:auto;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18)">
+          <p class="hint">Kartınızdaki QR sizin albümünüzü açar; buradaki QR örnektir.</p></div>
+        <div class="stack" style="min-width:0">
+          <label>Paket</label>
+          <div class="opkg" id="oPkg">${PAKETLER.map(p => `<button type="button" class="chip" data-p="${esc(p.ad)}">${esc(p.ad)}${p.fiyat ? ` · ${esc(p.fiyat)}` : ""}</button>`).join("")}</div>
+          <p class="hint" id="oPkgInfo"></p>
+          <label class="switch"><input type="checkbox" id="oArc"> ${esc(EK_ARSIV.ad)} (${esc(EK_ARSIV.fiyat)})</label>
+          <label for="oText">Kart yazısı <span class="opt">(isteğe bağlı)</span></label>
+          <textarea id="oText" rows="2" maxlength="120" placeholder="${esc(d.text(ev()))}"></textarea>
+          <label for="oNote">Notunuz <span class="opt">(isteğe bağlı)</span></label>
+          <textarea id="oNote" rows="3" maxlength="500" placeholder="Ör. masa sayısı, kart adedi, teslim tarihi, renk isteği…"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        ${WHATSAPP ? `<a class="btn" id="oSend" target="_blank" rel="noopener">${ICON.wa}WhatsApp'tan gönder</a>` : `<button class="btn" id="oCopy">Seçimi kopyala</button>`}
+        <button class="btn ghost" id="oShare" hidden>Görseli paylaş</button>
+        <button class="btn light" id="oSave">${ICON.download}Görseli kaydet</button>
+      </div>
+      <p class="hint">WhatsApp mesajına görsel otomatik eklenemiyor; mesajdaki önizleme linki tasarımınızı birebir açar. Görseli de eklemek isterseniz "Görseli paylaş" ya da "Görseli kaydet"i kullanın.</p></div>`;
     document.body.append(m);
-    m.addEventListener("click", ev2 => {
-      if (ev2.target === m || ev2.target.closest("[data-x]")) m.remove();
-      if (ev2.target.closest("[data-copy]")) copy(msg, "Seçiminiz kopyalandı");
-    });
-  };
+    const e2 = () => ev();
+    const previewLink = () => {
+      const q = new URLSearchParams({d: d.id, t: e2().title, k: e2().kind, tarih: e2().event_date});
+      if (order.text) q.set("y", order.text);
+      return `${SITE_URL}?tasarimlar&${q}`;
+    };
+    const message = () => {
+      const pk = PAKETLER.find(p => p.ad === order.pkg);
+      return [`Merhaba, MemoryQR siparişi vermek istiyorum.`, ``,
+        `Tasarım: ${d.name} (${d.id})`, `İsimler: ${e2().title}`, `Etkinlik: ${KINDS[e2().kind]} · ${fmtDate(e2().event_date)}`,
+        pk ? `Paket: ${pk.ad}${pk.fiyat ? ` (${pk.fiyat})` : ""}` : null, order.archive ? `Ek: ${EK_ARSIV.ad} (${EK_ARSIV.fiyat})` : null,
+        order.text ? `Kart yazısı: ${order.text}` : null, order.note ? `Not: ${order.note}` : null, ``, `Önizleme: ${previewLink()}`]
+        .filter(l => l !== null).join("\n");
+    };
+    const canvas = () => drawCard(e2(), d.id, order.text, 7);
+    const sync = () => {
+      $("#oPkg", m).querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p === order.pkg));
+      const pk = PAKETLER.find(p => p.ad === order.pkg);
+      $("#oPkgInfo", m).textContent = pk ? pk.ozellik.join(" · ") : "";
+      if ($("#oSend", m)) $("#oSend", m).href = waLink(message());
+    };
+    const drawImg = () => { $("#oImg", m).src = drawCard(e2(), d.id, order.text, 4.5).toDataURL("image/jpeg", .9); };
+    $("#oArc", m).checked = order.archive; $("#oText", m).value = order.text; $("#oNote", m).value = order.note;
+    drawImg(); sync();
+    let tm;
+    $("#oPkg", m).onclick = ev2 => { const b = ev2.target.closest("[data-p]"); if (b) { order.pkg = b.dataset.p; sync(); } };
+    $("#oArc", m).onchange = ev2 => { order.archive = ev2.target.checked; sync(); };
+    $("#oText", m).oninput = ev2 => { order.text = ev2.target.value.trim(); sync(); clearTimeout(tm); tm = setTimeout(drawImg, 300); };
+    $("#oNote", m).oninput = ev2 => { order.note = ev2.target.value.trim(); sync(); };
+    const blob = () => new Promise(res => canvas().toBlob(res, "image/jpeg", .92));
+    const fname = () => `memoryqr-${d.id}-${slug(e2().title)}.jpg`;
+    $("#oSave", m).onclick = async () => saveBlob(await blob(), fname());
+    // telefonda paylaş menüsü: görsel WhatsApp'a resim olarak gider
+    (async () => {
+      try {
+        const f = new File([await blob()], fname(), {type: "image/jpeg"});
+        if (navigator.canShare?.({files: [f]})) {
+          const btn = $("#oShare", m); btn.hidden = false;
+          btn.onclick = () => navigator.share({files: [f], text: message()}).catch(() => {});
+        }
+      } catch (err) {}
+    })();
+    $("#oCopy", m)?.addEventListener("click", () => copy(message(), "Seçiminiz kopyalandı"));
+    m.addEventListener("click", ev2 => { if (ev2.target === m || ev2.target.closest("[data-x]")) m.remove(); });
+  }
+
+  // önizleme linkiyle gelindiyse (?tasarimlar&d=…&t=…): bilgileri doldur, tasarımı aç
+  if (params.get("t")) { st.title = params.get("t"); $("#dzT").value = st.title; }
+  if (KINDS[params.get("k")]) { st.kind = params.get("k"); $("#dzK").value = st.kind; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(params.get("tarih") || "")) { st.date = params.get("tarih"); $("#dzD").value = st.date; }
+  if (params.get("y")) order.text = params.get("y").slice(0, 120);
+  if (params.has("t") || params.has("k")) grid();
+  if (CARD_DESIGNS.some(x => x.id === params.get("d"))) openOrder(params.get("d"));
 }
 
 // ---------------------------------------------------------------- yönlendirme

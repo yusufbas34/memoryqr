@@ -167,11 +167,11 @@ function cardKit(g, pxmm, W = CARD_W, H = CARD_H) {
       }
     },
     waves(colors, band) {
-      const W = W + 2 * CARD_BL;
+      const WW = W + 2 * CARD_BL;
       for (let i = -2, j = 0; i * band < H + 10; i++, j++) {
         g.fillStyle = colors[j % colors.length]; g.beginPath(); g.moveTo(0, X(i * band));
-        for (let x = 0; x <= W; x += 1) g.lineTo(mm(x), X(i * band + Math.sin(x / 9 + i * .7) * 4));
-        g.lineTo(mm(W), X(H + 10)); g.lineTo(0, X(H + 10)); g.closePath(); g.fill();
+        for (let x = 0; x <= WW; x += 1) g.lineTo(mm(x), X(i * band + Math.sin(x / 9 + i * .7) * 4));
+        g.lineTo(mm(WW), X(H + 10)); g.lineTo(0, X(H + 10)); g.closePath(); g.fill();
       }
     },
     halftone(color, step) {

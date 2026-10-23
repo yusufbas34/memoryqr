@@ -27,7 +27,7 @@ açılabilsin diye aynı çözünürlükte JPEG'e çevrilir.
 
 ```
 Misafir telefonu ── index.html (GitHub Pages)
-   │  fotoğrafı tarayıcıda küçültür (uzun kenar 2560 px, JPEG) ve 480 px küçük resim üretir
+   │  galeri için 480 px küçük resim üretir (fotoğrafın kendisi orijinal kalitede gider)
    ├─▶ Supabase  memory_upload_begin  → dosya kaydı + imzalı yükleme izni (3 saat geçerli)
    ├─▶ Worker    PUT /u/<anahtar>     → imzayı doğrular, dosyayı R2'ye yazar
    └─▶ Supabase  memory_upload_done   → dosya galeride görünür

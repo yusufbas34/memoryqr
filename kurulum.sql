@@ -39,8 +39,6 @@ begin
     on conflict (id) do update set admin_salt = excluded.admin_salt, admin_hash = excluded.admin_hash;  -- imza anahtarı korunur
 end $$;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 1';
-
 -- Şifre hatalıysa hata verir (HTTP 403); yönetim fonksiyonları bunu çağırır.
 create or replace function public.memory_admin_check(p_key text)
 returns void
@@ -74,7 +72,7 @@ create table if not exists public.memory_events (
   kind text not null default 'dugun' check (kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'diger')),
   event_date date not null,
   expires_at timestamptz not null,          -- yükleme ve görüntüleme bu ana kadar; dosyalar R2'de yaşam döngüsü kuralıyla silinir
-  guest_gallery boolean not null default true,  -- misafirler başkalarının yüklediklerini görebilir
+  guest_gallery boolean not null default false, -- true: misafirler başkalarının yüklediklerini de görür
   owner_name text,
   owner_phone text,
   note text,                                -- yalnızca yönetimde görünür (paket, ödeme, baskı notu)
@@ -101,6 +99,16 @@ create table if not exists public.memory_files (
   hidden boolean not null default false,    -- etkinlik sahibi gizledi: misafirler ve slayt görmez
   created_at timestamptz not null default now()
 );
+-- sürüm 2: masa kartı tasarımı; misafirler varsayılan olarak yalnızca kendi yüklediklerini görür
+alter table public.memory_events add column if not exists card_design text;
+alter table public.memory_events add column if not exists card_text text;
+alter table public.memory_events alter column guest_gallery set default false;
+do $$ begin
+  if to_regprocedure('public.memory_version()') is not null and public.memory_version() < 2 then
+    update public.memory_events set guest_gallery = false;
+  end if;
+end $$;
+
 create index if not exists memory_files_event_idx on public.memory_files (event_code, created_at desc);
 alter table public.memory_files enable row level security;
 revoke all on public.memory_files from anon, authenticated;
@@ -148,6 +156,7 @@ as $$
     'expires_at', e.expires_at, 'active', now() < e.expires_at and not e.files_purged, 'guest_gallery', e.guest_gallery,
     'files', (select count(*) from memory_files f where f.event_code = e.code and f.ready and (p_owner or not f.hidden)),
     'guests', (select count(distinct lower(f.guest)) from memory_files f where f.event_code = e.code and f.ready),
+    'card_design', e.card_design, 'card_text', e.card_text,
     'owner_name', case when p_owner then e.owner_name end,
     'bytes', case when p_owner then (select coalesce(sum(bytes), 0) from memory_files f where f.event_code = e.code and f.ready) end);
 $$;
@@ -253,6 +262,19 @@ as $$
 $$;
 grant execute on function public.memory_files(text, timestamptz, integer) to anon, authenticated;
 
+-- Misafirin kendi yükledikleri (kimlikler misafirin telefonunda saklanır; tahmin edilemez uuid'ler).
+create or replace function public.memory_files_mine(p_code text, p_ids uuid[])
+returns json
+language sql stable security definer set search_path = public
+as $$
+  select coalesce(json_agg(json_build_object('id', f.id, 'key', f.key, 'thumb_key', f.thumb_key, 'guest', f.guest, 'kind', f.kind,
+      'bytes', f.bytes, 'hidden', false, 'created_at', f.created_at) order by f.created_at desc), '[]'::json)
+  from memory_files f join memory_events e on e.code = f.event_code
+  where f.event_code = memory_norm(p_code) and f.ready and f.id = any(p_ids[1:1000])
+    and now() < e.expires_at and not e.files_purged;
+$$;
+grant execute on function public.memory_files_mine(text, uuid[]) to anon, authenticated;
+
 -- ---------------------------------------------------------------- etkinlik sahibi (PIN ile)
 create or replace function public.memory_owner(p_code text, p_pin text)
 returns json
@@ -320,6 +342,19 @@ begin
 end $$;
 grant execute on function public.memory_owner_settings(text, text, boolean) to anon, authenticated;
 
+create or replace function public.memory_owner_card(p_code text, p_pin text, p_design text, p_text text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare v_err text := memory_check_pin(p_code, p_pin);
+begin
+  if v_err is not null then return memory_pin_error(p_code, v_err); end if;
+  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 40), '')
+    where code = memory_norm(p_code);
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.memory_owner_card(text, text, text, text) to anon, authenticated;
+
 -- ---------------------------------------------------------------- yönetim
 create or replace function public.memory_admin_events(p_key text)
 returns json
@@ -330,6 +365,7 @@ begin
   return (select coalesce(json_agg(json_build_object('code', e.code, 'pin', e.pin, 'title', e.title, 'kind', e.kind,
       'event_date', e.event_date, 'expires_at', e.expires_at, 'guest_gallery', e.guest_gallery,
       'owner_name', e.owner_name, 'owner_phone', e.owner_phone, 'note', e.note, 'files_purged', e.files_purged,
+      'card_design', e.card_design, 'card_text', e.card_text,
       'created_at', e.created_at, 'files', s.n, 'bytes', s.b, 'guests', s.g, 'last_upload', s.last)
       order by e.event_date desc, e.created_at desc), '[]'::json)
     from memory_events e
@@ -373,6 +409,18 @@ begin
 end $$;
 grant execute on function public.memory_admin_save(text, text, text, text, date, integer, text, text, text) to anon, authenticated;
 
+create or replace function public.memory_admin_card(p_key text, p_code text, p_design text, p_text text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform memory_admin_check(p_key);
+  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 40), '')
+    where code = memory_norm(p_code);
+  return json_build_object('ok', found);
+end $$;
+grant execute on function public.memory_admin_card(text, text, text, text) to anon, authenticated;
+
 -- Etkinliğin tüm dosyalarını siler (kayıtlar + Worker'a gönderilecek önek silme imzası). p_drop: etkinliği de sil.
 create or replace function public.memory_admin_purge(p_key text, p_code text, p_drop boolean default false)
 returns json
@@ -391,3 +439,5 @@ begin
     'sig', memory_sign('DELP|e/' || v_code || '/|' || v_exp));
 end $$;
 grant execute on function public.memory_admin_purge(text, text, boolean) to anon, authenticated;
+
+create or replace function public.memory_version() returns integer language sql immutable as 'select 2';

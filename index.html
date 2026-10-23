@@ -153,6 +153,16 @@ body.slide{background:#000;padding:0;overflow:hidden;cursor:none}
 /* iletişim kutuları */
 .modal{position:fixed;inset:0;background:rgba(20,14,20,.55);z-index:60;display:grid;place-items:center;padding:20px}
 .modal .card{max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+/* masa kartı seçici */
+.cardpick{place-items:start center;overflow-y:auto}
+.cardpick>.card{max-width:980px;width:100%}
+.cp-body{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;align-items:start}
+.cp-prev img{width:100%;height:auto;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18);display:block}
+.cp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.cp-item{border:2px solid transparent;background:none;padding:4px;border-radius:8px;cursor:pointer;display:grid;gap:4px;font:inherit;font-size:13px;color:var(--ink)}
+.cp-item img{width:100%;height:auto;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.cp-item.on{border-color:var(--accent);background:var(--soft)}
+@media (max-width:640px){.cp-body{grid-template-columns:1fr}.cp-prev{max-width:240px;margin:0 auto}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;
   padding:12px 18px;border-radius:10px;font-size:15px;z-index:70;max-width:90vw}
 footer{text-align:center;font-size:13px;color:var(--muted);display:grid;gap:6px;padding-top:10px}
@@ -290,8 +300,9 @@ const footerHtml = code => `<footer>${code ? `<a href="?e=${esc(code)}&sahip">Et
   <span>MemoryQR · Bul QR · <a href="gizlilik.html">Gizlilik</a></span></footer>`;
 
 // ---------------------------------------------------------------- görsel hazırlama
-// Fotoğraf tarayıcıda küçültülür (uzun kenar 2560 px, JPEG): salon internetinde hızlı yüklensin, depolama ucuz kalsın.
-const MAX_EDGE = 2560, THUMB_EDGE = 480;
+// Fotoğraf orijinal kalitesiyle yüklenir; yalnızca galeri için 480 px küçük resim üretilir.
+// HEIC/HEIF (iPhone) her tarayıcıda açılmadığından aynı çözünürlükte JPEG'e çevrilir.
+const THUMB_EDGE = 480;
 const VIDEO_TYPES = {mp4: "video/mp4", m4v: "video/mp4", mov: "video/quicktime", webm: "video/webm", "3gp": "video/3gpp"};
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/gif"];
 const MAX_VIDEO = 300e6;
@@ -347,11 +358,11 @@ async function prepare(file) {
   }
   const w = img.width, h = img.height;
   const thumb = await scaled(img, w, h, THUMB_EDGE, .75);
-  // küçük JPEG'ler olduğu gibi kalır (EXIF bilgisi korunur)
-  if (file.type === "image/jpeg" && Math.max(w, h) <= MAX_EDGE && file.size < 2.5e6) { img.close?.(); return {kind: "photo", blob: file, mime: "image/jpeg", thumb}; }
-  const blob = await scaled(img, w, h, MAX_EDGE, .86);
+  const mime = ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) ? file.type
+    : /^(jpe?g)$/.test(ext) ? "image/jpeg" : ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : null;
+  if (mime) { img.close?.(); return {kind: "photo", blob: file, mime, thumb}; }  // orijinal dosya (EXIF dahil)
+  const blob = await scaled(img, w, h, Math.max(w, h), .92);
   img.close?.();
-  if (file.type === "image/gif") return {kind: "photo", blob: file, mime: "image/gif", thumb};
   return {kind: "photo", blob, mime: "image/jpeg", thumb};
 }
 
@@ -468,12 +479,12 @@ async function guestView(code) {
       <div class="queue" id="queue"></div>
     </section>
     <section class="stack" id="galSec" hidden>
-      <div class="row" style="justify-content:space-between"><h2>Tüm anılar <span id="galN" class="hint"></span></h2></div>
+      <div class="row" style="justify-content:space-between"><h2>${ev.guest_gallery ? "Tüm anılar" : "Yükledikleriniz"} <span id="galN" class="hint"></span></h2></div>
       <div class="gal" id="gal"></div>
       <button class="btn light" id="moreBtn" hidden>Daha fazla göster</button>
     </section>
-    <p class="hint" style="text-align:center">Yüklediğiniz fotoğraf ve videolar etkinlik sahibiyle${ev.guest_gallery ? " ve diğer misafirlerle" : ""} paylaşılır,
-      ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir.</p>
+    <p class="hint" style="text-align:center">${ev.guest_gallery ? "Yüklediğiniz fotoğraf ve videolar etkinlik sahibiyle ve diğer misafirlerle paylaşılır."
+      : "Yüklediklerinizi yalnızca siz ve etkinlik sahibi görür."} Hepsi ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir.</p>
     ${footerHtml(ev.code)}`;
 
   function drawName() {
@@ -557,9 +568,15 @@ async function guestView(code) {
 
   // galeri
   async function loadMore(reset) {
-    if (loading || !ev.guest_gallery || !ev.active) return;
+    if (loading || !ev.active) return;
     loading = true;
     try {
+      if (!ev.guest_gallery) {
+        // galeri kapalı: misafir yalnızca bu cihazdan yüklediklerini görür
+        files = mine.size ? await rpc("memory_files_mine", {p_code: ev.code, p_ids: [...mine]}) : [];
+        more = false;
+        return drawGal();
+      }
       const before = reset || !files.length ? null : files[files.length - 1].created_at;
       const got = await rpc("memory_files", {p_code: ev.code, p_before: before, p_limit: 120});
       files = reset ? got : files.concat(got);
@@ -569,7 +586,7 @@ async function guestView(code) {
   }
   function drawGal() {
     $("#galSec").hidden = !files.length;
-    $("#galN").textContent = `(${Math.max(files.length, ev.files)})`;
+    $("#galN").textContent = `(${ev.guest_gallery ? Math.max(files.length, ev.files) : files.length})`;
     $("#gal").innerHTML = files.map((f, i) => thumbHtml(f, i)).join("");
     $("#moreBtn").hidden = !more;
   }
@@ -651,7 +668,7 @@ async function ownerPanel(ev, pin) {
     ${ev.active ? `<p class="hint">Albüm ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir. O tarihe kadar hepsini indirin.</p>` : `<p class="err">Albümün süresi doldu.</p>`}
     <section class="row">
       <button class="btn" id="zip">${ICON.download}Hepsini indir (ZIP)</button>
-      <a class="btn ghost" href="?e=${esc(ev.code)}&slayt" target="_blank" rel="noopener">${ICON.play}Slayt gösterisi</a>
+      <a class="btn ghost" href="?e=${esc(ev.code)}&slayt" target="_blank">${ICON.play}Slayt gösterisi</a>
       <button class="btn ghost" id="share">${ICON.link}Misafir bağlantısı</button>
       <button class="btn ghost" id="card">${ICON.print}QR kartı (PDF)</button>
       <button class="btn ghost" id="wa">${ICON.wa}WhatsApp'ıma kaydet</button>
@@ -722,7 +739,10 @@ async function ownerPanel(ev, pin) {
   };
   $("#out").onclick = () => { session.del("pin_" + ev.code); store.del("pin_" + ev.code); location.href = `?e=${ev.code}`; };
   $("#share").onclick = () => copy(guestLink(ev.code), "Misafir bağlantısı kopyalandı");
-  $("#card").onclick = () => tableCardPdf(ev);
+  $("#card").onclick = () => cardPicker(ev, async (design, text) => {
+    const r = await rpc("memory_owner_card", {p_code: ev.code, p_pin: pin, p_design: design, p_text: text}).catch(() => null);
+    if (!r?.ok) toast("Tasarım kaydedilemedi, PDF yine de iniyor");
+  });
   $("#wa").onclick = () => {
     const text = `MemoryQR · ${ev.title}\nMisafir bağlantısı: ${guestLink(ev.code)}\nAlbüm (yalnızca siz): ${ownerLink(ev.code)}\nPIN: ${pin}\nAlbüm ${fmtDate(ev.expires_at)} tarihinde silinir.`;
     location.href = "https://wa.me/?text=" + encodeURIComponent(text);
@@ -819,67 +839,10 @@ async function slideView(code) {
   setInterval(show, 7000);
 }
 
-// ---------------------------------------------------------------- QR masa kartı (Özalit'e gidecek PDF)
-// A6 dikey (105×148 mm). Tek kart PDF'i 3 mm taşma paylı; A4 PDF'inde 4 kart ve kesim çizgileri.
-async function cardCanvas(ev) {
-  const PXMM = 12, W = 105, H = 148, BL = 3;  // 12 px/mm ≈ 305 dpi
-  const c = document.createElement("canvas");
-  c.width = (W + 2 * BL) * PXMM; c.height = (H + 2 * BL) * PXMM;
-  const g = c.getContext("2d");
-  await Promise.all(['700 40px "Barlow Condensed"', '600 20px "Barlow"', '400 20px "Barlow"'].map(f => document.fonts.load(f)));
-  const mm = v => v * PXMM, X = v => mm(v + BL);
-  const center = (text, y, font, color) => { g.font = font; g.fillStyle = color; g.textAlign = "center"; g.fillText(text, X(W / 2), X(y)); };
-  const fit = (text, y, max, weight, family, color, sizeMm) => {
-    let s = sizeMm;
-    do { g.font = `${weight} ${mm(s)}px ${family}`; s -= .5; } while (g.measureText(text).width > mm(max) && s > 4);
-    g.fillStyle = color; g.textAlign = "center"; g.fillText(text, X(W / 2), X(y));
-  };
-  g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
-  g.strokeStyle = "#a8832f"; g.lineWidth = mm(.5); g.strokeRect(X(6), X(6), mm(W - 12), mm(H - 12));
-  g.lineWidth = mm(.2); g.strokeRect(X(7.5), X(7.5), mm(W - 15), mm(H - 15));
-  center("ANILARIMIZI PAYLAŞIN", 20, `600 ${mm(3.6)}px Barlow`, "#a8832f");
-  fit(ev.title, 33, W - 22, 700, '"Barlow Condensed"', "#1d1820", 11);
-  center(`${KINDS[ev.kind] || ""} · ${fmtDate(ev.event_date)}`, 40.5, `400 ${mm(3.6)}px Barlow`, "#6b6070");
-  // QR
-  const q = qrcode(0, "M"); q.addData(guestLink(ev.code)); q.make();
-  const n = q.getModuleCount(), size = 62, cell = mm(size) / n, x0 = X((W - size) / 2), y0 = X(47);
-  g.fillStyle = "#111";
-  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(x0 + col * cell, y0 + r * cell, Math.ceil(cell), Math.ceil(cell));
-  center(`Albüm kodu: ${ev.code}`, 114, `600 ${mm(3)}px Barlow`, "#6b6070");
-  const steps = [["1", "QR'ı okut"], ["2", "İsmini yaz"], ["3", "Fotoğraf yükle"]];
-  steps.forEach(([num, t], i) => {
-    const cx = X(20 + i * 32.5), cy = X(122);
-    g.fillStyle = "#8c2f52"; g.beginPath(); g.arc(cx, cy, mm(3.4), 0, Math.PI * 2); g.fill();
-    g.fillStyle = "#fff"; g.font = `700 ${mm(3.8)}px Barlow`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(num, cx, cy + mm(.2));
-    g.textBaseline = "alphabetic"; g.fillStyle = "#1d1820"; g.font = `600 ${mm(3.3)}px Barlow`; g.fillText(t, cx, cy + mm(8));
-  });
-  center("Uygulama gerekmez · telefon kamerasıyla okutun", 137.5, `400 ${mm(2.8)}px Barlow`, "#6b6070");
-  return {canvas: c, W, H, BL};
-}
-
-async function tableCardPdf(ev) {
-  toast("PDF hazırlanıyor…");
-  try { await loadScript("vendor/jspdf.umd.min.js"); } catch (e) { return toast("PDF aracı yüklenemedi"); }
-  const {canvas, W, H, BL} = await cardCanvas(ev);
-  const img = canvas.toDataURL("image/jpeg", .95);
-  const {jsPDF} = window.jspdf;
-  // 1) tek kart, taşma paylı
-  const one = new jsPDF({unit: "mm", format: [W + 2 * BL, H + 2 * BL], orientation: "portrait"});
-  one.addImage(img, "JPEG", 0, 0, W + 2 * BL, H + 2 * BL);
-  one.save(`${slug(ev.title)}-masa-karti-A6-tasmali.pdf`);
-  // 2) A4'e 4 kart (2×2), kesim çizgili
-  const a4 = new jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
-  const ox = (210 - 2 * W) / 2, oy = (297 - 2 * H) / 2;
-  for (let r = 0; r < 2; r++) for (let col = 0; col < 2; col++) {
-    a4.addImage(img, "JPEG", ox + col * W - BL, oy + r * H - BL, W + 2 * BL, H + 2 * BL);
-  }
-  // taşma payları birbirinin üstüne binmesin: kart sınırlarının dışını beyazla, kesim çizgisi çiz
-  a4.setFillColor(255, 255, 255);
-  a4.rect(0, 0, 210, oy, "F"); a4.rect(0, oy + 2 * H, 210, 297, "F"); a4.rect(0, 0, ox, 297, "F"); a4.rect(ox + 2 * W, 0, 210, 297, "F");
-  a4.setDrawColor(150); a4.setLineWidth(.15);
-  for (const x of [ox, ox + W, ox + 2 * W]) { a4.line(x, 0, x, oy - 1); a4.line(x, oy + 2 * H + 1, x, 297); }
-  for (const y of [oy, oy + H, oy + 2 * H]) { a4.line(0, y, ox - 1, y); a4.line(ox + 2 * W + 1, y, 210, y); }
-  a4.save(`${slug(ev.title)}-masa-karti-A4-4lu.pdf`);
+// ---------------------------------------------------------------- QR masa kartı (kart.js: 10 tasarım, Özalit'e gidecek PDF)
+async function cardPicker(ev, save) {
+  try { await loadScript("kart.js"); } catch (e) { return toast("Kart aracı yüklenemedi"); }
+  openCardPicker(ev, save);
 }
 
 // ---------------------------------------------------------------- yönetim (?admin)
@@ -950,7 +913,9 @@ function adminPanel(key, list) {
       const a = ev.target.closest("[data-a]")?.dataset.a;
       if (!a) return;
       if (a === "owner") { session.set("pin_" + e.code, e.pin); window.open(`?e=${e.code}&sahip`, "_blank"); }
-      if (a === "card") tableCardPdf(e);
+      if (a === "card") cardPicker(e, async (design, text) => {
+        await rpc("memory_admin_card", {p_key: key, p_code: e.code, p_design: design, p_text: text}).catch(() => toast("Tasarım kaydedilemedi"));
+      });
       if (a === "copy") copy(guestLink(e.code));
       if (a === "wa") {
         const text = `Merhaba${e.owner_name ? " " + e.owner_name : ""}, MemoryQR albümünüz hazır.\n\nMisafir bağlantısı (QR bunu açar): ${guestLink(e.code)}\n` +

@@ -349,7 +349,7 @@ as $$
 declare v_err text := memory_check_pin(p_code, p_pin);
 begin
   if v_err is not null then return memory_pin_error(p_code, v_err); end if;
-  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 40), '')
+  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 120), '')
     where code = memory_norm(p_code);
   return json_build_object('ok', true);
 end $$;
@@ -415,7 +415,7 @@ language plpgsql security definer set search_path = public
 as $$
 begin
   perform memory_admin_check(p_key);
-  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 40), '')
+  update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 120), '')
     where code = memory_norm(p_code);
   return json_build_object('ok', found);
 end $$;

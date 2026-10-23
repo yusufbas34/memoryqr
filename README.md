@@ -13,9 +13,11 @@ dosyalar kalıcı olarak silinir. Bul QR ailesinin ürünüdür (Tasma QR, Araç
 | `?e=KOD&slayt` | **Slayt gösterisi**: salondaki ekran/projeksiyon için; yeni yüklenenler öne geçer, köşede "siz de yükleyin" QR'ı |
 | `?admin` | **Yönetim**: etkinlik oluştur/düzenle (kod + 6 haneli PIN üretilir), masa kartı PDF'i, müşteriye WhatsApp, dosyaları/etkinliği sil |
 
-**Masa kartı:** 11 tasarım (Klasik Altın, Modern Minimal, Romantik Pembe, Zümrüt Gece, Lacivert Altın, Kına Gecesi, Botanik,
-Art Deco, Pastel Kemer, Cesur Siyah, Çiçek Bahçesi), düzenlenebilir üst yazı, canlı önizleme. A6 (105×148 mm); iki PDF iner: 3 mm taşma
-paylı tek kart (Özalit'e matbaa baskısı için) ve A4'e 4'lü kesim çizgili. Seçilen tasarım etkinliğe kaydedilir.
+**Masa kartı:** 6 tasarım (Yeşil Yapraklar, Bordo Monogram, Aşkı Yakala, Altın Halka, Mavi Çini, Çiçek Bahçesi).
+Süslemeler kodla çizilir (Çiçek Bahçesi'nin madalyonu `kart/cicek.webp`). Kart yazısı değiştirilebilir; boş bırakılırsa
+tasarımın kendi metni etkinlik türüne göre kullanılır ("Düğünümüzde…", "Kına gecemizde…"). İsimler, baş harfler ve tarih
+etkinlik bilgilerinden gelir. A6 (105×148 mm); iki PDF iner: 3 mm taşma paylı tek kart (Özalit'e matbaa baskısı için)
+ve A4'e 4'lü kesim çizgili. Seçilen tasarım etkinliğe kaydedilir.
 
 **Misafir galerisi:** varsayılan olarak her misafir yalnızca kendi telefonundan yüklediklerini görür. Etkinlik sahibi
 panelden "Misafirler birbirinin yüklediklerini görebilsin" seçeneğini açarsa herkes tüm (gizlenmemiş) fotoğrafları görür.
@@ -73,7 +75,7 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - `index.html`: sitenin tamamı (misafir, sahip, slayt, yönetim)
 - `kurulum.sql`: veritabanı (tekrar çalıştırmak güvenli)
 - `worker/worker.js`, `worker/wrangler.toml`: Cloudflare Worker
-- `kart.js`, `kart.css`, `fonts/kart/`: masa kartı tasarımları ve yazı tipleri (Playfair Display, Cormorant Garamond, Great Vibes, Cinzel, Montserrat, Josefin Sans; SIL OFL 1.1)
+- `kart.js`, `kart.css`, `fonts/kart/`: masa kartı tasarımları ve yazı tipleri (Playfair Display, Cormorant Garamond, Great Vibes, Montserrat, Courier Prime, Bodoni Moda; SIL OFL 1.1)
 - `gizlilik.html`: gizlilik ve KVKK aydınlatma metni
 - `vendor/`: qrcode-generator 1.4.4, jsPDF 2.5.1, JSZip 3.10.1 (MIT); `fonts/`: Barlow (SIL OFL 1.1)
 

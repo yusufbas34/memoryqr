@@ -1,173 +1,282 @@
-// MemoryQR masa kartı: 10 tasarım, A6 dikey (105×148 mm). index.html'den yüklenir; qrcode, jsPDF ve index.html'deki
-// yardımcılar (esc, KINDS, fmtDate, guestLink, slug, loadScript, toast) gerekir. Yazı tipleri kart.css'te.
+// MemoryQR masa kartı tasarımları, A6 dikey (105×148 mm). index.html'den yüklenir; qrcode, jsPDF ve index.html'deki
+// yardımcılar (esc, KINDS, guestLink, slug, loadScript, toast, $) gerekir. Yazı tipleri kart.css'te.
 // Tek kart PDF'i 3 mm taşma paylı (Özalit için), A4 PDF'inde 4 kart ve kesim çizgileri.
+// Her tasarımın bir "kart yazısı" vardır; seçici ekranında değiştirilebilir, boş bırakılırsa tasarımın kendi metni kullanılır.
 
 const CARD_W = 105, CARD_H = 148, CARD_BL = 3;
-const CARD_STEPS = ["QR'ı okut", "İsmini yaz", "Fotoğraf yükle"];
-const CARD_DEFAULT_TEXT = "Anılarımızı paylaşın";
+const CARD_IMAGES = {};
 
-// ---------------------------------------------------------------- süsler
-function ornaments(g, u) {
-  const {mm, X} = u;
-  return {
-    border(color, inset, w) { g.strokeStyle = color; g.lineWidth = mm(w); g.strokeRect(X(inset), X(inset), mm(CARD_W - 2 * inset), mm(CARD_H - 2 * inset)); },
-    brackets(color, inset, len, w) {
-      g.strokeStyle = color; g.lineWidth = mm(w); g.lineCap = "square";
-      for (const [x, y, dx, dy] of [[inset, inset, 1, 1], [CARD_W - inset, inset, -1, 1], [inset, CARD_H - inset, 1, -1], [CARD_W - inset, CARD_H - inset, -1, -1]]) {
-        g.beginPath(); g.moveTo(X(x), X(y + dy * len)); g.lineTo(X(x), X(y)); g.lineTo(X(x + dx * len), X(y)); g.stroke();
-        g.beginPath(); g.arc(X(x + dx * 2.2), X(y + dy * 2.2), mm(.6), 0, 7); g.fillStyle = color; g.fill();
+// "Düğünümüzde", "Kına gecemizde"…: varsayılan kart yazılarında etkinlik türüne göre
+const KIND_IN = {dugun: "Düğünümüzde", nisan: "Nişanımızda", kina: "Kına gecemizde", soz: "Söz törenimizde",
+  mezuniyet: "Mezuniyetimizde", dogum_gunu: "Doğum günümüzde", diger: "Bu özel günümüzde"};
+const KIND_DAY = {dugun: "Bu mutlu günümüze", nisan: "Nişanımıza", kina: "Kına gecemize", soz: "Söz törenimize",
+  mezuniyet: "Mezuniyetimize", dogum_gunu: "Doğum günümüze", diger: "Bu özel günümüze"};
+
+const dateDots = d => { const [y, m, g] = String(d).slice(0, 10).split("-"); return `${g}.${m}.${y}`; };
+// "Selin & Berk" → ["S", "B"]; ayrılamayan başlıkta tek harf
+function initials(title) {
+  const parts = String(title).split(/\s*(?:&|\+|\bve\b|\band\b)\s*/i).map(s => s.trim()).filter(Boolean);
+  return parts.slice(0, 2).map(p => p[0].toLocaleUpperCase("tr-TR"));
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------------------------------------------------------------- çizim araçları (ölçüler mm)
+function cardKit(g, pxmm) {
+  const mm = v => v * pxmm, X = v => mm(v + CARD_BL);
+  const k = {
+    mm, X,
+    font: (f, s) => f.replace("{s}", mm(s)),
+    text(str, x, y, f, size, color, {align = "center", upper = false, sp = 0, max = CARD_W - 20} = {}) {
+      str = upper ? String(str).toLocaleUpperCase("tr-TR") : String(str);
+      if ("letterSpacing" in g) g.letterSpacing = sp ? `${mm(sp)}px` : "0px";
+      let s = size;
+      do { g.font = k.font(f, s); s -= .2; } while (g.measureText(str).width > mm(max) && s > 2);
+      g.fillStyle = color; g.textAlign = align; g.textBaseline = "alphabetic";
+      g.fillText(str, X(x), X(y));
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+    },
+    // satırlara böler; son satırın y'sini döndürür
+    wrap(str, x, y, width, f, size, color, lh, opts = {}) {
+      str = opts.upper ? String(str).toLocaleUpperCase("tr-TR") : String(str);
+      if ("letterSpacing" in g) g.letterSpacing = opts.sp ? `${mm(opts.sp)}px` : "0px";
+      g.font = k.font(f, size);
+      const lines = [];
+      for (const word of str.split(/\s+/)) {
+        const tryL = lines.length ? lines[lines.length - 1] + " " + word : word;
+        if (lines.length && g.measureText(tryL).width <= mm(width)) lines[lines.length - 1] = tryL; else lines.push(word);
+      }
+      g.fillStyle = color; g.textAlign = opts.align || "center"; g.textBaseline = "alphabetic";
+      lines.forEach((l, i) => g.fillText(l, X(x), X(y + i * lh)));
+      if ("letterSpacing" in g) g.letterSpacing = "0px";
+      return y + (lines.length - 1) * lh;
+    },
+    // QR: kareler piksel ızgarasına oturur; round: köşe gözleri yuvarlatılmış
+    qr(link, x, y, size, color, {round = false, bg = "#ffffff"} = {}) {
+      const q = qrcode(0, "M"); q.addData(link); q.make();
+      const n = q.getModuleCount(), cell = mm(size) / n;
+      const px = i => Math.round(X(x) + i * cell), py = i => Math.round(X(y) + i * cell);
+      const eye = (r, c) => round && ((r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7));
+      g.fillStyle = color;
+      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c) && !eye(r, c)) g.fillRect(px(c), py(r), px(c + 1) - px(c), py(r + 1) - py(r));
+      if (round) for (const [r, c] of [[0, 0], [0, n - 7], [n - 7, 0]]) {
+        const rr = (o, s, rad, fill) => { g.fillStyle = fill; g.beginPath(); g.roundRect(px(c + o), py(r + o), px(c + o + s) - px(c + o), py(r + o + s) - py(r + o), cell * rad); g.fill(); };
+        rr(0, 7, 2.2, color); rr(1, 5, 1.5, bg); rr(2, 3, 1, color);
       }
     },
-    leaf(x, y, ang, len, color) {
-      g.save(); g.translate(X(x), X(y)); g.rotate(ang); g.fillStyle = color;
-      g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(mm(len * .5), -mm(len * .32), mm(len), 0); g.quadraticCurveTo(mm(len * .5), mm(len * .32), 0, 0); g.fill();
+    leaf(x, y, ang, len, wid, color, alpha = 1) {
+      g.save(); g.globalAlpha = alpha; g.translate(X(x), X(y)); g.rotate(ang); g.fillStyle = color;
+      g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(mm(len * .45), -mm(wid), mm(len), 0); g.quadraticCurveTo(mm(len * .45), mm(wid), 0, 0); g.fill();
+      g.globalAlpha = alpha * .5; g.strokeStyle = "#ffffff"; g.lineWidth = mm(.12);
+      g.beginPath(); g.moveTo(mm(len * .08), 0); g.lineTo(mm(len * .85), 0); g.stroke();
       g.restore();
     },
-    sprig(x, y, ang, len, color, flip = 1) {
-      g.save(); g.translate(X(x), X(y)); g.rotate(ang);
-      g.strokeStyle = color; g.lineWidth = mm(.35);
-      g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(mm(len * .5), flip * mm(len * .12), mm(len), 0); g.stroke();
+    leafLine(x, y, ang, len, wid, color, lw = .25) {
+      g.save(); g.translate(X(x), X(y)); g.rotate(ang); g.strokeStyle = color; g.lineWidth = mm(lw);
+      g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(mm(len * .45), -mm(wid), mm(len), 0); g.quadraticCurveTo(mm(len * .45), mm(wid), 0, 0); g.stroke();
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(mm(len * .8), 0); g.stroke();
       g.restore();
-      const n = 6;
+    },
+    // dal: sap boyunca karşılıklı yapraklar (dolu ya da çizgi)
+    branch(x, y, ang, len, color, {leafLen = 7, wid = 1.6, n = 6, line = false, alpha = 1, bend = .15, lw = .3, palette} = {}) {
+      g.strokeStyle = color; g.lineWidth = mm(lw); g.globalAlpha = line ? 1 : alpha;
+      const ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len;
+      const cx = (x + ex) / 2 - Math.sin(ang) * len * bend, cy = (y + ey) / 2 + Math.cos(ang) * len * bend;
+      g.beginPath(); g.moveTo(X(x), X(y)); g.quadraticCurveTo(X(cx), X(cy), X(ex), X(ey)); g.stroke(); g.globalAlpha = 1;
       for (let i = 1; i <= n; i++) {
-        const t = i / (n + 1), px = x + Math.cos(ang) * len * t, py = y + Math.sin(ang) * len * t, l = 5.2 * (1 - t * .45);
-        this.leaf(px, py, ang - .75, l, color);
-        this.leaf(px, py, ang + .75, l, color);
+        const t = i / (n + .6), u = 1 - t;
+        const px = u * u * x + 2 * u * t * cx + t * t * ex, py = u * u * y + 2 * u * t * cy + t * t * ey;
+        const l = leafLen * (1 - t * .35), col = palette ? palette[i % palette.length] : color;
+        for (const s of [-1, 1]) line ? k.leafLine(px, py, ang + s * .7, l, wid, col, lw * .85) : k.leaf(px, py, ang + s * .7, l, wid, col, alpha);
       }
-      this.leaf(x + Math.cos(ang) * len, y + Math.sin(ang) * len, ang, 4.4, color);
+      line ? k.leafLine(ex, ey, ang, leafLen * .8, wid, color, lw * .85) : k.leaf(ex, ey, ang, leafLen * .8, wid, palette ? palette[0] : color, alpha);
     },
-    henna(x, y, dx, dy, color) {
-      g.strokeStyle = color; g.fillStyle = color; g.lineWidth = mm(.35);
-      const a0 = dx > 0 ? (dy > 0 ? 0 : -Math.PI / 2) : (dy > 0 ? Math.PI / 2 : Math.PI);
-      for (const r of [7, 10.5, 14]) { g.beginPath(); g.arc(X(x), X(y), mm(r), a0, a0 + Math.PI / 2); g.stroke(); }
-      for (let i = 0; i <= 8; i++) {
-        const a = a0 + Math.PI / 2 * i / 8;
-        g.beginPath(); g.arc(X(x) + Math.cos(a) * mm(17), X(y) + Math.sin(a) * mm(17), mm(.75), 0, 7); g.fill();
-        g.beginPath(); g.arc(X(x) + Math.cos(a) * mm(12.2), X(y) + Math.sin(a) * mm(12.2), mm(.4), 0, 7); g.fill();
+    heartPath(x, y, s) {
+      const p = X(x), q = X(y), z = mm(s);
+      g.beginPath(); g.moveTo(p, q + z * .38);
+      g.bezierCurveTo(p - z * .95, q - z * .3, p - z * .4, q - z * .98, p, q - z * .42);
+      g.bezierCurveTo(p + z * .4, q - z * .98, p + z * .95, q - z * .3, p, q + z * .38);
+    },
+    flower(x, y, r, color, lw = .25) {
+      g.strokeStyle = color; g.lineWidth = mm(lw);
+      for (let i = 0; i < 5; i++) {
+        const a = i * Math.PI * 2 / 5;
+        g.save(); g.translate(X(x) + Math.cos(a) * mm(r * .55), X(y) + Math.sin(a) * mm(r * .55)); g.rotate(a);
+        g.beginPath(); g.ellipse(0, 0, mm(r * .5), mm(r * .3), 0, 0, Math.PI * 2); g.stroke(); g.restore();
       }
-      g.beginPath(); g.arc(X(x), X(y), mm(3.5), 0, 7); g.fill();
+      g.beginPath(); g.arc(X(x), X(y), mm(r * .18), 0, 7); g.stroke();
     },
-    fan(cx, cy, r, color, up = true) {
-      g.strokeStyle = color; g.lineWidth = mm(.35);
-      const s = up ? -1 : 1;
-      for (const rr of [r, r * .72, r * .44]) { g.beginPath(); g.arc(X(cx), X(cy), mm(rr), up ? Math.PI : 0, up ? 2 * Math.PI : Math.PI); g.stroke(); }
-      for (let i = 0; i <= 12; i++) {
-        const a = Math.PI * i / 12;
-        g.beginPath(); g.moveTo(X(cx), X(cy)); g.lineTo(X(cx) + Math.cos(a) * mm(r), X(cy) + s * Math.sin(a) * mm(r)); g.stroke();
-      }
+    // fotoğraf makinesi + kalp (ince çizgi)
+    camera(x, y, w, color, lw = .3, heart = color) {
+      const h = w * .66;
+      g.strokeStyle = color; g.lineWidth = mm(lw); g.lineJoin = "round";
+      g.beginPath(); g.roundRect(X(x), X(y + h * .14), mm(w), mm(h * .86), mm(w * .1)); g.stroke();
+      g.beginPath(); g.moveTo(X(x + w * .22), X(y + h * .14)); g.lineTo(X(x + w * .3), X(y)); g.lineTo(X(x + w * .52), X(y)); g.lineTo(X(x + w * .6), X(y + h * .14)); g.stroke();
+      g.beginPath(); g.arc(X(x + w / 2), X(y + h * .56), mm(w * .25), 0, 7); g.stroke();
+      k.heartPath(x + w / 2, y + h * .58, w * .2); g.fillStyle = heart; g.fill();
     },
-    steps(color, inset, w) {
-      g.strokeStyle = color; g.lineWidth = mm(w);
-      for (const [x, y, dx, dy] of [[inset, inset, 1, 1], [CARD_W - inset, inset, -1, 1], [inset, CARD_H - inset, 1, -1], [CARD_W - inset, CARD_H - inset, -1, -1]]) {
-        g.beginPath(); g.moveTo(X(x), X(y + dy * 12));
-        g.lineTo(X(x), X(y)); g.lineTo(X(x + dx * 12), X(y));
-        g.moveTo(X(x + dx * 3), X(y + dy * 9)); g.lineTo(X(x + dx * 3), X(y + dy * 3)); g.lineTo(X(x + dx * 9), X(y + dy * 3));
-        g.stroke();
-      }
+    specks(n, color, seed, alpha = .5) {
+      const r = rng(seed); g.fillStyle = color; g.globalAlpha = alpha;
+      for (let i = 0; i < n; i++) { g.beginPath(); g.arc(X(r() * CARD_W), X(r() * CARD_H), mm(.12 + r() * .35), 0, 7); g.fill(); }
+      g.globalAlpha = 1;
     },
-    heart(x, y, s, color) {
-      g.fillStyle = color; g.beginPath();
-      const px = X(x), py = X(y), k = mm(s);
-      g.moveTo(px, py + k * .35);
-      g.bezierCurveTo(px - k * .9, py - k * .35, px - k * .35, py - k * .95, px, py - k * .4);
-      g.bezierCurveTo(px + k * .35, py - k * .95, px + k * .9, py - k * .35, px, py + k * .35);
-      g.fill();
-    },
-    scallop(color, inset, r, w) {
-      g.strokeStyle = color; g.lineWidth = mm(w);
-      const x0 = inset, y0 = inset, x1 = CARD_W - inset, y1 = CARD_H - inset;
-      const nx = Math.round((x1 - x0) / (2 * r)), ny = Math.round((y1 - y0) / (2 * r));
-      const rx = (x1 - x0) / nx / 2, ry = (y1 - y0) / ny / 2;
-      for (let i = 0; i < nx; i++) {
-        g.beginPath(); g.arc(X(x0 + rx * (2 * i + 1)), X(y0), mm(rx), Math.PI, 0); g.stroke();
-        g.beginPath(); g.arc(X(x0 + rx * (2 * i + 1)), X(y1), mm(rx), 0, Math.PI); g.stroke();
-      }
-      for (let i = 0; i < ny; i++) {
-        g.beginPath(); g.arc(X(x0), X(y0 + ry * (2 * i + 1)), mm(ry), Math.PI / 2, Math.PI * 1.5); g.stroke();
-        g.beginPath(); g.arc(X(x1), X(y0 + ry * (2 * i + 1)), mm(ry), -Math.PI / 2, Math.PI / 2); g.stroke();
-      }
-    },
+    bg(color) { g.fillStyle = color; g.fillRect(0, 0, mm(CARD_W + 2 * CARD_BL), mm(CARD_H + 2 * CARD_BL)); },
   };
+  return k;
 }
 
+const BRAND = (k, ev, y, color, x = CARD_W / 2, align = "center") => k.text(`MemoryQR · Albüm kodu ${ev.code}`, x, y, '600 {s}px "Barlow"', 2.1, color, {sp: .1, align});
+
 // ---------------------------------------------------------------- tasarımlar
-// Renkler: bg zemin, eye üst yazı, title başlık, date tarih, muted kod/alt yazı, step adım dairesi, stepText adım yazısı.
-// Yazı tipleri CSS font tanımı olarak (boyut mm cinsinden çizimde eklenir).
 const CARD_DESIGNS = [
-  {id: "klasik", name: "Klasik Altın",
-    c: {bg: "#fffdf8", eye: "#a8832f", title: "#2a2226", date: "#6d6157", muted: "#7a6e64", step: "#a8832f", stepText: "#2a2226"},
-    f: {eye: '600 {s}px "Cinzel"', title: '700 {s}px "Cormorant Garamond"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 3.4, eyeUpper: true, titleSize: 12, dateSize: 4.4, bodySize: 3.8,
-    deco(o) { o.border("#a8832f", 6, .55); o.border("#a8832f", 7.6, .2); }},
-  {id: "modern", name: "Modern Minimal",
-    c: {bg: "#ffffff", eye: "#111111", title: "#111111", date: "#555555", muted: "#777777", step: "#111111", stepText: "#111111"},
-    f: {eye: '600 {s}px "Montserrat"', title: '800 {s}px "Montserrat"', date: '400 {s}px "Montserrat"', body: '600 {s}px "Montserrat"'},
-    eyeSize: 2.8, eyeUpper: true, eyeSpacing: .35, titleSize: 9.5, titleUpper: true, dateSize: 3.2, bodySize: 2.9, stepStyle: "square",
-    deco(o, g, u) { g.fillStyle = "#111"; g.fillRect(u.X(46), u.X(12), u.mm(13), u.mm(1.2)); }},
-  {id: "romantik", name: "Romantik Pembe",
-    c: {bg: "#fbeef0", eye: "#b0586f", title: "#7d2f45", date: "#8b5a66", muted: "#9b6d78", step: "#c46b84", stepText: "#5e2a38"},
-    f: {eye: 'italic 500 {s}px "Cormorant Garamond"', title: '400 {s}px "Great Vibes"', date: '500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 4.6, titleSize: 15, titleY: 35, dateSize: 4.2, bodySize: 3.8,
-    deco(o) { o.scallop("#d99aab", 6, 2.6, .35); o.heart(22, 20.5, 3, "#d99aab"); o.heart(83, 20.5, 3, "#d99aab"); }},
-  {id: "zumrut", name: "Zümrüt Gece",
-    c: {bg: "#0f3d33", eye: "#d4b36a", title: "#f4ead2", date: "#cdbf9c", muted: "#b9ad8c", step: "#d4b36a", stepText: "#f4ead2", stepNum: "#0f3d33"},
-    f: {eye: '600 {s}px "Cinzel"', title: '600 {s}px "Cinzel"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 3.2, eyeUpper: true, titleSize: 9.5, dateSize: 4.4, bodySize: 3.8,
-    deco(o) { o.border("#d4b36a", 6, .5); o.border("#d4b36a", 7.6, .2); }},
-  {id: "lacivert", name: "Lacivert Altın",
-    c: {bg: "#14223f", eye: "#d8b45c", title: "#ffffff", date: "#c9cfdd", muted: "#aab3c7", step: "#d8b45c", stepText: "#ffffff", stepNum: "#14223f"},
-    f: {eye: 'italic 400 {s}px "Playfair Display"', title: '700 {s}px "Playfair Display"', date: 'italic 400 {s}px "Playfair Display"', body: '600 {s}px "Montserrat"'},
-    eyeSize: 4, titleSize: 11, dateSize: 3.6, bodySize: 2.9,
-    deco(o) { o.brackets("#d8b45c", 7, 14, .45); }},
-  {id: "kina", name: "Kına Gecesi",
-    c: {bg: "#7a1622", eye: "#e8c77f", title: "#fbe9c6", date: "#e7c99a", muted: "#d9b98c", step: "#e8c77f", stepText: "#fbe9c6", stepNum: "#7a1622"},
-    f: {eye: 'italic 500 {s}px "Cormorant Garamond"', title: '400 {s}px "Great Vibes"', date: '500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 4.6, titleSize: 15, titleY: 35, dateSize: 4.2, bodySize: 3.8,
-    deco(o) { o.henna(0, 0, 1, 1, "#e8c77f"); o.henna(CARD_W, 0, -1, 1, "#e8c77f"); o.henna(0, CARD_H, 1, -1, "#e8c77f"); o.henna(CARD_W, CARD_H, -1, -1, "#e8c77f"); }},
-  {id: "botanik", name: "Botanik",
-    c: {bg: "#f6f7f0", eye: "#4f6b4a", title: "#2f3d2c", date: "#5d6b58", muted: "#6f7a6a", step: "#4f6b4a", stepText: "#2f3d2c"},
-    f: {eye: '600 {s}px "Montserrat"', title: 'italic 400 {s}px "Playfair Display"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 2.7, eyeUpper: true, eyeSpacing: .3, titleSize: 12, dateSize: 4.4, bodySize: 3.8,
-    deco(o) {
-      const c = "#7c9a73";
-      o.sprig(4, 22, -1.0, 20, c); o.sprig(101, 22, Math.PI + 1.0, 20, c, -1);
-      o.sprig(3, 146, -.3, 13, c, -1); o.sprig(102, 146, Math.PI + .3, 13, c);
+  {id: "yaprak", name: "Yeşil Yapraklar",
+    text: ev => `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları bizimle paylaşmak için karekodu tarayın!`,
+    draw(k, g, ev, text) {
+      k.bg("#ffffff");
+      const greens = ["#8fae7e", "#6f9466", "#a9c39a", "#577a52", "#b7cdb0"];
+      const r = rng(7);
+      for (let i = 0; i < 9; i++) k.branch(108 - r() * 6, -3 + r() * 8, Math.PI * (.55 + r() * .4), 18 + r() * 14, "#6f9466",
+        {leafLen: 6 + r() * 4, wid: 1.4 + r() * 1.2, n: 4 + (i % 3), alpha: .55 + r() * .35, palette: greens});
+      for (let i = 0; i < 8; i++) k.branch(-3 + r() * 5, 152 - r() * 5, -Math.PI * (.04 + r() * .3), 12 + r() * 10, "#6f9466",
+        {leafLen: 6 + r() * 4, wid: 1.4 + r() * 1.2, n: 4 + (i % 3), alpha: .55 + r() * .35, palette: greens});
+      k.text("ANI", 52.5, 34, '400 {s}px "Playfair Display"', 11, "#2b2b2b", {sp: .4});
+      k.text("PAYLAŞ!", 52.5, 47, '400 {s}px "Playfair Display"', 11, "#2b2b2b", {sp: .4});
+      k.qr(guestLink(ev.code), 34, 56, 32, "#1e1e1e");
+      k.camera(71, 68, 9, "#555555", .3);
+      const end = k.wrap(text, 52.5, 100, 68, '400 {s}px "Courier Prime"', 3.3, "#333333", 4.6);
+      k.text(ev.title, 52.5, Math.max(end + 15, 124), '400 {s}px "Great Vibes"', 10, "#2b2b2b", {max: 70});
+      BRAND(k, ev, 143, "#9a9a9a");
     }},
-  {id: "artdeco", name: "Art Deco",
-    c: {bg: "#121212", eye: "#c9a54c", title: "#f1e3bd", date: "#cdbb8f", muted: "#a8996f", step: "#c9a54c", stepText: "#f1e3bd", stepNum: "#121212"},
-    f: {eye: '600 {s}px "Josefin Sans"', title: '600 {s}px "Josefin Sans"', date: '300 {s}px "Josefin Sans"', body: '600 {s}px "Josefin Sans"'},
-    eyeSize: 3, eyeUpper: true, eyeSpacing: .5, titleSize: 10.5, titleUpper: true, titleSpacing: .15, dateSize: 3.6, bodySize: 3.2, stepStyle: "diamond",
-    deco(o) { o.steps("#c9a54c", 5, .4); o.fan(52.5, 16, 8, "#c9a54c", true); }},
-  {id: "kemer", name: "Pastel Kemer",
-    c: {bg: "#eadfd3", eye: "#b8664a", title: "#4a332b", date: "#7b625a", muted: "#8d766c", step: "#b8664a", stepText: "#4a332b"},
-    f: {eye: '600 {s}px "Montserrat"', title: '700 {s}px "Cormorant Garamond"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '600 {s}px "Montserrat"'},
-    eyeSize: 2.7, eyeUpper: true, eyeSpacing: .3, titleSize: 12, titleMax: 66, titleY: 35, eyeY: 23, dateSize: 4.4, bodySize: 2.7,
-    deco(o, g, u) {
-      const {X, mm} = u, x0 = 7, x1 = CARD_W - 7, r = (x1 - x0) / 2, top = 7 + r, bot = CARD_H - 7;
-      g.fillStyle = "#fbf7f2"; g.beginPath(); g.moveTo(X(x0), X(bot)); g.lineTo(X(x0), X(top));
-      g.arc(X(52.5), X(top), mm(r), Math.PI, 0); g.lineTo(X(x1), X(bot)); g.closePath(); g.fill();
-      g.strokeStyle = "#d6b8a6"; g.lineWidth = mm(.3); g.stroke();
+  {id: "bordo", name: "Bordo Monogram",
+    text: () => "Lütfen QR kodu tarayarak fotoğraf ve videolarınızı albüme ekleyin.",
+    draw(k, g, ev, text) {
+      const B = "#7a1a24";
+      k.bg("#efe2dc");
+      // kenar bandı: bordo kıvrımlar ve çiçekler
+      const r = rng(11);
+      g.globalAlpha = .55;
+      for (let i = 0; i < 70; i++) {
+        let x, y; const side = i % 4, t = r();
+        if (side === 0) { x = t * CARD_W; y = r() * 8; } else if (side === 1) { x = t * CARD_W; y = CARD_H - r() * 8; }
+        else if (side === 2) { x = r() * 8; y = t * CARD_H; } else { x = CARD_W - r() * 8; y = t * CARD_H; }
+        if (r() < .5) k.flower(x, y, 1.6 + r() * 1.6, B, .22); else k.leafLine(x, y, r() * 6.3, 3 + r() * 3, .9, B, .22);
+      }
+      g.globalAlpha = 1;
+      g.fillStyle = "#f7f1ec"; g.fillRect(k.X(8), k.X(8), k.mm(CARD_W - 16), k.mm(CARD_H - 16));
+      g.strokeStyle = B; g.lineWidth = k.mm(1.3); g.strokeRect(k.X(8.65), k.X(8.65), k.mm(CARD_W - 17.3), k.mm(CARD_H - 17.3));
+      g.lineWidth = k.mm(.25); g.strokeRect(k.X(11), k.X(11), k.mm(CARD_W - 22), k.mm(CARD_H - 22));
+      const ini = initials(ev.title);
+      if (ini.length === 2) {
+        k.text(ini[0], 45, 40, '400 {s}px "Bodoni Moda"', 21, B);
+        k.text("&", 53.5, 45, '400 {s}px "Great Vibes"', 12, B);
+        k.text(ini[1], 61, 52, '400 {s}px "Bodoni Moda"', 21, B);
+      } else k.text(ini[0] || "M", 52.5, 48, '400 {s}px "Bodoni Moda"', 24, B);
+      k.text(ev.title, 52.5, 59, '600 {s}px "Cormorant Garamond"', 3, B, {upper: true, sp: .35, max: 70});
+      k.text(dateDots(ev.event_date), 52.5, 63.5, '500 {s}px "Cormorant Garamond"', 3, B, {sp: .2});
+      k.wrap(text, 52.5, 75, 64, '500 {s}px "Cormorant Garamond"', 4.6, "#3a2a2a", 5.6);
+      k.qr(guestLink(ev.code), 37.5, 92, 30, B, {bg: "#f7f1ec"});
+      k.heartPath(52.5, 129, 7.5); g.strokeStyle = B; g.lineWidth = k.mm(.3); g.stroke();
+      k.flower(52.5, 126.8, 1.5, B, .2); k.leafLine(50, 128.3, 2.6, 2.2, .7, B, .2); k.leafLine(55, 128.3, .55, 2.2, .7, B, .2);
+      BRAND(k, ev, 135.3, "#9b7d79");
     }},
-  {id: "cesur", name: "Cesur Siyah",
-    c: {bg: "#ffffff", eye: "#f5d76e", title: "#ffffff", date: "#d0d0d0", muted: "#666666", step: "#111111", stepText: "#111111"},
-    f: {eye: '600 {s}px "Montserrat"', title: '800 {s}px "Montserrat"', date: '400 {s}px "Montserrat"', body: '600 {s}px "Montserrat"'},
-    eyeSize: 2.8, eyeUpper: true, eyeSpacing: .35, titleSize: 10, titleUpper: true, dateSize: 3.2, bodySize: 2.9, stepStyle: "square",
-    deco(o, g, u) { g.fillStyle = "#111"; g.fillRect(0, 0, u.mm(CARD_W + 2 * CARD_BL), u.X(42)); }},
+  {id: "yakala", name: "Aşkı Yakala",
+    text: () => "Fotoğraflarınızı bizimle paylaşın!",
+    draw(k, g, ev, text) {
+      const R = "#b23a3a", INK = "#2a2a2a";
+      k.bg("#ffffff");
+      // el çizimi fotoğraf makinesi: iki kez hafif kaydırılmış ince çizgi
+      g.save(); g.translate(k.mm(.25), k.mm(-.15)); g.globalAlpha = .45; k.camera(22, 10, 42, INK, .28, "rgba(0,0,0,0)"); g.restore();
+      k.camera(22, 10, 42, INK, .35, R);
+      k.text("Aşkı", 72, 27, '400 {s}px "Great Vibes"', 10, R, {align: "left"});
+      k.text("Yakala", 76, 38, '400 {s}px "Great Vibes"', 10, R, {align: "left"});
+      k.wrap(text, 52.5, 51, 72, '400 {s}px "Montserrat"', 3.4, INK, 5.6, {upper: true, sp: .75});
+      k.qr(guestLink(ev.code), 37.5, 63, 30, R, {round: true});
+      k.wrap("QR Kodu Okutarak Fotoğraflarınızı Yükleyebilirsiniz!", 52.5, 102, 66, '400 {s}px "Montserrat"', 3.2, "#444444", 4.8);
+      k.text("Teşekkürler!", 52.5, 117, '400 {s}px "Great Vibes"', 6, R);
+      k.text(ev.title, 52.5, 126, '400 {s}px "Montserrat"', 3.8, INK, {upper: true, sp: .6, max: 66});
+      g.strokeStyle = INK; g.lineWidth = k.mm(.2);
+      g.beginPath(); g.moveTo(k.X(8), k.X(124.8)); g.quadraticCurveTo(k.X(14), k.X(123), k.X(17), k.X(124.8)); g.stroke();
+      g.beginPath(); g.moveTo(k.X(97), k.X(124.8)); g.quadraticCurveTo(k.X(91), k.X(123), k.X(88), k.X(124.8)); g.stroke();
+      k.heartPath(52.5, 136, 4.5); g.lineWidth = k.mm(.25); g.stroke();
+      BRAND(k, ev, 143.5, "#a0a0a0");
+    }},
+  {id: "halka", name: "Altın Halka",
+    text: () => "Bize güzel anlar bırakmak için QR kodu okutup bizimle paylaşır mısın?",
+    draw(k, g, ev, text) {
+      const G = "#c4a052";
+      k.bg("#faf8f3");
+      k.specks(220, G, 5, .55);
+      const ring = (cx, cy, rad) => {
+        g.strokeStyle = G; g.lineWidth = k.mm(.55); g.beginPath(); g.arc(k.X(cx), k.X(cy), k.mm(rad), 0, 7); g.stroke();
+        g.lineWidth = k.mm(.2); g.beginPath(); g.arc(k.X(cx + .8), k.X(cy - .6), k.mm(rad - 1.4), 0, 7); g.stroke();
+      };
+      const greens = ["#9db58d", "#7e9c73", "#b9cdaf", "#6a8a62"];
+      ring(84, 20, 25); ring(14, 130, 23);
+      const r = rng(3);
+      for (let i = 0; i < 4; i++) k.branch(66 + i * 3, 2 + r() * 4, Math.PI * (.75 + r() * .3), 13 + r() * 6, "#7e9c73", {leafLen: 4.5, wid: 1.2, n: 5, alpha: .7, palette: greens});
+      for (let i = 0; i < 3; i++) k.branch(98, 30 + i * 4, Math.PI * (.55 + r() * .2), 12 + r() * 5, "#7e9c73", {leafLen: 4.2, wid: 1.1, n: 4, alpha: .65, palette: greens});
+      for (let i = 0; i < 4; i++) k.branch(2 + i * 2, 118 + r() * 5, -Math.PI * (.1 + r() * .3), 13 + r() * 6, "#7e9c73", {leafLen: 4.5, wid: 1.2, n: 5, alpha: .7, palette: greens});
+      for (let i = 0; i < 3; i++) k.branch(22 + i * 4, 150, -Math.PI * (.35 + r() * .2), 11 + r() * 5, "#7e9c73", {leafLen: 4.2, wid: 1.1, n: 4, alpha: .65, palette: greens});
+      k.text(ev.title, 52.5, 52, '400 {s}px "Bodoni Moda"', 9.5, "#1d1d1d", {max: 78});
+      k.text(dateDots(ev.event_date), 52.5, 58, '500 {s}px "Cormorant Garamond"', 3.6, "#333333", {sp: .2});
+      const end = k.wrap(text, 52.5, 67, 74, '600 {s}px "Cormorant Garamond"', 3.5, "#222222", 4.6, {upper: true, sp: .15});
+      k.wrap(`${KIND_DAY[ev.kind] || KIND_DAY.diger} eşlik ettiğiniz için teşekkür ederiz.`, 52.5, end + 8, 66, '600 {s}px "Cormorant Garamond"', 2.8, "#333333", 3.8, {upper: true, sp: .12});
+      k.qr(guestLink(ev.code), 37.5, 94, 30, "#111111", {bg: "#faf8f3"});
+      BRAND(k, ev, 141, "#a39a86", 97, "right");
+    }},
+  {id: "cini", name: "Mavi Çini",
+    text: () => "Bu kodu okutun ve çektiğiniz fotoğraf ve videoları bizimle paylaşın!",
+    draw(k, g, ev, text) {
+      const BL = "#2f4f9a";
+      k.bg("#f8f5ee");
+      // kenar boyunca mavi çizgi bitki motifleri
+      const r = rng(21);
+      const motif = (x, y, a) => {
+        const t = r();
+        if (t < .4) k.branch(x, y, a, 9, BL, {leafLen: 3.6, wid: 1, n: 3, line: true, lw: .22});
+        else if (t < .75) k.flower(x, y, 2.4, BL, .22);
+        else { for (let i = 0; i < 3; i++) { g.strokeStyle = BL; g.lineWidth = k.mm(.22); g.beginPath(); g.arc(k.X(x + i * 1.6), k.X(y + (i % 2) * 1.4), k.mm(.9), 0, 7); g.stroke(); } }
+      };
+      for (let x = 6; x < CARD_W; x += 11) { motif(x, 5 + r() * 3, Math.PI * (.3 + r() * .4)); motif(x + 4, CARD_H - 5 - r() * 3, -Math.PI * (.3 + r() * .4)); }
+      for (let y = 16; y < CARD_H - 10; y += 12) { motif(4 + r() * 3, y, r() * .8 - .4); motif(CARD_W - 4 - r() * 3, y + 5, Math.PI + r() * .8 - .4); }
+      g.fillStyle = "#f8f5ee"; g.fillRect(k.X(12), k.X(13), k.mm(CARD_W - 24), k.mm(CARD_H - 26));
+      k.text("Hoş geldiniz", 52.5, 24, '400 {s}px "Montserrat"', 3, BL, {upper: true, sp: .9});
+      // zeytin dalı
+      k.branch(36, 44, -.35, 32, BL, {leafLen: 5, wid: 1.2, n: 5, line: true, lw: .25, bend: .1});
+      for (const [x, y] of [[46, 44.5], [52, 42.8], [58, 41]]) { g.strokeStyle = BL; g.lineWidth = k.mm(.25); g.beginPath(); g.ellipse(k.X(x), k.X(y + 2.2), k.mm(1.3), k.mm(1.8), .3, 0, 7); g.stroke(); }
+      k.text(ev.title, 52.5, 64, '400 {s}px "Great Vibes"', 11, BL, {max: 74});
+      k.wrap(text, 52.5, 73, 64, '400 {s}px "Montserrat"', 2.4, BL, 3.4, {upper: true, sp: .2});
+      k.text("Anı", 17, 104, '400 {s}px "Playfair Display"', 9, BL, {align: "left", upper: true, sp: .6});
+      k.text("Bırak", 17, 115, '400 {s}px "Playfair Display"', 9, BL, {align: "left", upper: true, sp: .6});
+      k.qr(guestLink(ev.code), 60, 90, 27, BL, {bg: "#f8f5ee"});
+      k.camera(81, 120, 7.5, BL, .25);
+      BRAND(k, ev, 131.5, "#7d8bb0");
+    }},
   {id: "cicek", name: "Çiçek Bahçesi", img: "kart/cicek.webp",
-    c: {bg: "#fdf7e7", eye: "#5b7f2e", title: "#b8325a", date: "#7a6a5a", muted: "#8a7a68", step: "#d9466f", stepText: "#4a3a30"},
-    f: {eye: 'italic 500 {s}px "Cormorant Garamond"', title: '400 {s}px "Great Vibes"', date: 'italic 500 {s}px "Cormorant Garamond"', body: '500 {s}px "Cormorant Garamond"'},
-    eyeSize: 4.2, titleSize: 12, dateSize: 4.1, bodySize: 3.8,
-    // motif üstte madalyon: yazılar ve QR aşağı kayar, QR biraz küçülür
-    L: {eye: 33.5, title: 46.5, date: 53, qrY: 58.5, qrSize: 46, code: 113.5, steps: 122},
-    deco(o, g, u) { const im = CARD_IMAGES["kart/cicek.webp"]; if (im) g.drawImage(im, u.X(52.5 - 12.5), u.X(4), u.mm(25), u.mm(25 * im.height / im.width)); }},
+    text: () => "Anılarımızı paylaşın",
+    draw(k, g, ev, text) {
+      k.bg("#fdf7e7");
+      const im = CARD_IMAGES["kart/cicek.webp"];
+      if (im) g.drawImage(im, k.X(52.5 - 12.5), k.X(4), k.mm(25), k.mm(25 * im.height / im.width));
+      k.text(text, 52.5, 33.5, '500 {s}px "Cormorant Garamond"', 4.4, "#5b7f2e");
+      k.text(ev.title, 52.5, 46.5, '400 {s}px "Great Vibes"', 12, "#b8325a", {max: 83});
+      k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 53, '500 {s}px "Cormorant Garamond"', 4, "#7a6a5a");
+      g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(26), k.X(55), k.mm(53), k.mm(53), k.mm(2.5)); g.fill();
+      k.qr(guestLink(ev.code), 29.5, 58.5, 46, "#111111");
+      ["QR'ı okut", "İsmini yaz", "Fotoğraf yükle"].forEach((t, i) => {
+        const cx = 20 + i * 32.5;
+        g.fillStyle = "#d9466f"; g.beginPath(); g.arc(k.X(cx), k.X(119), k.mm(3.2), 0, 7); g.fill();
+        k.text(String(i + 1), cx, 120.3, '700 {s}px "Barlow"', 3.5, "#ffffff");
+        k.text(t, cx, 127.5, '500 {s}px "Cormorant Garamond"', 3.8, "#4a3a30");
+      });
+      BRAND(k, ev, 139, "#a08f7b");
+    }},
 ];
-const CARD_IMAGES = {};
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
-// ---------------------------------------------------------------- çizim
-let cardFontsPromise;
+// ---------------------------------------------------------------- yazı tipi ve görsel yükleme
+let cardAssetsPromise;
 function cardFontsReady() {
-  if (!cardFontsPromise) {
+  if (!cardAssetsPromise) {
     // önce stil dosyası (@font-face tanımları) yüklenmeli, yoksa fonts.load hiçbir şey indirmeden biter
     const css = new Promise(res => {
       if (document.querySelector('link[href="kart.css"]')) return res();
@@ -175,73 +284,24 @@ function cardFontsReady() {
       l.rel = "stylesheet"; l.href = "kart.css"; l.onload = l.onerror = res;
       document.head.append(l);
     });
-    const faces = new Set();
-    for (const d of CARD_DESIGNS) for (const f of Object.values(d.f)) faces.add(f.replace("{s}", "20"));
-    faces.add('700 20px "Barlow"');
+    const faces = ['400 20px "Playfair Display"', '500 20px "Cormorant Garamond"', '600 20px "Cormorant Garamond"',
+      '400 20px "Great Vibes"', '400 20px "Montserrat"', '400 20px "Courier Prime"', '400 20px "Bodoni Moda"', '600 20px "Barlow"', '700 20px "Barlow"'];
     const imgs = CARD_DESIGNS.filter(d => d.img).map(d => new Promise(res => {
       const im = new Image();
       im.onload = () => { CARD_IMAGES[d.img] = im; res(); }; im.onerror = res; im.src = d.img;
     }));
-    cardFontsPromise = css.then(() => Promise.all([...imgs, ...[...faces].map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))]));
+    cardAssetsPromise = css.then(() => Promise.all([...imgs, ...faces.map(f => document.fonts.load(f, "ŞİĞÜÇÖşığüçö Aa").catch(() => null))]));
   }
-  return cardFontsPromise;
+  return cardAssetsPromise;
 }
 
-// pxmm: mm başına piksel (baskı için 12 ≈ 305 dpi). Kenarlarda CARD_BL taşma payı vardır.
+// pxmm: mm başına piksel (baskı için 12 ≈ 305 dpi). Kenarlarda CARD_BL taşma payı vardır. text boşsa tasarımın kendi yazısı.
 function drawCard(ev, designId, text, pxmm) {
   const d = cardDesign(designId);
   const c = document.createElement("canvas");
   c.width = Math.round((CARD_W + 2 * CARD_BL) * pxmm); c.height = Math.round((CARD_H + 2 * CARD_BL) * pxmm);
   const g = c.getContext("2d");
-  const mm = v => v * pxmm, X = v => mm(v + CARD_BL), u = {mm, X};
-  const font = (f, s) => f.replace("{s}", mm(s));
-  const spacing = em => { if ("letterSpacing" in g) g.letterSpacing = em ? `${mm(em)}px` : "0px"; };
-  const line = (str, y, f, size, color, {upper, sp = 0, max} = {}) => {
-    max = max || CARD_W - 22;
-    str = upper ? String(str).toLocaleUpperCase("tr-TR") : String(str);
-    let s = size;
-    spacing(sp);
-    do { g.font = font(f, s); s -= .25; } while (g.measureText(str).width > mm(max) && s > 3);
-    g.fillStyle = color; g.textAlign = "center"; g.textBaseline = "alphabetic";
-    g.fillText(str, X(CARD_W / 2), X(y));
-    spacing(0);
-  };
-
-  g.fillStyle = d.c.bg; g.fillRect(0, 0, c.width, c.height);
-  d.deco?.(ornaments(g, u), g, u);
-
-  const L = {eye: d.eyeY || 21, title: d.titleY || 33.5, date: 40.5, qrY: 48, qrSize: 56, code: 113.5, steps: 122, ...d.L};
-  line(text || CARD_DEFAULT_TEXT, L.eye, d.f.eye, d.eyeSize, d.c.eye, {upper: d.eyeUpper, sp: d.eyeSpacing});
-  line(ev.title, L.title, d.f.title, d.titleSize, d.c.title, {upper: d.titleUpper, sp: d.titleSpacing, max: d.titleMax});
-  line(`${KINDS[ev.kind] || ""} · ${fmtDate(ev.event_date)}`, L.date, d.f.date, d.dateSize, d.c.date);
-
-  // QR her tasarımda beyaz zemin üstünde: koyu kartlarda da telefon kolay okusun
-  const q = qrcode(0, "M"); q.addData(guestLink(ev.code)); q.make();
-  const n = q.getModuleCount(), size = L.qrSize, pad = 3.5, x0 = (CARD_W - size) / 2, y0 = L.qrY;
-  g.fillStyle = "#ffffff";
-  g.beginPath(); g.roundRect ? g.roundRect(X(x0 - pad), X(y0 - pad), mm(size + 2 * pad), mm(size + 2 * pad), mm(2.5)) : g.rect(X(x0 - pad), X(y0 - pad), mm(size + 2 * pad), mm(size + 2 * pad)); g.fill();
-  const cell = mm(size) / n;
-  g.fillStyle = "#111111";
-  // kareler tam piksele oturur: aralarında ince boşluk çizgisi kalmaz
-  const px = i => Math.round(X(x0) + i * cell), py = i => Math.round(X(y0) + i * cell);
-  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) g.fillRect(px(col), py(r), px(col + 1) - px(col), py(r + 1) - py(r));
-
-  line(`Albüm kodu: ${ev.code}`, L.code, '600 {s}px "Barlow"', 2.9, d.c.muted);  // kod her tasarımda net okunsun
-
-  CARD_STEPS.forEach((t, i) => {
-    const cx = X(20 + i * 32.5), cy = X(L.steps), r = mm(3.3);
-    g.fillStyle = d.c.step;
-    g.beginPath();
-    if (d.stepStyle === "square") g.rect(cx - r, cy - r, 2 * r, 2 * r);
-    else if (d.stepStyle === "diamond") { g.moveTo(cx, cy - r * 1.25); g.lineTo(cx + r * 1.25, cy); g.lineTo(cx, cy + r * 1.25); g.lineTo(cx - r * 1.25, cy); g.closePath(); }
-    else g.arc(cx, cy, r, 0, Math.PI * 2);
-    g.fill();
-    g.fillStyle = d.c.stepNum || "#ffffff"; g.font = `700 ${mm(3.6)}px Barlow`; g.textAlign = "center"; g.textBaseline = "middle";
-    g.fillText(String(i + 1), cx, cy + mm(.2));
-    g.textBaseline = "alphabetic"; g.fillStyle = d.c.stepText; g.font = font(d.f.body, d.bodySize);
-    g.fillText(t, cx, cy + mm(8));
-  });
-  line("Uygulama gerekmez · telefon kamerasıyla okutun", 137.5, d.f.body, d.bodySize * .78, d.c.muted);
+  d.draw(cardKit(g, pxmm), g, ev, text || d.text(ev));
   return c;
 }
 
@@ -265,9 +325,10 @@ async function cardPdf(ev, designId, text) {
 }
 
 // ---------------------------------------------------------------- seçim ekranı
-// save(design, text): seçimi kaydeder (yönetim ya da etkinlik sahibi); hata verirse PDF yine iner.
+// save(design, text): seçimi kaydeder (yönetim ya da etkinlik sahibi); text boşsa tasarımın kendi yazısı kullanılır.
 async function openCardPicker(ev, save) {
-  let design = ev.card_design || "klasik", text = ev.card_text || CARD_DEFAULT_TEXT;
+  let design = cardDesign(ev.card_design).id, custom = ev.card_text || "";
+  if (custom === "Anılarımızı paylaşın" && design !== "cicek") custom = "";  // eski sürümün varsayılanı
   const m = document.createElement("div");
   m.className = "modal cardpick";
   m.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-label="Masa kartı tasarımı">
@@ -275,9 +336,9 @@ async function openCardPicker(ev, save) {
       <div class="cp-body">
         <div class="cp-prev"><img id="cpBig" alt="Seçili tasarımın önizlemesi"></div>
         <div class="stack" style="min-width:0">
-          <label for="cpText">Üst yazı</label>
-          <input type="text" id="cpText" maxlength="40" value="${esc(text)}">
-          <span class="hint">Ör. "Kına gecemize hoş geldiniz", "Anılarımızı paylaşın"</span>
+          <label for="cpText">Kart yazısı</label>
+          <textarea id="cpText" rows="2" maxlength="120"></textarea>
+          <span class="hint">Boş bırakırsanız tasarımın kendi yazısı kullanılır. İsimler ve tarih etkinlik bilgilerinden gelir.</span>
           <div class="cp-grid" id="cpGrid"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
         </div>
       </div>
@@ -286,12 +347,15 @@ async function openCardPicker(ev, save) {
     </div>`;
   document.body.append(m);
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-x]")) m.remove(); });
+  const ta = $("#cpText", m);
+  const syncText = () => { ta.value = custom; ta.placeholder = cardDesign(design).text(ev); };
+  syncText();
   await cardFontsReady();
   const big = $("#cpBig", m), grid = $("#cpGrid", m);
-  const drawBig = () => { big.src = drawCard(ev, design, text, 5).toDataURL("image/jpeg", .9); };
+  const drawBig = () => { big.src = drawCard(ev, design, custom, 5).toDataURL("image/jpeg", .9); };
   const drawGrid = () => {
     grid.innerHTML = CARD_DESIGNS.map(d => `<button class="cp-item${d.id === design ? " on" : ""}" data-d="${d.id}">
-      <img src="${drawCard(ev, d.id, text, 1.6).toDataURL("image/jpeg", .85)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
+      <img src="${drawCard(ev, d.id, custom, 1.6).toDataURL("image/jpeg", .85)}" alt=""><span>${esc(d.name)}</span></button>`).join("");
   };
   drawBig(); drawGrid();
   grid.onclick = e => {
@@ -299,17 +363,17 @@ async function openCardPicker(ev, save) {
     if (!b) return;
     design = b.dataset.d;
     grid.querySelectorAll(".cp-item").forEach(x => x.classList.toggle("on", x === b));
-    drawBig();
+    syncText(); drawBig();
   };
   let t;
-  $("#cpText", m).oninput = e => { text = e.target.value.trim() || CARD_DEFAULT_TEXT; clearTimeout(t); t = setTimeout(() => { drawBig(); drawGrid(); }, 250); };
+  ta.oninput = () => { custom = ta.value.trim(); clearTimeout(t); t = setTimeout(() => { drawBig(); drawGrid(); }, 300); };
   $("#cpDl", m).onclick = async () => {
     const btn = $("#cpDl", m);
     btn.disabled = true; btn.textContent = "Hazırlanıyor…";
     try {
-      await save?.(design, text);
-      ev.card_design = design; ev.card_text = text;
-      await cardPdf(ev, design, text);
+      await save?.(design, custom);
+      ev.card_design = design; ev.card_text = custom;
+      await cardPdf(ev, design, custom);
       toast("PDF indirildi");
     } catch (e) { toast("PDF hazırlanamadı: " + e.message, 5000); }
     btn.disabled = false; btn.textContent = "PDF indir (A6 + A4'e 4'lü)";

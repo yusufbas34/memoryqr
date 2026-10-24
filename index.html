@@ -110,6 +110,11 @@ main.wide .gal{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .gi .vid{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.6);color:#fff;border-radius:999px;font-size:12px;padding:2px 8px}
 .gi .novid{display:flex;align-items:center;justify-content:center;height:100%;font-size:30px;color:var(--muted)}
 .gi.hid img{opacity:.35}
+.gi .fav{position:absolute;left:6px;bottom:6px;color:#ffd166;font-size:18px;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.lb .ic{background:rgba(255,255,255,.14);border:0;color:#fff;width:42px;height:42px;border-radius:10px;font-size:18px;cursor:pointer}
+.lb .btn.on{background:#ffd166;color:#3a2a00}
+.lb .lbfav{color:#ffd166}
+.lb:fullscreen{background:#000}
 .gi.hid::after{content:"Gizli";position:absolute;left:6px;top:6px;background:var(--ink);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px}
 .gi.sel{outline:4px solid var(--accent);outline-offset:-4px}
 .gi .tick{position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25)}
@@ -117,7 +122,7 @@ main.wide .gal{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .gi:focus-visible,.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
 
 /* tam ekran görüntüleyici */
-.lb{position:fixed;inset:0;background:rgba(12,10,14,.96);z-index:50;display:grid;grid-template-rows:auto 1fr auto;color:#fff;
+.lb{position:fixed;inset:0;background:#0e0b10;z-index:50;display:grid;grid-template-rows:auto 1fr auto;color:#fff;
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 .lb .top,.lb .bot{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-wrap:wrap}
 .lb .top{justify-content:space-between}
@@ -517,23 +522,49 @@ const UPLOAD_ERRORS = {
 };
 
 // ---------------------------------------------------------------- tam ekran görüntüleyici
-function lightbox(list, index, {owner = null, onChange} = {}) {
+// Tam ekran görüntüleyici: kaydırma/oklar, otomatik oynatma, tam ekran; etkinlik sahibi için favori, gizle, sil
+function lightbox(list, index, {owner = null, onChange, play = false} = {}) {
   const el = document.createElement("div");
   el.className = "lb"; el.setAttribute("role", "dialog"); el.setAttribute("aria-modal", "true");
   document.body.append(el);
-  let i = index;
-  const close = () => { el.remove(); document.removeEventListener("keydown", key); };
-  const key = e => { if (e.key === "Escape") close(); if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1); };
+  let i = index, playing = false, timer = null;
+  const fsOn = () => !!document.fullscreenElement;
+  const close = () => {
+    stop(); el.remove(); document.removeEventListener("keydown", key);
+    if (fsOn()) document.exitFullscreen?.().catch(() => {});
+  };
+  const key = e => {
+    if (e.key === "Escape") close(); if (e.key === "ArrowLeft") go(-1); if (e.key === "ArrowRight") go(1);
+    if (e.key === " ") { e.preventDefault(); toggle(); } if (e.key === "f") full();
+  };
   const go = d => { i = (i + d + list.length) % list.length; draw(); };
+  const stop = () => { clearTimeout(timer); timer = null; };
+  const schedule = () => {
+    stop();
+    if (!playing) return;
+    const f = list[i];
+    if (f?.kind === "video") { const v = $("video", el); if (v) v.onended = () => playing && go(1); }
+    else timer = setTimeout(() => go(1), 4000);
+  };
+  const toggle = () => { playing = !playing; draw(); };
+  const full = () => fsOn() ? document.exitFullscreen?.().catch(() => {}) : el.requestFullscreen?.().catch(() => {});
+  const heart = on => `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="${on ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.6-9.5-9.2C1.2 8.6 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4C11.8 6.1 13.2 5 15.2 5c3.5 0 5.6 3.6 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>`;
   function draw() {
     const f = list[i];
     if (!f) return close();
-    el.innerHTML = `<div class="top"><div><div class="who">${esc(f.guest)}</div><div style="font-size:13px;opacity:.75">${esc(fmtTime(f.created_at))} · ${i + 1}/${list.length}</div></div>
-        <button class="x" aria-label="Kapat">×</button></div>
-      <div class="media">${f.kind === "video" ? `<video src="${esc(fileUrl(f.key))}" controls playsinline autoplay></video>` : `<img src="${esc(fileUrl(f.key))}" alt="${esc(f.guest)} yükledi">`}
+    el.innerHTML = `<div class="top"><div><div class="who">${esc(f.guest)}${f.favorite ? ` <span class="lbfav">★</span>` : ""}</div>
+        <div style="font-size:13px;opacity:.75">${esc(fmtTime(f.created_at))} · ${i + 1}/${list.length}</div></div>
+        <div class="row" style="gap:4px">${list.length > 1 ? `<button class="ic" data-a="play" aria-label="${playing ? "Durdur" : "Otomatik oynat"}">${playing ? "❚❚" : "▶"}</button>` : ""}
+          ${document.fullscreenEnabled ? `<button class="ic" data-a="full" aria-label="Tam ekran">⛶</button>` : ""}<button class="x" aria-label="Kapat">×</button></div></div>
+      <div class="media">${f.kind === "video" ? `<video src="${esc(fileUrl(f.key))}" controls playsinline autoplay ${playing ? "muted" : ""}></video>` : `<img src="${esc(fileUrl(f.key))}" alt="${esc(f.guest)} yükledi">`}
         ${list.length > 1 ? `<button class="nav l" aria-label="Önceki">‹</button><button class="nav r" aria-label="Sonraki">›</button>` : ""}</div>
-      <div class="bot"><a class="btn light" href="${esc(fileUrl(f.key))}?dl=${encodeURIComponent(fileName(f))}">${ICON.download}İndir</a>
+      <div class="bot">${owner ? `<button class="btn light${f.favorite ? " on" : ""}" data-a="fav">${heart(f.favorite)}${f.favorite ? "Favoride" : "Favori"}</button>` : ""}
+        <a class="btn light" href="${esc(fileUrl(f.key))}?dl=${encodeURIComponent(fileName(f))}">${ICON.download}İndir</a>
         ${owner ? `<button class="btn light" data-a="hide">${f.hidden ? "Göster" : "Gizle"}</button><button class="btn light" data-a="del">Sil</button>` : ""}</div>`;
+    // sonraki fotoğrafı önceden yükle: geçiş beklemesin
+    const n = list[(i + 1) % list.length];
+    if (n && n.kind === "photo") { const pre = new Image(); pre.src = fileUrl(n.key); }
+    schedule();
   }
   el.addEventListener("click", async e => {
     if (e.target.closest(".x")) return close();
@@ -542,6 +573,9 @@ function lightbox(list, index, {owner = null, onChange} = {}) {
     const a = e.target.closest("[data-a]")?.dataset.a;
     if (!a) return;
     const f = list[i];
+    if (a === "play") return toggle();
+    if (a === "full") return full();
+    if (a === "fav" && await owner.fav([f.id], !f.favorite)) { f.favorite = !f.favorite; draw(); onChange?.(); }
     if (a === "hide" && await owner.hide([f.id], !f.hidden)) { f.hidden = !f.hidden; draw(); onChange?.(); }
     if (a === "del" && await owner.remove([f.id])) { list.splice(i, 1); onChange?.(); if (!list.length) return close(); i = i % list.length; draw(); }
   });
@@ -549,6 +583,7 @@ function lightbox(list, index, {owner = null, onChange} = {}) {
   el.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, {passive: true});
   el.addEventListener("touchend", e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) go(dx > 0 ? -1 : 1); x0 = null; });
   document.addEventListener("keydown", key);
+  if (play) { playing = true; full(); }
   draw();
 }
 
@@ -556,7 +591,7 @@ function thumbHtml(f, i, sel) {
   const src = f.thumb_key ? fileUrl(f.thumb_key) : f.kind === "photo" ? fileUrl(f.key) : null;
   return `<button class="gi${f.hidden ? " hid" : ""}${sel?.has(f.id) ? " sel" : ""}" data-i="${i}" aria-label="${esc(f.guest)}: ${f.kind === "video" ? "video" : "fotoğraf"}">
     ${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<span class="novid">▶</span>`}
-    ${f.kind === "video" ? `<span class="vid">video</span>` : ""}${sel ? `<span class="tick"></span>` : ""}</button>`;
+    ${f.kind === "video" ? `<span class="vid">video</span>` : ""}${f.favorite ? `<span class="fav" aria-label="Favori">★</span>` : ""}${sel ? `<span class="tick"></span>` : ""}</button>`;
 }
 
 // ---------------------------------------------------------------- misafir sayfası
@@ -750,6 +785,11 @@ async function ownerPanel(ev, pin) {
   let files = [], guestFilter = "", selecting = false;
   const sel = new Set();
   const owner = {
+    async fav(ids, favorite) {
+      const r = await rpc("memory_owner_fav", {p_code: ev.code, p_pin: pin, p_ids: ids, p_favorite: favorite}).catch(() => null);
+      if (!r?.ok) { toast("Kaydedilemedi"); return false; }
+      return true;
+    },
     async hide(ids, hidden) {
       const r = await rpc("memory_owner_hide", {p_code: ev.code, p_pin: pin, p_ids: ids, p_hidden: hidden}).catch(() => null);
       if (!r?.ok) { toast("Kaydedilemedi"); return false; }
@@ -780,9 +820,10 @@ async function ownerPanel(ev, pin) {
     ${ev.active ? `<p class="hint">Albüm ${esc(fmtDate(ev.expires_at))} tarihinde kalıcı olarak silinir. O tarihe kadar hepsini indirin${ev.archive_url ? "" : " ya da 1 yıl saklama ekini isteyin"}.</p>` : ev.archive_url ? "" : `<p class="err">Albümün süresi doldu.</p>`}
     <p class="hint">MemoryQR'dan memnun kaldınız mı? <a href="${esc(SITE_URL)}#yorum" target="_blank" rel="noopener">Bir yorum yazın</a>, başka çiftlere yol gösterin.</p>
     <section class="row">
-      <button class="btn" id="zip">${ICON.download}Hepsini indir (ZIP)</button>
+      <button class="btn" id="zip">${ICON.download}<span id="zipL">Hepsini indir (ZIP)</span></button>
+      <button class="btn ghost" id="play">${ICON.play}Tam ekran izle</button>
       <button class="btn ghost" id="share">${ICON.link}Misafir bağlantısı</button>
-      <a class="btn ghost" href="?e=${esc(ev.code)}&kart">${ICON.print}Kart tasarımı ve PDF</a>
+      <a class="btn ghost" href="?e=${esc(ev.code)}&kart">${ICON.print}${ev.package === "dijital" ? "Kart tasarımı ve PDF" : "Kart tasarımı"}</a>
       <button class="btn ghost" id="wa">${ICON.wa}WhatsApp'ıma kaydet</button>
     </section>
     <section class="card" id="zipBox" hidden><div id="zipT">Hazırlanıyor…</div><div class="prog"><i id="zipP"></i></div></section>
@@ -791,7 +832,8 @@ async function ownerPanel(ev, pin) {
       <select id="gf" style="max-width:240px;font-size:16px;padding:8px 10px"><option value="">Tüm misafirler</option></select>
       <button class="btn small light" id="selBtn">Seç</button>
       <span id="selActs" hidden class="row"><span id="selN" class="hint"></span>
-        <button class="btn small light" data-s="all">Tümü</button><button class="btn small light" data-s="dl">İndir</button>
+        <button class="btn small light" data-s="all">Tümü</button><button class="btn small light" data-s="fav">★ Favorile</button>
+        <button class="btn small light" data-s="unfav">Favoriden çıkar</button><button class="btn small light" data-s="dl">İndir</button>
         <button class="btn small light" data-s="hide">Gizle</button><button class="btn small light" data-s="show">Göster</button>
         <button class="btn small danger" data-s="del">Sil</button></span>
     </div>
@@ -799,18 +841,22 @@ async function ownerPanel(ev, pin) {
     <p class="hint" id="empty" hidden style="text-align:center;padding:30px 0">Henüz yükleme yok. Misafir bağlantısını paylaşın ya da QR kartını masalara koyun.</p>
     ${footerHtml()}`;
 
-  const view = () => guestFilter ? files.filter(f => f.guest === guestFilter) : files;
+  const view = () => guestFilter === "__fav" ? files.filter(f => f.favorite) : guestFilter ? files.filter(f => f.guest === guestFilter) : files;
   function draw() {
     const v = view();
     $("#gal").innerHTML = v.map((f, i) => thumbHtml(f, i, selecting ? sel : null)).join("");
-    $("#empty").hidden = files.length > 0;
     $("#sF").textContent = files.length;
     $("#selActs").hidden = !selecting;
     $("#selBtn").textContent = selecting ? "Bitti" : "Seç";
     $("#selN").textContent = `${sel.size} seçili`;
     const guests = [...new Set(files.map(f => f.guest))].sort((a, b) => a.localeCompare(b, "tr"));
-    $("#gf").innerHTML = `<option value="">Tüm misafirler (${files.length})</option>` +
+    const favN = files.filter(f => f.favorite).length;
+    $("#gf").innerHTML = `<option value="">Tüm misafirler (${files.length})</option><option value="__fav" ${guestFilter === "__fav" ? "selected" : ""}>★ Favoriler (${favN})</option>` +
       guests.map(g => `<option ${g === guestFilter ? "selected" : ""}>${esc(g)}</option>`).join("");
+    $("#zipL").textContent = guestFilter ? `${guestFilter === "__fav" ? "Favorileri" : "Bunları"} indir (${v.length})` : "Hepsini indir (ZIP)";
+    $("#empty").textContent = guestFilter === "__fav" ? "Henüz favori yok. Fotoğrafı açıp kalbe dokunun ya da Seç ile toplu favorileyin."
+      : "Henüz yükleme yok. Misafir bağlantısını paylaşın ya da QR kartını masalara koyun.";
+    $("#empty").hidden = v.length > 0;
   }
   async function load() {
     files = [];
@@ -840,6 +886,9 @@ async function ownerPanel(ev, pin) {
     const ids = [...sel];
     if (!ids.length) return toast("Önce fotoğraf seçin");
     if (a === "dl") return downloadZip(files.filter(f => sel.has(f.id)));
+    if (a === "fav" || a === "unfav") {
+      if (await owner.fav(ids, a === "fav")) { files.forEach(f => { if (sel.has(f.id)) f.favorite = a === "fav"; }); sel.clear(); toast(a === "fav" ? "Favorilere eklendi" : "Favorilerden çıkarıldı"); draw(); }
+    }
     if (a === "hide" || a === "show") {
       if (await owner.hide(ids, a === "hide")) { files.forEach(f => { if (sel.has(f.id)) f.hidden = a === "hide"; }); sel.clear(); draw(); }
     }
@@ -855,7 +904,8 @@ async function ownerPanel(ev, pin) {
     const text = `MemoryQR · ${ev.title}\nMisafir bağlantısı: ${guestLink(ev.code)}\nAlbüm (yalnızca siz): ${ownerLink(ev.code)}\nPIN: ${pin}\nAlbüm ${fmtDate(ev.expires_at)} tarihinde silinir.`;
     location.href = "https://wa.me/?text=" + encodeURIComponent(text);
   };
-  $("#zip").onclick = () => downloadZip(files);
+  $("#zip").onclick = () => downloadZip(view());
+  $("#play").onclick = () => { const v = view(); if (!v.length) return toast("Gösterilecek fotoğraf yok"); lightbox(v, 0, {owner, onChange: draw, play: true}); };
 
   // ZIP: tarayıcı belleğini aşmamak için 400 MB'lık parçalar halinde
   async function downloadZip(list) {
@@ -966,6 +1016,7 @@ async function kartPanel(ev, pin) {
         <div class="kp-img"><img id="prev" alt="Önizleme"></div>
         <div class="seg" id="viewTabs"><button type="button" data-v="duz" class="on">Düz</button><button type="button" data-v="mekan">Mekânda</button></div>
         <p class="hint" id="prodNote" style="text-align:center"></p>
+        <p class="hint" id="noPdf" hidden style="text-align:center">Kartlarınızı biz basıp gönderiyoruz. Tasarımı seçip kaydetmeniz yeterli.</p>
         <div class="row" id="dlRow"><select id="panoSize" hidden><option value="50x70">50 × 70 cm</option><option value="35x50">35 × 50 cm</option></select>
           <button class="btn ghost" id="dl">${ICON.download}PDF indir</button></div>
       </aside>
@@ -996,6 +1047,8 @@ async function kartPanel(ev, pin) {
   const sel = {design: cardDesign(ev.card_design || CARD_DESIGNS.find(d => d.cat === (KIND_CAT[ev.kind] || "dugun"))?.id).id, text: ev.card_text || ""};
   const custom = {key: ev.card_custom_key || null, img: null, pos: ev.card_qr_pos || "alt", size: ev.card_qr_size || "orta"};
   let mode = custom.key ? "kendi" : "hazir", product = "kart", view = "duz", cat = KIND_CAT[ev.kind] || "", dirty = false;
+  const canPdf = ev.package === "dijital" || !!session.get("admin");
+  $("#dlRow").hidden = !canPdf; $("#noPdf").hidden = canPdf;
   if (custom.key) custom.img = await loadImg(fileUrl(custom.key)).catch(() => null);
   const cur = () => ({design: sel.design, text: sel.text, custom: mode === "kendi" ? custom : null});
   const designName = () => mode === "kendi" ? "kendi tasarımım" : cardDesign(sel.design).name;
@@ -1140,6 +1193,8 @@ function adminPanel(key, list) {
         <div class="stack"><label for="eTitle">Başlık (kartta büyük yazar)</label><input type="text" id="eTitle" maxlength="60" placeholder="Ayşe & Mehmet" required></div>
         <div class="stack"><label for="eKind">Tür</label><select id="eKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
         <div class="stack"><label for="eDate">Etkinlik tarihi</label><input type="date" id="eDate" value="${today}" required></div>
+        <div class="stack"><label for="ePkg">Paket</label><select id="ePkg"><option value="dijital">Dijital (müşteri PDF indirir)</option>
+          <option value="standart" selected>Standart</option><option value="aile">Aile paketi</option></select></div>
         <div class="stack"><label for="eDays">Saklama (etkinlikten sonra gün)</label><input type="number" id="eDays" value="30" min="1" max="365"></div>
         <div class="stack"><label for="eOwner">Müşteri adı</label><input type="text" id="eOwner"></div>
         <div class="stack"><label for="ePhone">Müşteri telefonu</label><input type="tel" id="ePhone" placeholder="05xx xxx xx xx"></div>
@@ -1178,7 +1233,7 @@ function adminPanel(key, list) {
       <div class="meta"><span class="code">${esc(e.code)}</span><span>PIN <b>${esc(e.pin)}</b></span><span>${esc(KINDS[e.kind])} · ${esc(fmtDate(e.event_date))}</span>
         <span>${e.files} dosya · ${e.guests} misafir · ${fmtBytes(e.bytes)}</span>${e.owner_name ? `<span>${esc(e.owner_name)}</span>` : ""}
         ${e.owner_phone ? `<span>${esc(e.owner_phone)}</span>` : ""}${e.last_upload ? `<span>son yükleme ${esc(fmtTime(e.last_upload))}</span>` : ""}
-        <span>Kart: <b>${e.card_custom_key ? "kendi tasarımı" : e.card_design ? esc(e.card_design) : "seçilmedi"}</b></span></div>
+        <span>Paket: <b>${esc({dijital: "Dijital", standart: "Standart", aile: "Aile"}[e.package] || "—")}</b></span><span>Kart: <b>${e.card_custom_key ? "kendi tasarımı" : e.card_design ? esc(e.card_design) : "seçilmedi"}</b></span></div>
       ${e.note ? `<p class="hint">${esc(e.note)}</p>` : ""}
       <div class="row">
         <a class="btn small light" href="?e=${esc(e.code)}" target="_blank" rel="noopener">Misafir sayfası</a>
@@ -1213,7 +1268,7 @@ function adminPanel(key, list) {
         $("#efT").textContent = `Düzenle: ${e.code}`; $("#eSave").textContent = "Kaydet"; $("#eCancel").hidden = false;
         $("#eCode").value = e.code; $("#eTitle").value = e.title; $("#eKind").value = e.kind; $("#eDate").value = e.event_date;
         $("#eDays").value = Math.round((new Date(e.expires_at) - new Date(e.event_date + "T00:00:00+03:00")) / 864e5) - 1;
-        $("#eOwner").value = e.owner_name || ""; $("#ePhone").value = e.owner_phone || ""; $("#eNote").value = e.note || ""; $("#eArchive").value = e.archive_url || "";
+        $("#eOwner").value = e.owner_name || ""; $("#ePhone").value = e.owner_phone || ""; $("#eNote").value = e.note || ""; $("#eArchive").value = e.archive_url || ""; $("#ePkg").value = e.package || "standart";
         $("#ef").scrollIntoView({behavior: "smooth"});
       }
       if (a === "purge" || a === "drop") {
@@ -1236,7 +1291,7 @@ function adminPanel(key, list) {
     ev.preventDefault();
     const r = await rpc("memory_admin_save", {p_key: key, p_code: $("#eCode").value || null, p_title: $("#eTitle").value, p_kind: $("#eKind").value,
       p_event_date: $("#eDate").value, p_days: +$("#eDays").value || 30, p_owner_name: $("#eOwner").value, p_owner_phone: $("#ePhone").value,
-      p_note: $("#eNote").value, p_archive_url: $("#eArchive").value}).catch(err => ({ok: false, error: err.message}));
+      p_note: $("#eNote").value, p_archive_url: $("#eArchive").value, p_package: $("#ePkg").value}).catch(err => ({ok: false, error: err.message}));
     if (!r.ok) return toast(r.error === "bad_url" ? "Arşiv bağlantısı https:// ile başlamalı" : "Kaydedilemedi: " + (r.error || ""));
     toast($("#eCode").value ? "Kaydedildi" : `Oluşturuldu: ${r.code} · PIN ${r.pin}`, 5000);
     adminPanel(key, await rpc("memory_admin_events", {p_key: key}));

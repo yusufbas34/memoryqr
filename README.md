@@ -12,7 +12,7 @@ dosyalar kalıcı olarak silinir. Bul QR ailesinin ürünüdür (Tasma QR, Araç
 |---|---|
 | (adres yalın) | **Tanıtım sayfası**: nasıl çalışır, özellikler, kart tasarımları (canlı çizilir), paketler, yorumlar, SSS, albüm koduyla giriş. Yorumlar veritabanından gelir |
 | `?e=KOD` | **Misafir sayfası** (QR bunu açar): ad, çoklu fotoğraf/video yükleme, kameradan çekim, ortak galeri |
-| `?e=KOD&sahip` | **Etkinlik sahibi**: PIN ile giriş, istatistik, gizle/sil, misafire göre süzme, ZIP indirme (400 MB'lık parçalar), QR kartı PDF, WhatsApp'a kaydet, "misafirler galeriyi görsün" anahtarı |
+| `?e=KOD&sahip` | **Etkinlik sahibi**: PIN ile giriş, istatistik, tam ekran görüntüleyici (kaydırma, otomatik oynatma, tam ekran), favoriler (tek tek ya da toplu; listede "★ Favoriler"), gizle/sil, misafire göre süzme, görünenleri ZIP indirme (400 MB'lık parçalar), WhatsApp'a kaydet, "misafirler galeriyi görsün" anahtarı. Kart PDF'lerini yalnızca **Dijital** paketteki müşteri indirir; diğer paketlerde PDF'i yönetim indirir |
 | `?e=KOD&kart` | **Kart tasarımı (müşteriye gönderilen link, PIN ile)**: hazır tasarım seçme ya da kendi tasarımını yükleme (QR'ın yeri ve boyutu seçilir), kart yazısı; masa kartı, kartvizit ve ayaklı pano önizlemesi ve PDF'leri. Seçilen tasarım misafir sayfasının başında görünür, vurgu rengi tasarımdan gelir. Yönetimde **Tasarım linkini gönder** ile WhatsApp'tan gönderilir |
 | `?tasarimlar` | **Tasarım seçme**: müşteri kendi isimleriyle bütün kartları görür, seçip WhatsApp'tan gönderir |
 | `?e=KOD&slayt` | Slayt gösterisi (şimdilik satılmıyor; panelde düğmesi yok, adresle açılır) |

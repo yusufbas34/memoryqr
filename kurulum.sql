@@ -574,4 +574,32 @@ begin
 end $$;
 grant execute on function public.memory_admin_review_set(text, uuid, boolean) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 5';
+-- ---------------------------------------------------------------- tasarım paylaşımı (sürüm 6)
+-- Tasarım sayfasından "Siparişi başlat" / "Sevdiklerine sor": kart görseli R2'ye (s/…) yüklenir, Worker'ın /p/<id> sayfası
+-- WhatsApp önizlemesinde görseli gösterir. Herkese açık olduğu için saatlik sınır ve küçük dosya sınırı var.
+create table if not exists public.memory_shares (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+alter table public.memory_shares enable row level security;
+revoke all on public.memory_shares from anon, authenticated;
+
+create or replace function public.memory_share_begin(p_bytes bigint)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare v_id uuid := gen_random_uuid(); v_key text; v_exp bigint := extract(epoch from now())::bigint + 900;
+begin
+  if coalesce(p_bytes, 0) <= 0 or p_bytes > 900000 then return json_build_object('ok', false, 'error', 'too_big'); end if;
+  delete from memory_shares where created_at < now() - interval '2 days';
+  if (select count(*) from memory_shares where created_at > now() - interval '1 hour') >= 300 then
+    return json_build_object('ok', false, 'error', 'busy');
+  end if;
+  insert into memory_shares (id) values (v_id);
+  v_key := 's/' || v_id || '.jpg';
+  return json_build_object('ok', true, 'id', v_id, 'key', v_key, 'max', p_bytes, 'exp', v_exp,
+    'sig', memory_sign('PUT|' || v_key || '|' || p_bytes || '|' || v_exp));
+end $$;
+grant execute on function public.memory_share_begin(bigint) to anon, authenticated;
+
+create or replace function public.memory_version() returns integer language sql immutable as 'select 6';

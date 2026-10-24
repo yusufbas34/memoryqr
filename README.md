@@ -30,8 +30,10 @@ kartı kaplar, QR beyaz kutuda seçilen yere basılır. Yüklenen tasarımlar R2
 etkinlik silinince silinir).
 
 **Tasarım seçme sayfası (`?tasarimlar`):** müşteri isimlerini, etkinliği ve tarihi yazar, bütün tasarımları kendi kartı
-olarak görür, beğendiğini seçip WhatsApp'tan gönderir (tasarım adı ve kodu mesajda yazar). Müşteriye gönderilecek bağlantı:
-`https://memoryqr.bulqr.com.tr/?tasarimlar`
+olarak görür. Bir tasarımda paket, 1 yıl saklama, kart yazısı ve not seçer; **Siparişi başlat** WhatsApp'tan bize mesaj açar,
+**Sevdiklerine sor** kartı sevgiliye/aileye/arkadaşa gönderir (telefonda kart resmi mesaja eklenir). İki mesajdaki bağlantı
+Worker'ın `/p/<id>` paylaşım sayfasıdır: WhatsApp önizlemesinde kart görseli çıkar, dokununca sitedeki tasarım birebir açılır.
+Müşteriye gönderilecek bağlantı: `https://memoryqr.bulqr.com.tr/?tasarimlar`
 
 **Yorumlar:** tanıtım sayfasında herkes yorum yazabilir; yönetimde (en altta) **Yayınla** denen yorumlar sayfada görünür.
 Etkinlik sahibinin panelinde de yorum bağlantısı var.
@@ -72,6 +74,7 @@ Tasma QR ile aynı projeyi kullanabilirsiniz; tablolar `memory_` ile başlar.
 ### 2. Dosya deposu (Cloudflare R2)
 1. Cloudflare > **R2** > **Create bucket**, ad: `memoryqr`.
 2. Bucket > **Settings** > **Object lifecycle rules** > **Add rule**: önek `e/`, **Delete objects 31 days after upload**.
+   İkinci kural: önek `s/` (tasarım paylaşım görselleri), **Delete objects 30 days after upload**.
 
 ### 3. Worker
 Panelden (kurulum gerekmez):

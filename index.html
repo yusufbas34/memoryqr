@@ -260,6 +260,9 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 
 .ord{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px;align-items:start}
 .opkg{display:flex;gap:8px;flex-wrap:wrap}
+.ord-act{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.ord-act .btn{width:100%}
+@media (max-width:640px){.ord-act{grid-template-columns:1fr}.ord-act>div:last-child{order:-1}}
 @media (max-width:640px){.ord{grid-template-columns:1fr}.ord img{max-width:260px;margin:0 auto}}
 
 img[data-d]:not(.ready){aspect-ratio:111/154;background:linear-gradient(110deg,var(--soft) 40%,#fbf6f8 50%,var(--soft) 60%) 0 0/200% 100%;animation:shim 1.4s linear infinite}
@@ -1501,12 +1504,13 @@ async function designsView() {
           <textarea id="oNote" rows="3" maxlength="500" placeholder="Ör. masa sayısı, kart adedi, teslim tarihi, renk isteği…"></textarea>
         </div>
       </div>
-      <div class="row">
-        ${WHATSAPP ? `<a class="btn" id="oSend" target="_blank" rel="noopener">${ICON.wa}WhatsApp'tan gönder</a>` : `<button class="btn" id="oCopy">Seçimi kopyala</button>`}
-        <button class="btn ghost" id="oShare" hidden>Görseli paylaş</button>
-        <button class="btn light" id="oSave">${ICON.download}Görseli kaydet</button>
+      <div class="ord-act">
+        <div class="stack"><button type="button" class="btn ghost" id="oAsk">${ICON.wa}Sevdiklerine sor</button>
+          <span class="hint">Kartı sevgilinize, ailenize, arkadaşlarınıza gönderin; beğenip beğenmediklerini yazsınlar.</span></div>
+        <div class="stack">${WHATSAPP ? `<a class="btn" id="oSend" target="_blank" rel="noopener">Siparişi başlat</a>` : `<button class="btn" id="oCopy">Seçimi kopyala</button>`}
+          <span class="hint">Seçiminiz kart görseliyle birlikte bize gelir; ödeme ve teslimatı WhatsApp'tan konuşuruz.</span></div>
       </div>
-      <p class="hint">WhatsApp mesajına görsel otomatik eklenemiyor; mesajdaki önizleme linki tasarımınızı birebir açar. Görseli de eklemek isterseniz "Görseli paylaş" ya da "Görseli kaydet"i kullanın.</p></div>`;
+      <button type="button" class="linkbtn" id="oSave" style="justify-self:start">Görseli telefona kaydet</button></div>`;
     document.body.append(m);
     const e2 = () => ev();
     const previewLink = () => {
@@ -1514,12 +1518,30 @@ async function designsView() {
       if (order.text) q.set("y", order.text);
       return `${SITE_URL}?tasarimlar&${q}`;
     };
+    // kart görseli dosya sunucusuna yüklenir; /p/<id> bağlantısı WhatsApp'ta görselle görünür ve tasarımı açar
+    let share = null, shareSig = "", shareTm;
+    const sig = () => JSON.stringify([d.id, order.text, e2().title, e2().kind, e2().event_date]);
+    const shareLink = () => share && shareSig === sig() ? share : previewLink();
+    async function makeShare() {
+      const want = sig();
+      try {
+        const cv = mockup("stand", e2(), {design: d.id, text: order.text}, 1000, 760);
+        const b = await new Promise(res => cv.toBlob(res, "image/jpeg", .82));
+        const t = await rpc("memory_share_begin", {p_bytes: b.size});
+        if (!t?.ok) return;
+        const r = await fetch(`${FILES_URL}/u/${t.key}?max=${t.max}&exp=${t.exp}&sig=${t.sig}`, {method: "PUT", body: b,
+          headers: {"Content-Type": "image/jpeg", "X-Share-Title": encodeURIComponent(`${e2().title} · ${d.name}`), "X-Share-Url": encodeURIComponent(previewLink())}});
+        if (r.ok && want === sig()) { share = `${FILES_URL}/p/${t.id}`; shareSig = want; sync(); }
+      } catch (err) {}
+    }
+    const queueShare = () => { clearTimeout(shareTm); shareTm = setTimeout(makeShare, 900); };
+    const friendMsg = () => `Selam! ${KINDS[e2().kind] || "Etkinlik"} kartımızı seçiyorum, sence bu nasıl? 👇\n${shareLink()}\n\nBeğendin mi, yoksa başka bir tasarıma mı bakalım? Fikrini yaz 🙏`;
     const message = () => {
       const pk = PAKETLER.find(p => p.ad === order.pkg);
       return [`Merhaba, MemoryQR siparişi vermek istiyorum.`, ``,
         `Tasarım: ${d.name} (${d.id})`, `İsimler: ${e2().title}`, `Etkinlik: ${KINDS[e2().kind]} · ${fmtDate(e2().event_date)}`,
         pk ? `Paket: ${pk.ad}${pk.fiyat ? ` (${pk.fiyat})` : ""}` : null, order.archive ? `Ek: ${EK_ARSIV.ad} (${EK_ARSIV.fiyat})` : null,
-        order.text ? `Kart yazısı: ${order.text}` : null, order.note ? `Not: ${order.note}` : null, ``, `Önizleme: ${previewLink()}`]
+        order.text ? `Kart yazısı: ${order.text}` : null, order.note ? `Not: ${order.note}` : null, ``, `Kart görseli: ${shareLink()}`]
         .filter(l => l !== null).join("\n");
     };
     const canvas = () => drawCard(e2(), d.id, order.text, 7);
@@ -1533,23 +1555,24 @@ async function designsView() {
     $("#oArc", m).checked = order.archive; $("#oText", m).value = order.text; $("#oNote", m).value = order.note;
     drawImg(); sync();
     let tm;
+    makeShare();
     $("#oPkg", m).onclick = ev2 => { const b = ev2.target.closest("[data-p]"); if (b) { order.pkg = b.dataset.p; sync(); } };
     $("#oArc", m).onchange = ev2 => { order.archive = ev2.target.checked; sync(); };
-    $("#oText", m).oninput = ev2 => { order.text = ev2.target.value.trim(); sync(); clearTimeout(tm); tm = setTimeout(drawImg, 300); };
+    $("#oText", m).oninput = ev2 => { order.text = ev2.target.value.trim(); sync(); clearTimeout(tm); tm = setTimeout(drawImg, 300); queueShare(); };
     $("#oNote", m).oninput = ev2 => { order.note = ev2.target.value.trim(); sync(); };
     const blob = () => new Promise(res => canvas().toBlob(res, "image/jpeg", .92));
     const fname = () => `memoryqr-${d.id}-${slug(e2().title)}.jpg`;
     $("#oSave", m).onclick = async () => saveBlob(await blob(), fname());
-    // telefonda paylaş menüsü: görsel WhatsApp'a resim olarak gider
-    (async () => {
-      try {
-        const f = new File([await blob()], fname(), {type: "image/jpeg"});
-        if (navigator.canShare?.({files: [f]})) {
-          const btn = $("#oShare", m); btn.hidden = false;
-          btn.onclick = () => navigator.share({files: [f], text: message()}).catch(() => {});
-        }
-      } catch (err) {}
-    })();
+    // telefonda paylaş menüsü kart resmini doğrudan ekler; olmayan yerde WhatsApp bağlantısı (önizlemede görsel çıkar)
+    let file = null;
+    blob().then(b => { try { const f = new File([b], fname(), {type: "image/jpeg"}); if (navigator.canShare?.({files: [f]})) file = f; } catch (err) {} });
+    $("#oAsk", m).onclick = async () => {
+      if (file) {
+        try { file = new File([await blob()], fname(), {type: "image/jpeg"}); await navigator.share({files: [file], text: friendMsg()}); return; }
+        catch (err) { if (err?.name === "AbortError") return; }
+      }
+      window.open("https://wa.me/?text=" + encodeURIComponent(friendMsg()), "_blank");
+    };
     $("#oCopy", m)?.addEventListener("click", () => copy(message(), "Seçiminiz kopyalandı"));
     m.addEventListener("click", ev2 => { if (ev2.target === m || ev2.target.closest("[data-x]")) m.remove(); });
   }

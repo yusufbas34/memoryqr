@@ -5,12 +5,17 @@
 //   POST /del   [{key, exp, sig}]       mesaj: DEL|<anahtar>|<exp>
 //   POST /delp  {prefix, exp, sig}      mesaj: DELP|<önek>|<exp>          (etkinliğin tüm dosyaları)
 //   GET  /f/<anahtar>[?dl=dosya-adı]    dosyayı verir (video için Range destekli); dl varsa indirme olarak
+//   GET  /p/<id>                        paylaşım sayfası: WhatsApp önizlemesinde kart görseli çıkar, sonra sitedeki tasarıma yönlendirir
 //   GET  /durum                         kurulum kontrolü (R2 bağlantısı ve UPLOAD_SECRET var mı; gizli değer gösterilmez)
 // Ortam: BUCKET (R2 bağlantısı), UPLOAD_SECRET (gizli), ALLOWED_ORIGINS (virgüllü; boşsa her yer)
 
 // e/: misafir yüklemeleri (R2 kuralıyla 31 günde silinir), t/: etkinlik sahibinin yüklediği kart tasarımı (kurala girmez)
 const KEY_RE = /^[et]\/[A-Z0-9]{4,12}\/[0-9a-f-]{36}(_t)?\.[a-z0-9]{2,5}$/;
 const PREFIX_RE = /^[et]\/[A-Z0-9]{4,12}\/$/;
+// s/: tasarım paylaşım görselleri (sitedeki "Sevdiklerine sor" / "Siparişi başlat"); R2 kuralıyla silinmesi önerilir
+const SHARE_RE = /^s\/[0-9a-f-]{36}\.jpg$/;
+const escHtml = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const origins = env => (env.ALLOWED_ORIGINS || "").split(",").map(s => s.trim().replace(/\/+$/, "")).filter(Boolean);
 const enc = new TextEncoder();
 
 function cors(req, env) {
@@ -20,7 +25,7 @@ function cors(req, env) {
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Methods": "GET, HEAD, PUT, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Range",
+    "Access-Control-Allow-Headers": "Content-Type, Range, X-Share-Title, X-Share-Url",
     "Access-Control-Expose-Headers": "Content-Length, Content-Range, ETag",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
@@ -68,12 +73,21 @@ async function handle(req, env) {
       const key = path.slice(3);
       const max = Number(url.searchParams.get("max"));
       const exp = url.searchParams.get("exp");
-      if (!KEY_RE.test(key) || !(max > 0)) return json({error: "bad_key"}, 400);
+      const share = SHARE_RE.test(key);
+      if (!(KEY_RE.test(key) || share) || !(max > 0)) return json({error: "bad_key"}, 400);
       if (!await verify(env, `PUT|${key}|${max}|${exp}`, exp, url.searchParams.get("sig"))) return json({error: "bad_sig"}, 403);
       const len = Number(req.headers.get("Content-Length"));
       if (!(len > 0) || len > max) return json({error: "too_big"}, 413);
       const ext = key.split(".").pop();
-      await env.BUCKET.put(key, req.body, {httpMetadata: {contentType: CONTENT_TYPES[ext] || "application/octet-stream"}});
+      const opts = {httpMetadata: {contentType: CONTENT_TYPES[ext] || "application/octet-stream"}};
+      if (share) {
+        // başlık ve dönüş adresi paylaşım sayfasında kullanılır; adres yalnızca izinli sitelerden biri olabilir
+        const dec = v => { try { return decodeURIComponent(v || ""); } catch (e) { return ""; } };
+        const title = dec(req.headers.get("X-Share-Title")).slice(0, 140), url = dec(req.headers.get("X-Share-Url")).slice(0, 900);
+        const okUrl = /^https:\/\//.test(url) && (!origins(env).length || origins(env).some(o => url.startsWith(o + "/")));
+        opts.customMetadata = {title, url: okUrl ? url : ""};
+      }
+      await env.BUCKET.put(key, req.body, opts);
       return json({ok: true});
     }
 
@@ -103,7 +117,7 @@ async function handle(req, env) {
 
     if ((req.method === "GET" || req.method === "HEAD") && path.startsWith("/f/")) {
       const key = path.slice(3);
-      if (!KEY_RE.test(key)) return new Response("Bulunamadı", {status: 404, headers: h});
+      if (!KEY_RE.test(key) && !SHARE_RE.test(key)) return new Response("Bulunamadı", {status: 404, headers: h});
       const obj = await env.BUCKET.get(key, {range: req.headers, onlyIf: req.headers});
       if (!obj) return new Response("Bulunamadı", {status: 404, headers: h});
       const headers = new Headers(h);
@@ -123,6 +137,22 @@ async function handle(req, env) {
         status = 206;
       } else headers.set("Content-Length", String(obj.size));
       return new Response(req.method === "HEAD" ? null : obj.body, {status, headers});
+    }
+
+    if (req.method === "GET" && path.startsWith("/p/")) {
+      const id = path.slice(3).replace(/\/$/, ""), key = `s/${id}.jpg`;
+      const obj = SHARE_RE.test(key) ? await env.BUCKET.head(key) : null;
+      if (!obj) return new Response("Bu paylaşım bulunamadı ya da süresi doldu.", {status: 404, headers: {...h, "Content-Type": "text/plain; charset=utf-8"}});
+      const {title = "", url = ""} = obj.customMetadata || {};
+      const t = escHtml(title || "MemoryQR kart tasarımı");
+      const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${t}</title><meta property="og:type" content="website"><meta property="og:site_name" content="MemoryQR">
+<meta property="og:title" content="${t}"><meta property="og:description" content="Kart tasarımına bakın, fikrinizi yazın.">
+<meta property="og:image" content="${escHtml(new URL(req.url).origin + "/f/" + key)}"><meta property="og:image:type" content="image/jpeg">
+<meta name="twitter:card" content="summary_large_image">${url ? `<meta http-equiv="refresh" content="0;url=${escHtml(url)}">` : ""}
+<style>body{font-family:system-ui,sans-serif;margin:0;background:#faf7f6;display:grid;place-items:center;min-height:100vh;text-align:center;padding:20px}img{max-width:min(92vw,520px);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.15)}a{color:#8c2f52;font-weight:600}</style></head>
+<body><div><img src="/f/${key}" alt="${t}"><p>${url ? `<a href="${escHtml(url)}">Tasarımı MemoryQR'da açın</a>` : t}</p></div></body></html>`;
+      return new Response(html, {headers: {...h, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=3600"}});
     }
 
     if (path === "/durum") {

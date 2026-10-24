@@ -756,6 +756,37 @@ function mockup(kind, ev, sel, W, H) {
     g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(cx + cw / 2, top, Math.max(2, W * .006), ch);           // köpük pano kalınlığı
     g.fillStyle = woodC; g.fillRect(cx - cw * .58, ledge - H * .005, cw * 1.16, H * .028);                // raf
     g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(cx - cw * .58, ledge - H * .005, cw * 1.16, H * .005);
+  } else if (kind === "aile") {
+    // aile paketi: solda şövalede giriş panosu, sağda yan sehpada masa kartları ve kartvizitler
+    wall("#eee7e1", "#ddd2c8");
+    const fy = H * .86; g.fillStyle = "#cfc3b8"; g.fillRect(0, fy, W, H - fy); g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, fy, W, 2);
+    const ch = H * .56, cw = ch * CARD_W / CARD_H, cx = W * .32, top = H * .12, ledge = top + ch, woodC = "#9a6b45", woodD = "#6e4a2f";
+    const leg = (x0, y0, x1, y1, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = "round"; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); };
+    shadow(cx, fy + H * .015, cw * .9, H * .035, .35);
+    leg(cx, top - H * .05, cx + W * .02, fy - H * .005, W * .016, woodD);
+    leg(cx - cw * .12, top - H * .04, cx - cw * .55, fy, W * .02, woodC); leg(cx + cw * .12, top - H * .04, cx + cw * .55, fy, W * .02, woodC);
+    let pxmm = ch / CARD_H * 1.02, t = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm);
+    g.shadowColor = "rgba(0,0,0,.22)"; g.shadowBlur = H * .03; g.shadowOffsetX = H * .012; g.shadowOffsetY = H * .01;
+    g.fillStyle = "#ffffff"; g.fillRect(cx - cw / 2 - 2, top - 2, cw + 4, ch + 4); g.shadowColor = "transparent";
+    put(t, cx - cw / 2, top, cw, ch);
+    g.fillStyle = woodC; g.fillRect(cx - cw * .58, ledge - H * .005, cw * 1.16, H * .026);
+    // yan sehpa
+    const tx0 = W * .58, tx1 = W * .97, tt = H * .6;
+    shadow((tx0 + tx1) / 2, fy + H * .01, (tx1 - tx0) * .55, H * .03, .3);
+    g.fillStyle = woodD; g.fillRect(tx0 + W * .03, tt, W * .014, fy - tt); g.fillRect(tx1 - W * .044, tt, W * .014, fy - tt);
+    const tg = g.createLinearGradient(0, tt - H * .03, 0, tt + H * .02); tg.addColorStop(0, "#c49a72"); tg.addColorStop(1, "#8f6443");
+    g.fillStyle = tg; g.fillRect(tx0, tt - H * .03, tx1 - tx0, H * .045);
+    // sehpada masa kartı (Aile paketinde stand yok; kart kendi ayağıyla durur)
+    const sh = H * .3, sw = sh * CARD_W / CARD_H, scx = tx0 + (tx1 - tx0) * .33, sb = tt - H * .025;
+    pxmm = sh / CARD_H * 1.02; t = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm);
+    g.shadowColor = "rgba(0,0,0,.18)"; g.shadowBlur = H * .015; put(t, scx - sw / 2, sb - sh, sw, sh); g.shadowColor = "transparent";
+    // sehpada üst üste kartvizitler
+    const bw = (tx1 - tx0) * .36, bh = bw * 55 / 85; pxmm = bw / 85 * 1.02; const tb = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
+    for (let i = 2; i >= 0; i--) {
+      g.save(); g.translate(tx0 + (tx1 - tx0) * .76 + i * 2, tt - H * .02 - i * 2.2); g.transform(1, 0, -.35, .42, 0, 0); g.rotate(-.12 + i * .08);
+      g.shadowColor = "rgba(0,0,0,.2)"; g.shadowBlur = 6; g.fillStyle = "#fff"; g.fillRect(-bw / 2, -bh, bw, bh); g.shadowColor = "transparent";
+      if (i === 0) put(tb, -bw / 2, -bh, bw, bh); g.restore();
+    }
   } else if (kind === "kartvizit") {
     const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#f4f1ee"); gr.addColorStop(1, "#ddd6cf"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     g.strokeStyle = "rgba(150,140,130,.12)"; for (let i = 0; i < 14; i++) { g.lineWidth = .5 + r() * 2; g.beginPath(); g.moveTo(r() * W, 0); g.bezierCurveTo(r() * W, H * .3, r() * W, H * .7, r() * W, H); g.stroke(); }

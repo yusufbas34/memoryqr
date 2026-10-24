@@ -31,8 +31,10 @@
   // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
   const PAKETLER = [
     {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
-    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "stand", ozellik: ["Dijital paketteki her şey", "20 basılı masa kartı", "1 pleksi masa standı", "Size özel kart tasarımı"]},
-    {ad: "Aile paketi", fiyat: "1.490 TL", gorsel: "stand2", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "40 basılı masa kartı, 2 stand", "60 gün saklama", "Size özel kart tasarımı"]},
+    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "stand", ozellik: ["Dijital paketteki her şey", "20 masa kartı (A6, kalın kâğıda basılı; her masaya bir tane)",
+      "1 şeffaf pleksi stand (bir kart içine takılır, karşılama masasında durur)", "Size özel kart tasarımı"]},
+    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "aile", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
+      "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama", "Size özel kart tasarımı"]},
   ];
   // Her pakete eklenebilen 1 yıl saklama (albüm Google Drive'a arşivlenir, bağlantısı albüm sayfasında görünür)
   const EK_ARSIV = {ad: "1 yıl saklama", fiyat: "+299 TL"};
@@ -1259,6 +1261,7 @@ const FAQ = [
   ["Fotoğraflar ne kadar saklanıyor?", "Etkinlikten sonra 30 gün. Bu sürede hepsini tek tıkla indirirsiniz; süre dolunca dosyalar kalıcı olarak silinir."],
   ["Daha uzun saklamak istersem?", "1 yıl saklama ekini alabilirsiniz. Albümünüz Google Drive'da arşivlenir, bağlantısı albüm sayfanızda bir yıl boyunca durur."],
   ["Uygunsuz bir fotoğraf yüklenirse?", "Panelden tek dokunuşla gizler ya da silersiniz. Gizlenen fotoğraf misafirlere görünmez."],
+  ["Masa kartı ile pleksi stand arasındaki fark ne?", "Masa kartı, QR kodlu basılı karttır; her masaya bir tane konur. Pleksi stand ise bu kartlardan birinin içine takıldığı şeffaf tutucudur; karşılama masasında dik durur ve daha şık görünür."],
   ["Kartları kim basıyor?", "Basılı paketlerde masa kartlarını biz bastırıp gönderiyoruz. Dijital pakette PDF'i alıp istediğiniz yerde bastırabilirsiniz."],
 ];
 
@@ -1361,8 +1364,9 @@ function homeView() {
   loadScript("kart.js").then(() => {
     const ex = {code: "ORNEK1", title: "Selin & Berk", kind: "dugun", event_date: "2026-06-14"};
     // örnek mekân görselleri (gerçek kart tasarımıyla çizilir)
-    const mockDesign = {stand2: "yaprak", phone: "bordo"};
-    Promise.all([designReady("bordo"), designReady("yaprak")]).then(() => {
+    // tüm örnekler aynı tasarım ve isimlerle: müşteri aynı kartın farklı ürünlerini görür
+    const mockDesign = {};
+    designReady("bordo").then(() => {
       $("#heroCard").src = mockup("stand", ex, {design: "bordo", text: ""}, 800, 640).toDataURL("image/jpeg", .88);
       document.querySelectorAll("img[data-mock]").forEach(im => {
         im.src = mockup(im.dataset.mock, ex, {design: mockDesign[im.dataset.mock] || "bordo", text: ""}, 720, 540).toDataURL("image/jpeg", .86);

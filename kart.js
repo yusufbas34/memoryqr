@@ -692,3 +692,101 @@ function drawProduct(product, ev, sel, pxmm) {
   if (product === "kartvizit") return drawBiz(ev, sel, pxmm);
   return drawKart(ev, sel, pxmm);
 }
+
+// ---------------------------------------------------------------- mekân görselleri (ürün örneği): pleksi stantta masa kartı, şövalede pano, masada kartvizit, telefonda albüm
+// Kart gerçek tasarımdan çizilir; sahne (duvar, ahşap masa, pleksi, şövale) kodla. W × H piksel.
+function mockup(kind, ev, sel, W, H) {
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"), r = rng(31);
+  const trimmed = (cv, bl, pxmm) => ({cv, sx: bl * pxmm, sy: bl * pxmm, sw: cv.width - 2 * bl * pxmm, sh: cv.height - 2 * bl * pxmm});
+  const put = (t, x, y, w, h) => g.drawImage(t.cv, t.sx, t.sy, t.sw, t.sh, x, y, w, h);
+  const wall = (top, bot) => {
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, top); gr.addColorStop(1, bot); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 9; i++) { // yumuşak ışık lekeleri
+      const x = r() * W, y = r() * H * .6, rad = H * (.06 + r() * .12), rg = g.createRadialGradient(x, y, 0, x, y, rad);
+      rg.addColorStop(0, "rgba(255,248,235,.35)"); rg.addColorStop(1, "rgba(255,248,235,0)"); g.fillStyle = rg; g.fillRect(x - rad, y - rad, 2 * rad, 2 * rad);
+    }
+  };
+  const wood = (y0) => {
+    const gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, "#c49a72"); gr.addColorStop(1, "#8f6443"); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0);
+    g.fillStyle = "rgba(255,255,255,.18)"; g.fillRect(0, y0, W, Math.max(1, H * .004));
+    g.strokeStyle = "rgba(70,40,20,.16)";
+    for (let i = 0; i < 26; i++) { const y = y0 + r() * (H - y0); g.lineWidth = .6 + r() * 1.4; g.beginPath(); g.moveTo(0, y); g.bezierCurveTo(W * .3, y + (r() - .5) * 8, W * .7, y + (r() - .5) * 8, W, y + (r() - .5) * 6); g.stroke(); }
+  };
+  const shadow = (x, y, rx, ry, a) => { const rg = g.createRadialGradient(x, y, 0, x, y, rx); rg.addColorStop(0, `rgba(40,25,15,${a})`); rg.addColorStop(1, "rgba(40,25,15,0)");
+    g.save(); g.translate(x, y); g.scale(1, ry / rx); g.translate(-x, -y); g.fillStyle = rg; g.fillRect(x - rx, y - rx, 2 * rx, 2 * rx); g.restore(); };
+
+  if (kind === "stand" || kind === "stand2") {
+    wall("#f1e9e3", "#e2d6cd"); const ty = H * .7; wood(ty);
+    const one = (cx, ch, tilt) => {
+      const pxmm = ch / CARD_H * 1.02, t = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm), cw = ch * CARD_W / CARD_H;
+      const bottom = ty + H * .07, x = cx - cw / 2, y = bottom - ch;
+      shadow(cx + cw * .1, bottom + H * .015, cw * .75, H * .05, .45);
+      g.save(); g.translate(cx, bottom); g.rotate(tilt); g.translate(-cx, -bottom);
+      g.shadowColor = "rgba(0,0,0,.18)"; g.shadowBlur = H * .02; g.shadowOffsetX = H * .01; put(t, x, y, cw, ch); g.shadowColor = "transparent";
+      // pleksi ön plaka: ince kenar, çapraz parlama
+      const px = x - cw * .03, py = y - ch * .03, pw = cw * 1.06, ph = ch * 1.03;
+      g.fillStyle = "rgba(255,255,255,.06)"; g.fillRect(px, py, pw, ph);
+      const gl = g.createLinearGradient(px, py, px + pw, py + ph); gl.addColorStop(.18, "rgba(255,255,255,0)"); gl.addColorStop(.26, "rgba(255,255,255,.38)");
+      gl.addColorStop(.34, "rgba(255,255,255,0)"); gl.addColorStop(.62, "rgba(255,255,255,0)"); gl.addColorStop(.66, "rgba(255,255,255,.16)"); gl.addColorStop(.7, "rgba(255,255,255,0)");
+      g.fillStyle = gl; g.fillRect(px, py, pw, ph);
+      g.strokeStyle = "rgba(255,255,255,.75)"; g.lineWidth = Math.max(1, H * .003); g.strokeRect(px, py, pw, ph);
+      // taban: üst yüz ve ön yüz
+      const bw = pw * 1.08, bx = cx - bw / 2, bh = H * .045, depth = H * .03;
+      g.fillStyle = "rgba(235,245,250,.55)"; g.beginPath(); g.moveTo(bx + depth, bottom - depth * .4); g.lineTo(bx + bw - depth * .2, bottom - depth * .4); g.lineTo(bx + bw, bottom); g.lineTo(bx, bottom); g.closePath(); g.fill();
+      const fg = g.createLinearGradient(0, bottom, 0, bottom + bh); fg.addColorStop(0, "rgba(255,255,255,.75)"); fg.addColorStop(1, "rgba(200,220,230,.45)");
+      g.fillStyle = fg; g.fillRect(bx, bottom, bw, bh); g.fillStyle = "rgba(255,255,255,.9)"; g.fillRect(bx, bottom, bw, Math.max(1, H * .004));
+      g.restore();
+    };
+    if (kind === "stand2") { one(W * .34, H * .5, -.02); one(W * .68, H * .56, .015); } else one(W * .5, H * .6, 0);
+  } else if (kind === "pano") {
+    wall("#eee7e1", "#ddd2c8");
+    const fy = H * .86; g.fillStyle = "#cfc3b8"; g.fillRect(0, fy, W, H - fy); g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(0, fy, W, 2);
+    const ch = H * .6, cw = ch * CARD_W / CARD_H, cx = W * .5, top = H * .1, ledge = top + ch;
+    const woodC = "#9a6b45", woodD = "#6e4a2f";
+    const leg = (x0, y0, x1, y1, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = "round"; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); };
+    shadow(cx, fy + H * .015, cw * .9, H * .035, .35);
+    leg(cx, top - H * .05, cx + W * .02, fy - H * .005, W * .018, woodD);                 // arka ayak
+    leg(cx - cw * .12, top - H * .04, cx - cw * .55, fy, W * .022, woodC);                 // ön ayaklar
+    leg(cx + cw * .12, top - H * .04, cx + cw * .55, fy, W * .022, woodC);
+    const pxmm = ch / CARD_H * 1.02, t = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm);
+    g.shadowColor = "rgba(0,0,0,.22)"; g.shadowBlur = H * .03; g.shadowOffsetX = H * .012; g.shadowOffsetY = H * .01;
+    g.fillStyle = "#ffffff"; g.fillRect(cx - cw / 2 - 2, top - 2, cw + 4, ch + 4); g.shadowColor = "transparent";
+    put(t, cx - cw / 2, top, cw, ch);
+    g.fillStyle = "rgba(0,0,0,.08)"; g.fillRect(cx + cw / 2, top, Math.max(2, W * .006), ch);           // köpük pano kalınlığı
+    g.fillStyle = woodC; g.fillRect(cx - cw * .58, ledge - H * .005, cw * 1.16, H * .028);                // raf
+    g.fillStyle = "rgba(255,255,255,.25)"; g.fillRect(cx - cw * .58, ledge - H * .005, cw * 1.16, H * .005);
+  } else if (kind === "kartvizit") {
+    const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#f4f1ee"); gr.addColorStop(1, "#ddd6cf"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.strokeStyle = "rgba(150,140,130,.12)"; for (let i = 0; i < 14; i++) { g.lineWidth = .5 + r() * 2; g.beginPath(); g.moveTo(r() * W, 0); g.bezierCurveTo(r() * W, H * .3, r() * W, H * .7, r() * W, H); g.stroke(); }
+    const bw = W * .56, bh = bw * 55 / 85, pxmm = bw / 85 * 1.02, t = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
+    const card = (x, y, a, back) => {
+      g.save(); g.translate(x, y); g.rotate(a);
+      g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = H * .035; g.shadowOffsetY = H * .015;
+      if (back) { g.fillStyle = cardTheme(sel).bg || "#ffffff"; g.fillRect(-bw / 2, -bh / 2, bw, bh); g.shadowColor = "transparent"; g.fillStyle = "rgba(0,0,0,.04)"; g.fillRect(-bw / 2, -bh / 2, bw, bh); }
+      else { g.fillStyle = "#fff"; g.fillRect(-bw / 2, -bh / 2, bw, bh); g.shadowColor = "transparent"; put(t, -bw / 2, -bh / 2, bw, bh); }
+      g.restore();
+    };
+    card(W * .58, H * .4, .14, true); card(W * .62, H * .44, .1, false); card(W * .42, H * .6, -.08, false);
+  } else { // telefon: misafirin yükleme sayfası
+    wall("#efe8f0", "#ddd3e0");
+    const ph = H * .86, pw = ph * .49, x = W / 2 - pw / 2, y = H * .07, rad = pw * .12;
+    shadow(W / 2 + pw * .1, y + ph, pw * .7, H * .04, .35);
+    g.fillStyle = "#1c1b20"; g.beginPath(); g.roundRect(x, y, pw, ph, rad); g.fill();
+    const sx = x + pw * .045, sy = y + pw * .045, sw = pw * .91, sh = ph - pw * .09;
+    g.fillStyle = "#faf7f6"; g.beginPath(); g.roundRect(sx, sy, sw, sh, rad * .8); g.fill();
+    g.save(); g.beginPath(); g.roundRect(sx, sy, sw, sh, rad * .8); g.clip();
+    const t = cardTheme(sel), acc = t.accent || "#8c2f52";
+    const ch = sh * .3, cw = ch * CARD_W / CARD_H, pxmm = ch / CARD_H * 1.02, tc = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm);
+    g.save(); g.translate(sx + sw / 2, sy + sh * .06 + ch / 2); g.rotate(-.035); g.shadowColor = "rgba(0,0,0,.2)"; g.shadowBlur = 8; put(tc, -cw / 2, -ch / 2, cw, ch); g.restore();
+    g.fillStyle = "#1d1820"; g.textAlign = "center"; g.font = `700 ${sh * .045}px "Barlow Condensed", Barlow, sans-serif`; g.fillText(ev.title, sx + sw / 2, sy + sh * .43, sw * .9);
+    g.fillStyle = "#6b6070"; g.font = `400 ${sh * .022}px Barlow, sans-serif`; g.fillText("Fotoğraf ve videolarınızı yükleyin", sx + sw / 2, sy + sh * .47, sw * .9);
+    const btn = (by, fill, txt, col) => { g.fillStyle = fill; g.beginPath(); g.roundRect(sx + sw * .08, by, sw * .84, sh * .07, sh * .015); g.fill(); g.fillStyle = col; g.font = `600 ${sh * .026}px Barlow, sans-serif`; g.fillText(txt, sx + sw / 2, by + sh * .045); };
+    btn(sy + sh * .51, acc, "Fotoğraf / video seç", "#ffffff"); btn(sy + sh * .6, "#f0e6ea", "Fotoğraf çek", acc);
+    const tw = (sw * .84 - 8) / 3, cols = ["#d9c7bd", "#c9d6cf", "#e3cfd6", "#cfd3e3", "#e6dcc5", "#d6c9e0"];
+    cols.forEach((cc, i) => { g.fillStyle = cc; g.fillRect(sx + sw * .08 + (i % 3) * (tw + 4), sy + sh * .71 + Math.floor(i / 3) * (tw + 4), tw, tw); });
+    g.restore();
+    g.fillStyle = "#1c1b20"; g.beginPath(); g.roundRect(x + pw * .36, y + pw * .06, pw * .28, pw * .06, pw * .03); g.fill();
+  }
+  return c;
+}

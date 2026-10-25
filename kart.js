@@ -14,7 +14,7 @@ const KIND_DAY = {dugun: "Bu mutlu günümüze", nisan: "Nişanımıza", kina: "
   mezuniyet: "Mezuniyetimize", dogum_gunu: "Doğum günümüze", diger: "Bu özel günümüze"};
 
 const dateDots = d => { const [y, m, g] = String(d).slice(0, 10).split("-"); return `${g}.${m}.${y}`; };
-// "Selin & Berk" → ["S", "B"]; ayrılamayan başlıkta tek harf
+// "Seda & Yusuf" → ["S", "Y"]; ayrılamayan başlıkta tek harf
 function initials(title) {
   const parts = String(title).split(/\s*(?:&|\+|\bve\b|\band\b)\s*/i).map(s => s.trim()).filter(Boolean);
   return parts.slice(0, 2).map(p => p[0].toLocaleUpperCase("tr-TR"));

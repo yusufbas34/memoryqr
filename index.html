@@ -31,9 +31,9 @@
   // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
   const PAKETLER = [
     {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
-    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "stand", ozellik: ["Dijital paketteki her şey", "20 masa kartı (A6, kalın kâğıda basılı; her masaya bir tane)",
+    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:pleksi-stand", ozellik: ["Dijital paketteki her şey", "20 masa kartı (A6, kalın kâğıda basılı; her masaya bir tane)",
       "1 şeffaf pleksi stand (bir kart içine takılır, karşılama masasında durur)", "Size özel kart tasarımı"]},
-    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "aile", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
+    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:sovale-pano", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
       "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama", "Size özel kart tasarımı"]},
   ];
   // Her pakete eklenebilen 1 yıl saklama (albüm Google Drive'a arşivlenir, bağlantısı albüm sayfasında görünür)
@@ -1302,6 +1302,10 @@ function adminPanel(key, list) {
 }
 
 // ---------------------------------------------------------------- giriş sayfası (kod ile)
+// örnek isimler: kartın türüne göre (kız/erkek doğum günü, mezuniyet), diğerlerinde verilen örnek
+const SAMPLE_BY_CAT = {dogum_kiz: ["Seda'nın Doğum Günü", "dogum_gunu"], dogum_erkek: ["Uras'ın Doğum Günü Partisi", "dogum_gunu"],
+  mezuniyet: ["Hukuk Fakültesi Mezuniyet Balosu", "mezuniyet"]};
+const sampleEv = (id, base) => { const x = SAMPLE_BY_CAT[cardDesign(id).cat]; return x ? {...base, title: x[0], kind: x[1]} : base; };
 const waLink = text => WHATSAPP ? `https://wa.me/${WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
 const FEATURES = [
   ["Uygulama yok", "Misafir telefon kamerasıyla okutur, tarayıcıda açılır. Kayıt, şifre, indirme yok."],
@@ -1340,7 +1344,7 @@ function homeView() {
         <p class="lede">Misafirleriniz masadaki QR'ı okutur, adını yazar, fotoğraf ve videolarını yükler. Gecenin bütün anları tek albümde toplanır. Uygulama indirmek gerekmez.</p>
         <div class="row">${contact || `<a class="btn" href="#paketler">Paketleri görün</a>`}<a class="btn light" href="#nasil">Nasıl çalışır?</a></div>
       </div>
-      <div class="lhero-card"><img id="heroCard" class="mock" alt="Pleksi standda örnek MemoryQR masa kartı"></div>
+      <div class="lhero-card"><img id="heroCard" class="mock" src="kart/foto/pleksi-stand.webp" srcset="kart/foto/pleksi-stand-k.webp 640w, kart/foto/pleksi-stand.webp 1200w" sizes="(max-width:760px) 92vw, 460px" alt="Düğün salonunda pleksi standda MemoryQR masa kartı"></div>
     </section>
 
     <section class="lsec" id="nasil"><div class="eyebrow">Nasıl çalışır</div><h2>Üç adımda bütün anılar sizde</h2>
@@ -1357,16 +1361,17 @@ function homeView() {
     <section class="lsec" id="kartlar"><div class="eyebrow">Masa kartları</div><h2>Size uygun tasarımı seçin</h2>
       <p class="lede">İsimleriniz, tarihiniz ve size özel QR ile hazırlanır. Aynı tasarım masa kartı, kartvizit ve düğün girişi için ayaklı pano olarak basılır. İsterseniz kendi tasarımınızı da kullanabilirsiniz.</p>
       <div class="lprod">
-        <figure><img class="mock" data-mock="stand" alt="Pleksi standda masa kartı"><figcaption><b>Masa kartı</b> A6, pleksi standla</figcaption></figure>
-        <figure><img class="mock" data-mock="kartvizit" alt="Kartvizit"><figcaption><b>Kartvizit</b> 8,5 × 5,5 cm</figcaption></figure>
-        <figure><img class="mock" data-mock="pano" alt="Şövalede giriş panosu"><figcaption><b>Giriş panosu</b> 50 × 70 cm, şövaleli</figcaption></figure>
+        <figure><img class="mock" src="kart/foto/pleksi-stand-k.webp" srcset="kart/foto/pleksi-stand-k.webp 640w, kart/foto/pleksi-stand.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Pleksi standda MemoryQR masa kartı" loading="lazy"><figcaption><b>Masa kartı</b> A6, pleksi standla</figcaption></figure>
+        <figure><img class="mock" src="kart/foto/tabak-kartvizit-k.webp" srcset="kart/foto/tabak-kartvizit-k.webp 640w, kart/foto/tabak-kartvizit.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Tabakta MemoryQR kartviziti" loading="lazy"><figcaption><b>Kartvizit</b> 8,5 × 5,5 cm, her misafirin tabağına</figcaption></figure>
+        <figure><img class="mock" src="kart/foto/sovale-pano-k.webp" srcset="kart/foto/sovale-pano-k.webp 640w, kart/foto/sovale-pano.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Düğün girişinde şövalede MemoryQR panosu" loading="lazy"><figcaption><b>Giriş panosu</b> 50 × 70 cm, şövaleli</figcaption></figure>
       </div>
       <div class="lcards" id="lcards"><p class="hint">Tasarımlar yükleniyor…</p></div>
       <div class="row"><a class="btn" href="?tasarimlar" id="allDesigns">Tüm tasarımları görün ve seçin</a></div></section>
 
     <section class="lsec" id="paketler"><div class="eyebrow">Paketler</div><h2>Tek seferlik ödeme, abonelik yok</h2>
       <div class="lpack">${PAKETLER.map(pk => `<div class="${pk.one ? "on" : ""}">${pk.one ? `<span class="tagp">En çok tercih edilen</span>` : ""}
-        ${pk.gorsel ? `<img class="mock" data-mock="${pk.gorsel}" alt="${esc(pk.ad)} paketi örnek görseli">` : ""}
+        ${pk.gorsel?.startsWith("foto:") ? `<img class="mock" src="kart/foto/${pk.gorsel.slice(5)}-k.webp" alt="${esc(pk.ad)} paketi örnek görseli" loading="lazy">`
+          : pk.gorsel ? `<img class="mock" data-mock="${pk.gorsel}" alt="${esc(pk.ad)} paketi örnek görseli">` : ""}
         <h3>${esc(pk.ad)}</h3><div class="price">${esc(pk.fiyat || "Fiyat için yazın")}</div>
         <ul>${pk.ozellik.map(o => `<li>${esc(o)}</li>`).join("")}</ul>
         ${wa ? `<a class="btn ${pk.one ? "" : "ghost"}" href="${esc(waLink(`Merhaba, MemoryQR ${pk.ad} paketi hakkında bilgi almak istiyorum.`))}" target="_blank" rel="noopener">Bu paketi isteyin</a>` : ""}</div>`).join("")}</div>
@@ -1420,12 +1425,11 @@ function homeView() {
 
   // kart örnekleri gerçek tasarım kodundan çizilir
   loadScript("kart.js").then(() => {
-    const ex = {code: "ORNEK1", title: "Selin & Berk", kind: "dugun", event_date: "2026-06-14"};
+    const ex = {code: "ORNEK1", title: "Seda & Yusuf", kind: "dugun", event_date: "2026-06-14"};
     // örnek mekân görselleri (gerçek kart tasarımıyla çizilir)
     // tüm örnekler aynı tasarım ve isimlerle: müşteri aynı kartın farklı ürünlerini görür
     const mockDesign = {};
     designReady("bordo").then(() => {
-      $("#heroCard").src = mockup("stand", ex, {design: "bordo", text: ""}, 800, 640).toDataURL("image/jpeg", .88);
       document.querySelectorAll("img[data-mock]").forEach(im => {
         im.src = mockup(im.dataset.mock, ex, {design: mockDesign[im.dataset.mock] || "bordo", text: ""}, 720, 540).toDataURL("image/jpeg", .86);
       });
@@ -1433,7 +1437,7 @@ function homeView() {
     $("#allDesigns").textContent = `Tüm tasarımları görün ve seçin (${CARD_DESIGNS.length})`;
     const pick = ["bordo", "yaprak", "cicek", "halka", "unicorn", "dinozor", "mezun_lacivert", "gunes"].map(cardDesign);
     $("#lcards").innerHTML = pick.map(d => `<figure><img data-d="${d.id}" alt="${esc(d.name)} masa kartı"><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
-    lazyThumbs($("#lcards"), id => drawCard(ex, id, "", 3).toDataURL("image/jpeg", .85));
+    lazyThumbs($("#lcards"), id => drawCard(sampleEv(id, ex), id, "", 3).toDataURL("image/jpeg", .85));
   }).catch(() => { $("#lcards").innerHTML = ""; });
 }
 
@@ -1442,13 +1446,13 @@ async function designsView() {
   app.className = "home";
   document.title = "Kart tasarımları · MemoryQR";
   const st = {title: "", kind: "dugun", date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), cat: ""};
-  const sample = {dugun: "Selin & Berk", nisan: "Selin & Berk", kina: "Sinem'in Kına Gecesi", soz: "Selin & Berk", mezuniyet: "Ece Yılmaz",
-    dogum_gunu: "Ada 5 Yaşında", diger: "Selin & Berk"};
+  const sample = {dugun: "Seda & Yusuf", nisan: "Seda & Yusuf", kina: "Seda'nın Kına Gecesi", soz: "Seda & Yusuf", mezuniyet: "Hukuk Fakültesi Mezuniyet Balosu",
+    dogum_gunu: "Seda'nın Doğum Günü", diger: "Seda & Yusuf"};
   app.innerHTML = `<nav class="lnav">${brandHtml}<div class="row"><a href="./#paketler">Paketler</a><a href="./#sss">SSS</a><a class="btn small" href="./">Ana sayfa</a></div></nav>
     <section class="stack" style="padding:28px 0 8px"><div class="eyebrow">Masa kartları</div><h1 style="font-size:clamp(36px,6vw,54px)">Kartınızı seçin</h1>
       <p class="lede">İsimlerinizi ve tarihinizi yazın, bütün tasarımları kendi kartınız olarak görün. Beğendiğinize dokunun ve WhatsApp'tan bize gönderin.</p></section>
     <form class="card dz" id="dzf" onsubmit="return false">
-      <div class="stack"><label for="dzT">İsimler ya da başlık</label><input type="text" id="dzT" maxlength="60" placeholder="Ör. Selin & Berk"></div>
+      <div class="stack"><label for="dzT">İsimler ya da başlık</label><input type="text" id="dzT" maxlength="60" placeholder="Ör. Seda & Yusuf"></div>
       <div class="stack"><label for="dzK">Etkinlik</label><select id="dzK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
       <div class="stack"><label for="dzD">Tarih</label><input type="date" id="dzD" value="${st.date}"></div>
     </form>
@@ -1457,15 +1461,16 @@ async function designsView() {
     ${footerHtml()}`;
   try { await loadScript("kart.js"); } catch (e) { $("#dzG").innerHTML = `<p class="err">Tasarımlar yüklenemedi, sayfayı yenileyin.</p>`; return; }
   const ev = () => ({code: "ORNEK1", title: st.title || sample[st.kind], kind: st.kind, event_date: st.date || new Date().toISOString().slice(0, 10)});
+  // isim yazılmadıysa her kart kendi türüne uygun örnekle görünür (doğum günü, mezuniyet)
+  const evFor = id => st.title ? ev() : sampleEv(id, ev());
   const cats = () => {
     $("#dzC").innerHTML = [["", `Tümü (${CARD_DESIGNS.length})`], ...Object.entries(CARD_CATS).map(([k, v]) => [k, `${v} (${CARD_DESIGNS.filter(d => d.cat === k).length})`])]
       .map(([k, v]) => `<button type="button" class="chip${st.cat === k ? " on" : ""}" data-c="${k}">${esc(v)}</button>`).join("");
   };
   const grid = () => {
-    const e = ev();
     $("#dzG").innerHTML = CARD_DESIGNS.filter(d => !st.cat || d.cat === st.cat).map(d => `<figure><button class="dz-item" data-d="${d.id}" aria-label="${esc(d.name)} tasarımını aç">
       <img data-d="${d.id}" alt=""></button><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
-    lazyThumbs($("#dzG"), id => drawCard(e, id, "", 2.4).toDataURL("image/jpeg", .85));
+    lazyThumbs($("#dzG"), id => drawCard(evFor(id), id, "", 2.4).toDataURL("image/jpeg", .85));
   };
   cats(); grid();
   let t;
@@ -1499,7 +1504,7 @@ async function designsView() {
           <p class="hint" id="oPkgInfo"></p>
           <label class="switch"><input type="checkbox" id="oArc"> ${esc(EK_ARSIV.ad)} (${esc(EK_ARSIV.fiyat)})</label>
           <label for="oText">Kart yazısı <span class="opt">(isteğe bağlı)</span></label>
-          <textarea id="oText" rows="2" maxlength="120" placeholder="${esc(d.text(ev()))}"></textarea>
+          <textarea id="oText" rows="2" maxlength="120" placeholder="${esc(d.text(evFor(d.id)))}"></textarea>
           <label for="oNote">Notunuz <span class="opt">(isteğe bağlı)</span></label>
           <textarea id="oNote" rows="3" maxlength="500" placeholder="Ör. masa sayısı, kart adedi, teslim tarihi, renk isteği…"></textarea>
         </div>
@@ -1512,7 +1517,7 @@ async function designsView() {
       </div>
       <button type="button" class="linkbtn" id="oSave" style="justify-self:start">Görseli telefona kaydet</button></div>`;
     document.body.append(m);
-    const e2 = () => ev();
+    const e2 = () => evFor(d.id);
     const previewLink = () => {
       const q = new URLSearchParams({d: d.id, t: e2().title, k: e2().kind, tarih: e2().event_date});
       if (order.text) q.set("y", order.text);

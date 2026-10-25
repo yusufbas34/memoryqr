@@ -31,8 +31,8 @@
   // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
   const PAKETLER = [
     {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
-    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:pleksi-stand", ozellik: ["Dijital paketteki her şey", "20 masa kartı (A6, kalın kâğıda basılı; her masaya bir tane)",
-      "1 şeffaf pleksi stand (bir kart içine takılır, karşılama masasında durur)", "Size özel kart tasarımı"]},
+    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:tabak-kartvizit", ozellik: ["Dijital paketteki her şey",
+      "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)"]},
     {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:sovale-pano", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
       "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama", "Size özel kart tasarımı"]},
   ];
@@ -1323,7 +1323,7 @@ const FAQ = [
   ["Fotoğraflar ne kadar saklanıyor?", "Etkinlikten sonra 30 gün. Bu sürede hepsini tek tıkla indirirsiniz; süre dolunca dosyalar kalıcı olarak silinir."],
   ["Daha uzun saklamak istersem?", "1 yıl saklama ekini alabilirsiniz. Albümünüz Google Drive'da arşivlenir, bağlantısı albüm sayfanızda bir yıl boyunca durur."],
   ["Uygunsuz bir fotoğraf yüklenirse?", "Panelden tek dokunuşla gizler ya da silersiniz. Gizlenen fotoğraf misafirlere görünmez."],
-  ["Masa kartı ile pleksi stand arasındaki fark ne?", "Masa kartı, QR kodlu basılı karttır; her masaya bir tane konur. Pleksi stand ise bu kartlardan birinin içine takıldığı şeffaf tutucudur; karşılama masasında dik durur ve daha şık görünür."],
+  ["Masa kartı mı, kartvizit mi?", "Masa kartı A6 boyutundadır, masalara konur; her masaya bir tane yeter. Kartvizit küçüktür (8,5 × 5,5 cm), her misafirin tabağına ya da peçetesinin yanına konur. Standart pakette 10 masa kartı ya da 100 kartvizitten birini seçersiniz."],
   ["Kartları kim basıyor?", "Basılı paketlerde masa kartlarını biz bastırıp gönderiyoruz. Dijital pakette PDF'i alıp istediğiniz yerde bastırabilirsiniz."],
 ];
 
@@ -1361,7 +1361,7 @@ function homeView() {
     <section class="lsec" id="kartlar"><div class="eyebrow">Masa kartları</div><h2>Size uygun tasarımı seçin</h2>
       <p class="lede">İsimleriniz, tarihiniz ve size özel QR ile hazırlanır. Aynı tasarım masa kartı, kartvizit ve düğün girişi için ayaklı pano olarak basılır. İsterseniz kendi tasarımınızı da kullanabilirsiniz.</p>
       <div class="lprod">
-        <figure><img class="mock" src="kart/foto/pleksi-stand-k.webp" srcset="kart/foto/pleksi-stand-k.webp 640w, kart/foto/pleksi-stand.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Pleksi standda MemoryQR masa kartı" loading="lazy"><figcaption><b>Masa kartı</b> A6, pleksi standla</figcaption></figure>
+        <figure><img class="mock" src="kart/foto/pleksi-stand-k.webp" srcset="kart/foto/pleksi-stand-k.webp 640w, kart/foto/pleksi-stand.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Pleksi standda MemoryQR masa kartı" loading="lazy"><figcaption><b>Masa kartı</b> A6, masalara</figcaption></figure>
         <figure><img class="mock" src="kart/foto/tabak-kartvizit-k.webp" srcset="kart/foto/tabak-kartvizit-k.webp 640w, kart/foto/tabak-kartvizit.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Tabakta MemoryQR kartviziti" loading="lazy"><figcaption><b>Kartvizit</b> 8,5 × 5,5 cm, her misafirin tabağına</figcaption></figure>
         <figure><img class="mock" src="kart/foto/sovale-pano-k.webp" srcset="kart/foto/sovale-pano-k.webp 640w, kart/foto/sovale-pano.webp 1200w" sizes="(max-width:640px) 92vw, 360px" alt="Düğün girişinde şövalede MemoryQR panosu" loading="lazy"><figcaption><b>Giriş panosu</b> 50 × 70 cm, şövaleli</figcaption></figure>
       </div>

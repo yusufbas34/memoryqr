@@ -33,8 +33,10 @@
     {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
     {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:tabak-kartvizit", ozellik: ["Dijital paketteki her şey",
       "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)"]},
-    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:sovale-pano", ozellik: ["Kına + nişan + düğün, 3 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
-      "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama", "Size özel kart tasarımı"]},
+    {ad: "Standart + Şövale", fiyat: "1.499 TL", gorsel: "foto:sovale-pano", ozellik: ["Dijital paketteki her şey",
+      "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)", "Giriş panosu ve ahşap şövale"]},
+    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:pleksi-stand", ozellik: ["Kına + düğün, 2 ayrı albüm", "50 masa kartı ya da 50 kartvizit (siz seçersiniz)",
+      "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama"]},
   ];
   // Her pakete eklenebilen 1 yıl saklama (albüm Google Drive'a arşivlenir, bağlantısı albüm sayfasında görünür)
   const EK_ARSIV = {ad: "1 yıl saklama", fiyat: "+299 TL"};
@@ -205,7 +207,7 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 .lcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px;margin-top:10px}
 .lcards figure{margin:0;display:grid;gap:8px;text-align:center;font-weight:600;font-size:14px}
 .lcards img{width:100%;height:auto;border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
-.lpack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:10px;align-items:start}
+.lpack{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:10px;align-items:start}
 .lpack>div{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:10px}
 .lpack>div.on{border:2px solid var(--accent)}
 .lpack .price{font-family:"Barlow Condensed","Barlow",sans-serif;font-size:36px;font-weight:700;color:var(--accent)}
@@ -1197,7 +1199,7 @@ function adminPanel(key, list) {
         <div class="stack"><label for="eKind">Tür</label><select id="eKind">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
         <div class="stack"><label for="eDate">Etkinlik tarihi</label><input type="date" id="eDate" value="${today}" required></div>
         <div class="stack"><label for="ePkg">Paket</label><select id="ePkg"><option value="dijital">Dijital (müşteri PDF indirir)</option>
-          <option value="standart" selected>Standart</option><option value="aile">Aile paketi</option></select></div>
+          <option value="standart" selected>Standart</option><option value="sovale">Standart + Şövale</option><option value="aile">Aile paketi</option></select></div>
         <div class="stack"><label for="eDays">Saklama (etkinlikten sonra gün)</label><input type="number" id="eDays" value="30" min="1" max="365"></div>
         <div class="stack"><label for="eOwner">Müşteri adı</label><input type="text" id="eOwner"></div>
         <div class="stack"><label for="ePhone">Müşteri telefonu</label><input type="tel" id="ePhone" placeholder="05xx xxx xx xx"></div>
@@ -1236,7 +1238,7 @@ function adminPanel(key, list) {
       <div class="meta"><span class="code">${esc(e.code)}</span><span>PIN <b>${esc(e.pin)}</b></span><span>${esc(KINDS[e.kind])} · ${esc(fmtDate(e.event_date))}</span>
         <span>${e.files} dosya · ${e.guests} misafir · ${fmtBytes(e.bytes)}</span>${e.owner_name ? `<span>${esc(e.owner_name)}</span>` : ""}
         ${e.owner_phone ? `<span>${esc(e.owner_phone)}</span>` : ""}${e.last_upload ? `<span>son yükleme ${esc(fmtTime(e.last_upload))}</span>` : ""}
-        <span>Paket: <b>${esc({dijital: "Dijital", standart: "Standart", aile: "Aile"}[e.package] || "—")}</b></span><span>Kart: <b>${e.card_custom_key ? "kendi tasarımı" : e.card_design ? esc(e.card_design) : "seçilmedi"}</b></span></div>
+        <span>Paket: <b>${esc({dijital: "Dijital", standart: "Standart", sovale: "Standart + Şövale", aile: "Aile"}[e.package] || "—")}</b></span><span>Kart: <b>${e.card_custom_key ? "kendi tasarımı" : e.card_design ? esc(e.card_design) : "seçilmedi"}</b></span></div>
       ${e.note ? `<p class="hint">${esc(e.note)}</p>` : ""}
       <div class="row">
         <a class="btn small light" href="?e=${esc(e.code)}" target="_blank" rel="noopener">Misafir sayfası</a>

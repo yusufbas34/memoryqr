@@ -447,7 +447,7 @@ declare
   v_exp timestamptz := ((p_event_date + greatest(coalesce(p_days, 30), 1) + 1)::timestamp at time zone 'Europe/Istanbul');
   v_alphabet text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   v_archive text := nullif(trim(coalesce(p_archive_url, '')), '');
-  v_package text := case when p_package in ('dijital', 'standart', 'aile') then p_package end;
+  v_package text := case when p_package in ('dijital', 'standart', 'sovale', 'aile') then p_package end;
   i integer;
 begin
   perform memory_admin_check(p_key);

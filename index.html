@@ -217,7 +217,8 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 .lfeat>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:6px;align-content:start}
 @media (max-width:760px){.lsteps,.lfeat{grid-template-columns:1fr}}
 @media (min-width:761px) and (max-width:960px){.lfeat{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.lcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px;margin-top:10px}
+.lcards{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-top:10px}
+@media (max-width:760px){.lcards{grid-template-columns:repeat(2,1fr)}}
 .lcards figure{margin:0;display:grid;gap:8px;text-align:center;font-weight:600;font-size:14px}
 .lcards img{width:100%;height:auto;border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
 .lpack{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:10px}
@@ -1500,7 +1501,7 @@ function homeView() {
       });
     });
     $("#allDesigns").textContent = `Tüm tasarımları görün ve seçin (${CARD_DESIGNS.length})`;
-    const pick = ["bordo", "yaprak", "cicek", "halka", "unicorn", "dinozor", "mezun_lacivert", "gunes"].map(cardDesign);
+    const pick = ["yaprak", "kalpli_dal", "love_kirmizi", "love_bordo", "lacivert_barok", "lacivert_dalga", "mavi_suluboya", "adacayi", "gece", "gulkurusu"].map(cardDesign);
     $("#lcards").innerHTML = pick.map(d => `<figure><img data-d="${d.id}" alt="${esc(d.name)} masa kartı"><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
     lazyThumbs($("#lcards"), id => drawCard(sampleEv(id, ex), id, "", 3).toDataURL("image/jpeg", .85));
   }).catch(() => { $("#lcards").innerHTML = ""; });

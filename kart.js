@@ -395,6 +395,34 @@ function poster(o) {
     }};
 }
 
+// ---- çizim yardımcıları (aşağıdaki esinlenme tasarımları için)
+// saten fiyonk: iki kulak, iki kuyruk, düğüm; s: genişlik (mm)
+function bow(k, g, x, y, s, col = "#141414", rot = 0) {
+  const X = k.X, m = k.mm;
+  g.save(); g.translate(X(x), X(y)); g.rotate(rot);
+  const shade = (x0, y0, x1, y1) => { const gr = g.createLinearGradient(m(x0), m(y0), m(x1), m(y1)); gr.addColorStop(0, col); gr.addColorStop(.45, "#4a4a4a"); gr.addColorStop(1, col); return gr; };
+  for (const d of [-1, 1]) {
+    g.fillStyle = shade(0, -s * .3, d * s * .5, s * .3);
+    g.beginPath(); g.moveTo(0, 0);
+    g.bezierCurveTo(m(d * s * .18), m(-s * .42), m(d * s * .55), m(-s * .36), m(d * s * .5), m(-s * .05));
+    g.bezierCurveTo(m(d * s * .48), m(s * .18), m(d * s * .2), m(s * .14), 0, 0); g.fill();
+    g.fillStyle = shade(0, 0, d * s * .3, s * .9);
+    g.beginPath(); g.moveTo(m(d * s * .03), m(s * .02));
+    g.bezierCurveTo(m(d * s * .12), m(s * .3), m(d * s * .08), m(s * .55), m(d * s * .3), m(s * .85));
+    g.lineTo(m(d * s * .18), m(s * .78)); g.lineTo(m(d * s * .12), m(s * .9));
+    g.bezierCurveTo(m(d * s * .02), m(s * .6), m(-d * s * .02), m(s * .3), m(-d * s * .03), m(s * .04)); g.fill();
+  }
+  g.fillStyle = col; g.beginPath(); g.ellipse(0, m(s * .01), m(s * .08), m(s * .1), 0, 0, 7); g.fill();
+  g.restore();
+}
+// el çizimi kalp (çift çizgi, hafif titrek)
+function doodleHeart(k, g, x, y, s, col, rot = 0) {
+  g.save(); g.translate(k.X(x), k.X(y)); g.rotate(rot); g.translate(-k.X(x), -k.X(y));
+  g.strokeStyle = col; g.lineWidth = k.mm(.45); g.lineCap = "round";
+  for (const j of [0, .25]) { k.heartPath(x + j, y + j * .5, s); g.stroke(); }
+  g.restore();
+}
+
 const POSTERS = [
   // ---- doğum günü (kız)
   poster({id: "safari_pembe", name: "Pembe Safari", cat: "dogum_kiz", ...KIDS, text: KIDS_TEXT, emojis: ["1f338", "1f33a", "1f992", "1f418", "1f33c"],
@@ -552,6 +580,89 @@ const FRAMES = [
     text: "Fotoğraf ve videolarınızı QR kodu okutarak bizimle paylaşın", L: {t: 49, d: 55.5, m: 62, box: 71, brand: 110.5}}),
   frame({id: "altin_zambak", name: "Altın Zambak", img: "kart/cerceve/altin-zambak.webp", bg: "#ffffff", ink: "#6b5530", mc: "#5e5546", ac: "#b08a3e", y: 4, w: 56, qr: 30, brand: 124, eyebrow: false}),
   frame({id: "beyaz_cicek", name: "Beyaz Çiçekler", img: "kart/cerceve/beyaz-cicek.webp", bg: "#fbf8ef", ink: "#4f6a3c", mc: "#5b6656", ac: "#a8832f", y: 0, w: 60, qr: 28, brand: 118}),
+  // ---- esinlenme: siyah kurdeleler (kız doğum günü)
+  poster({id: "siyah_kurdele", name: "Siyah Kurdele", cat: "dogum_kiz", bg: "#f6f1e8", hc: "#1a1a1a", h: [], text: KIDS_TEXT,
+    nf: F.vibes, ns: 12, mf: F.play, ms: 3.2, mw: 62, L: {msg: 52, qrY: 66, qr: 30, name: 114, brand: 140},
+    deco(k, g, ev) {
+      g.strokeStyle = "#1a1a1a"; g.lineWidth = k.mm(.3); g.strokeRect(k.X(8), k.X(8), k.mm(89), k.mm(132));
+      // balon ve ipi
+      const bx = 15, by = 15, gr = g.createRadialGradient(k.X(bx - 2), k.X(by - 3), k.mm(.5), k.X(bx), k.X(by), k.mm(8));
+      gr.addColorStop(0, "#6a6a6a"); gr.addColorStop(.35, "#1c1c1c"); gr.addColorStop(1, "#0a0a0a");
+      g.fillStyle = gr; g.beginPath(); g.ellipse(k.X(bx), k.X(by), k.mm(6.5), k.mm(7.8), 0, 0, 7); g.fill();
+      g.strokeStyle = "#1a1a1a"; g.lineWidth = k.mm(.25); g.beginPath(); g.moveTo(k.X(bx), k.X(by + 7.8));
+      g.bezierCurveTo(k.X(bx + 3), k.X(by + 14), k.X(bx - 3), k.X(by + 20), k.X(bx + 1), k.X(by + 28)); g.stroke();
+      bow(k, g, bx, by + 9, 7);
+      bow(k, g, 92, 12, 16, "#141414", .35);
+      bow(k, g, 14, 124, 15, "#141414", -.15);
+      k.text("İyi ki", 52.5, 27, F.vibes, 12, "#1a1a1a");
+      k.text("DOĞDUN", 52.5, 43, F.play, 9, "#1a1a1a", {sp: 1.2});
+      g.strokeStyle = "#1a1a1a"; g.lineWidth = k.mm(.25);
+      for (const yy of [104, 124]) { g.beginPath(); g.moveTo(k.X(36), k.X(yy)); g.lineTo(k.X(49), k.X(yy)); g.moveTo(k.X(56), k.X(yy)); g.lineTo(k.X(69), k.X(yy)); g.stroke(); k.heartPath(52.5, yy + .6, 2.4); g.stroke(); }
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 131, F.play, 3.6, "#1a1a1a", {upper: true, sp: .5}); }}),
+  // ---- esinlenme: çizgi kalpler (siyah-beyaz, kırmızı kalpler)
+  poster({id: "cizgi_kalp", name: "Çizgi Kalpler", cat: "dugun", bg: "#fbfaf6", hc: "#151515", hf: F.vibes, h: ["Anılarımızı", "paylaşın"], hs: [15, 15], L: {h: [28, 42], msg: 58, qrY: 72, qr: 30, name: 117, brand: 141},
+    mf: F.mont, ms: 2.8, mw: 64, nf: F.vibes, ns: 11,
+    deco(k, g, ev) {
+      const R = "#d23a3a";
+      doodleHeart(k, g, 86, 20, 6, R, .2); doodleHeart(k, g, 16, 62, 5, R, -.2); doodleHeart(k, g, 90, 96, 4.5, R, .25); doodleHeart(k, g, 15, 104, 3.5, R, -.1);
+      g.strokeStyle = "#151515"; g.lineWidth = k.mm(.3); g.lineCap = "round";
+      for (const [x, y, a] of [[22, 51, 0], [83, 51, Math.PI]]) for (const d of [-.5, 0, .5]) { g.beginPath(); g.moveTo(k.X(x + Math.cos(a + d) * 3), k.X(y + Math.sin(a + d) * 3)); g.lineTo(k.X(x + Math.cos(a + d) * 6), k.X(y + Math.sin(a + d) * 6)); g.stroke(); }
+      // altta çizgi çiçekler ve çimen
+      for (const [x, h] of [[10, 13], [16, 9], [89, 11], [95, 14]]) {
+        g.beginPath(); g.moveTo(k.X(x), k.X(136)); g.quadraticCurveTo(k.X(x + 1.5), k.X(136 - h / 2), k.X(x), k.X(136 - h)); g.stroke();
+        k.flower(x, 136 - h - 1.6, 2.6, "#151515", .25);
+      }
+      for (let x = 6; x < 100; x += 2.2) { if (x > 26 && x < 79) continue; g.beginPath(); g.moveTo(k.X(x), k.X(137)); g.lineTo(k.X(x + .8), k.X(134.5)); g.stroke(); }
+      g.beginPath(); g.moveTo(k.X(6), k.X(137)); g.lineTo(k.X(99), k.X(137)); g.stroke();
+    },
+    after(k, g, ev) { k.text(dateDots(ev.event_date), 52.5, 51.5, F.mont, 3.4, "#151515", {sp: .8}); }}),
+  // ---- esinlenme: kalpli dal ayracı (sade, el yazısı havası)
+  poster({id: "kalpli_dal", name: "Kalpli Dal", cat: "dugun", bg: "#faf8f3", hc: "#1d1d1d", hf: F.bod, h: ["ANI", "PAYLAŞ!"], hs: [15, 15], hsp: 1, L: {h: [30, 47], msg: 58, qrY: 70, qr: 30, name: 125, brand: 141},
+    mf: F.mont, ms: 2.8, mw: 64, nf: F.montB, ns: 5, nc: "#1d1d1d",
+    deco(k, g, ev) {
+      k.specks(160, "#d8d2c4", 31, .5);
+      const y = 113, C = "#1d1d1d";
+      k.heartPath(52.5, y + 1.5, 5.5); g.strokeStyle = C; g.lineWidth = k.mm(.35); g.stroke();
+      k.branch(48.5, y, Math.PI + .08, 17, C, {leafLen: 3.6, wid: 1.1, n: 3, line: true, lw: .3, bend: .12});
+      k.branch(56.5, y, -.08, 17, C, {leafLen: 3.6, wid: 1.1, n: 3, line: true, lw: .3, bend: -.12});
+    },
+    after(k, g, ev) { k.text(dateDots(ev.event_date), 52.5, 132, F.mont, 3.6, "#1d1d1d", {sp: .8}); }}),
+  // ---- esinlenme: kırmızı ip (iki uçtan uzanan ip, ortada kalp düğümü)
+  poster({id: "kirmizi_ip", name: "Kırmızı İp", cat: "dugun", bg: "#ffffff", hc: "#111111", hf: F.vibes, h: ["Hoş", "geldiniz"], hs: [17, 17], L: {h: [26, 42], msg: 52, qrY: 64, qr: 30, name: 125, brand: 141},
+    mf: F.mont, ms: 2.8, mw: 64, nf: F.montB, ns: 5, nc: "#111111",
+    deco(k, g, ev) {
+      const y = 111, C = "#111111";
+      g.strokeStyle = C; g.lineWidth = k.mm(.45); g.lineCap = "round";
+      g.beginPath(); g.moveTo(k.X(-3), k.X(y - 10)); g.quadraticCurveTo(k.X(26), k.X(y + 2), k.X(49.5), k.X(y + 3.5));
+      g.bezierCurveTo(k.X(53), k.X(y + 4), k.X(55), k.X(y + 3), k.X(55.5), k.X(y + 3.5));
+      g.quadraticCurveTo(k.X(79), k.X(y + 2), k.X(108), k.X(y - 10)); g.stroke();
+      k.heartPath(52.5, y + 2, 7); g.fillStyle = "#c8282e"; g.fill(); g.strokeStyle = C; g.lineWidth = k.mm(.3); k.heartPath(52.8, y + 2.3, 7); g.stroke();
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 132, F.mont, 3.2, "#111111", {sp: .6}); }}),
+  // ---- esinlenme: bahçe partisi (süsleme ipleri, suluboya çiçekler)
+  poster({id: "bahce_partisi", name: "Bahçe Partisi", cat: "dugun", bg: "#fdf8ea", hc: "#4a5a3a", hf: F.vibes, h: ["Kutlamamıza", "hoş geldiniz"], hs: [12.5, 12.5], L: {h: [36, 49], msg: 60, qrY: 72, qr: 30, name: 117, brand: 141},
+    mf: F.mont, ms: 2.8, mw: 62, nf: F.vibes, ns: 11, nc: "#c0503a",
+    deco(k, g, ev) {
+      // iki kat süs ipi ve ampuller
+      for (const [y0, sag, col] of [[2, 16, "#a9c3cf"], [6, 12, "#a9c3cf"]]) for (const side of [-1, 1]) {
+        const x0 = side < 0 ? -3 : 108, x1 = 52.5;
+        g.strokeStyle = col; g.lineWidth = k.mm(.6); g.beginPath(); g.moveTo(k.X(x0), k.X(y0 + 12)); g.quadraticCurveTo(k.X((x0 + x1) / 2), k.X(y0 + sag + 6), k.X(x1), k.X(y0)); g.stroke();
+        for (let t = .06; t < 1; t += .08) { const u = 1 - t, cx = (x0 + x1) / 2, cy = y0 + sag + 6;
+          const px = u * u * x0 + 2 * u * t * cx + t * t * x1, py = u * u * (y0 + 12) + 2 * u * t * cy + t * t * y0;
+          g.fillStyle = "#f2c94c"; g.beginPath(); g.ellipse(k.X(px), k.X(py + 1.4), k.mm(.8), k.mm(1), 0, 0, 7); g.fill(); }
+      }
+      // yanlarda suluboya çiçekler
+      const r = rng(9), cols = ["#f0a23a", "#f2c94c", "#e88aa0", "#9b8fd0", "#e26a4a"];
+      for (const side of [0, 1]) for (let i = 0; i < 7; i++) {
+        const x = side ? 99 - r() * 5 : 6 + r() * 5, y = 30 + i * 13 + r() * 5;
+        k.branch(x, y + 6, side ? -Math.PI / 2 - .3 : -Math.PI / 2 + .3, 8, "#7f9a5a", {leafLen: 3, wid: .9, n: 2, alpha: .7, lw: .25});
+        g.globalAlpha = .85; for (let p = 0; p < 6; p++) { const a = p / 6 * Math.PI * 2; g.fillStyle = cols[(i + side) % cols.length];
+          g.beginPath(); g.ellipse(k.X(x + Math.cos(a) * 1.6), k.X(y + Math.sin(a) * 1.6), k.mm(1.5), k.mm(.8), a, 0, 7); g.fill(); }
+        g.globalAlpha = 1; g.fillStyle = "#8a5a2a"; g.beginPath(); g.arc(k.X(x), k.X(y), k.mm(.6), 0, 7); g.fill();
+      }
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 129, F.mont, 3.2, "#4a5a3a", {sp: .5}); }}),
 ];
 CARD_DESIGNS.push(...POSTERS);
 CARD_DESIGNS.push(...FRAMES, FIRCA);

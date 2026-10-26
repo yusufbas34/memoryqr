@@ -581,6 +581,8 @@ const FRAMES = [
   frame({id: "altin_zambak", name: "Altın Zambak", img: "kart/cerceve/altin-zambak.webp", bg: "#ffffff", ink: "#6b5530", mc: "#5e5546", ac: "#b08a3e", y: 4, w: 56, qr: 30, brand: 124, eyebrow: false}),
   frame({id: "beyaz_gul_yuzuk", name: "Beyaz Güller ve Yüzük", img: "kart/cerceve/beyaz-gul-yuzuk.webp", bg: "#f7f6f4", ink: "#5a5148", mc: "#6b6259", ac: "#a8895a",
     cx: 64, w: 54, ts: 11, qr: 30, y: 2, brand: 128}),
+  frame({id: "kirmizi_cicek", name: "Kırmızı Çiçekler", img: "kart/cerceve/kirmizi-cicek.webp", bg: "#f3f0ec", ink: "#9a1218", mc: "#4e4442", ac: "#9a1218", eyebrow: false,
+    w: 54, qr: 30, L: {t: 52, d: 59.5, m: 66, box: 80, brand: 134}}),
   frame({id: "beyaz_cicek", name: "Beyaz Çiçekler", img: "kart/cerceve/beyaz-cicek.webp", bg: "#fbf8ef", ink: "#4f6a3c", mc: "#5b6656", ac: "#a8832f", y: 0, w: 60, qr: 28, brand: 118}),
   // ---- esinlenme: siyah kurdeleler (kız doğum günü)
   poster({id: "siyah_kurdele", name: "Siyah Kurdele", cat: "dogum_kiz", bg: "#f6f1e8", hc: "#1a1a1a", h: [], text: KIDS_TEXT,
@@ -711,6 +713,37 @@ const FRAMES = [
       for (const x of [33, 72]) { k.heartPath(x, y + .6, 2); g.fillStyle = C; g.fill(); }
     },
     after(k, g, ev) { k.text(dateDots(ev.event_date), 52.5, 134.2, F.play, 3.6, "#1d1d1d", {sp: 1.2}); }}),
+  // ---- tipografi: üst üste "LO / VE", üstünde el yazısı "love"
+  poster({id: "love_kirmizi", name: "Love Kırmızı", cat: "dugun", bg: "#ffffff", hc: "#c0141c", h: [], mf: F.mont, ms: 2.8, mw: 62, mc: "#333333",
+    nf: F.vibes, ns: 11, nc: "#1d1d1d", L: {msg: 72, qrY: 84, qr: 30, name: 64, brand: 141},
+    deco(k, g, ev) {
+      const R = "#c0141c";
+      k.text("LO", 54, 34, F.bod, 22, R, {sp: -.5});
+      k.text("VE", 54, 53, F.bod, 22, R, {sp: -.5});
+      k.text("love", 47, 41, F.vibes, 16, "#151515");
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 126, F.mont, 3, "#333333", {upper: true, sp: .6}); }}),
+  // ---- tipografi: bordo zemin, iç içe geçmiş "LOVE"
+  poster({id: "love_bordo", name: "Love Bordo", cat: "dugun", bg: "#5a0606", hc: "#fde3dc", h: [], mf: F.mont, ms: 2.8, mw: 62, mc: "#fde3dc",
+    nf: F.vibes, ns: 11, nc: "#fde3dc", bc: "rgba(253,227,220,.55)", L: {msg: 76, qrY: 88, qr: 28, name: 67, brand: 141},
+    deco(k, g, ev) {
+      const C = "#fde3dc";
+      k.text("L", 37, 33, F.bod, 22, C); k.text("O", 51, 37, F.bod, 20, C);
+      k.text("V", 40, 51, F.bod, 19, C); k.text("E", 55, 52, F.bod, 19, C);
+      g.fillStyle = C; g.fillRect(k.X(31), k.X(35), k.mm(28), k.mm(.5));
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 128, F.mont, 3, "#fde3dc", {upper: true, sp: .6}); }}),
+  // ---- esinlenme: sarı zemin, kalp balon
+  poster({id: "kalp_balon", name: "Kalp Balon", cat: "dugun", bg: "#f9cf6b", hc: "#2d2420", hf: F.corm, h: ["mutlu olun"], hs: [9], L: {h: [56], msg: 66, qrY: 78, qr: 30, name: 124, brand: 141},
+    mf: F.mont, ms: 2.8, mw: 62, mc: "#2d2420", nf: F.vibes, ns: 11, nc: "#2d2420",
+    deco(k, g, ev) {
+      g.strokeStyle = "#5a4a3a"; g.lineWidth = k.mm(.3); g.beginPath(); g.moveTo(k.X(52.5), k.X(32));
+      g.bezierCurveTo(k.X(50), k.X(38), k.X(55), k.X(42), k.X(52), k.X(48)); g.stroke();
+      k.heartPath(52.5, 24, 15); g.fillStyle = "#e3262b"; g.fill();
+      g.fillStyle = "#e3262b"; g.beginPath(); g.moveTo(k.X(51.3), k.X(32.8)); g.lineTo(k.X(53.7), k.X(32.8)); g.lineTo(k.X(52.5), k.X(30.6)); g.fill();
+      g.fillStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.ellipse(k.X(47.5), k.X(20.5), k.mm(1.8), k.mm(1), -.6, 0, 7); g.fill();
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 132, F.mont, 3, "#2d2420", {upper: true, sp: .6}); }}),
 ];
 CARD_DESIGNS.push(...POSTERS);
 CARD_DESIGNS.push(...FRAMES, FIRCA);

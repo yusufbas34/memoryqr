@@ -109,3 +109,6 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - Albüm silinmeden 7 gün ve 1 gün önce WhatsApp/e-posta hatırlatması
 - Aile paketi: kına + nişan + düğün için tek QR'dan ayrı albümler
 - Yükleme kuyruğunun sayfa kapanınca da sürmesi (IndexedDB)
+
+## Pazarlama
+- `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı).

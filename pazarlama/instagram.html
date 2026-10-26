@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MemoryQR Instagram Planı</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="../logo.svg">
+<link rel="stylesheet" href="../fonts.css">
+<style>
+/* Tek sütun çalışma sayfası: üstte hazırlık, altta gün gün kartlar; işaretlenenler bu cihazda hatırlanır */
+:root{--bg:#faf7f6;--card:#fff;--fg:#1d1820;--muted:#6b6070;--line:#e7dfe3;--accent:#8c2f52;--gold:#a8832f;--soft:#f4ecef;--ok:#1f7a4a;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;--body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161219;--card:#211b24;--fg:#efe8ef;--muted:#ab9fae;--line:#362d39;--accent:#e58aa8;--gold:#d8b35c;--soft:#2a2130;--ok:#6cc28f;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body)}
+.wrap{max-width:860px;margin:0 auto;padding:28px max(16px,env(safe-area-inset-right)) 64px max(16px,env(safe-area-inset-left))}
+a{color:var(--accent)}
+h1{font-family:var(--display);font-size:clamp(36px,7vw,56px);line-height:1;margin:8px 0 10px;text-wrap:balance}
+h2{font-family:var(--display);font-size:30px;line-height:1.1;margin:40px 0 12px}
+h3{font-size:18px;margin:0 0 6px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.lead{color:var(--muted);font-size:18px;max-width:62ch;margin:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:10px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stats b{display:block;font-family:var(--display);font-size:30px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.stats span{font-size:14px;color:var(--muted)}
+.small{font-size:14px;color:var(--muted)}
+pre.copy{white-space:pre-wrap;background:var(--soft);border-radius:10px;padding:12px 14px;margin:8px 0 0;font:15px/1.5 var(--body)}
+.btn{appearance:none;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;padding:6px 12px;font:600 14px var(--body);cursor:pointer}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-top:16px}
+.controls label{display:grid;gap:4px;font-weight:600;font-size:14px}
+.controls input{font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg)}
+.prog{height:8px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:8px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.week{margin-top:34px}
+.week h2{margin:0 0 4px}
+.day{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+.day.done{opacity:.6}
+.day.key{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.day .chk{width:24px;height:24px;margin-top:2px;accent-color:var(--accent)}
+.day .head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.day .num{font-family:var(--display);font-size:22px;font-weight:700}
+.day .date{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.pill{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--fg)}
+.pill.reels{background:#f7e0e8;color:#7a1f42}.pill.karusel{background:#e3ecf8;color:#1f4a86}.pill.hikaye{background:#fbefd7;color:#7a5410}.pill.gonderi{background:#e2f2e8;color:#1f6b40}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.reels,:root:not([data-theme="light"]) .pill.karusel,:root:not([data-theme="light"]) .pill.hikaye,:root:not([data-theme="light"]) .pill.gonderi{background:var(--soft);color:var(--fg)}}
+.day .body{grid-column:2;display:grid;gap:6px}
+.day .body p{margin:0}
+.day details summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:15px}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0}
+.warn{border-left:5px solid #c0392b}
+@media print{body{background:#fff}.controls,.btn{display:none}.day,.card{break-inside:avoid}details{display:block}details>*{display:block}}
+@media (max-width:520px){.day{grid-template-columns:1fr}.day .body{grid-column:1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="eyebrow">MemoryQR · Instagram</div>
+  <h1>30 günlük Instagram planı</h1>
+  <p class="lead">Her gün ne paylaşılacağı, nasıl çekileceği ve açıklama metni. Amaç ilk ayda hesabı kurmak, pilot kına gecesinden gerçek içerik çıkarmak ve ilk siparişleri almak. Yaptığın günü işaretle; işaretler bu telefonda kalır.</p>
+
+  <div class="controls">
+    <label for="start">Başlangıç günü<input type="date" id="start"></label>
+    <div style="flex:1;min-width:200px"><span id="progT" class="small"></span><div class="prog"><i id="progB"></i></div></div>
+  </div>
+
+  <div class="stats">
+    <div><b>30</b><span>gün, her gün 1 içerik</span></div>
+    <div><b>10</b><span>Reels (en çok erişim)</span></div>
+    <div><b>15 dk</b><span>günlük etkileşim rutini</span></div>
+    <div><b>7 Kasım</b><span>pilot: Sinem'in kına gecesi</span></div>
+  </div>
+
+  <h2>Başlamadan önce (1 saat)</h2>
+  <div class="card">
+    <ul>
+      <li><b>Hesap:</b> kullanıcı adı <b>@memoryqr</b> (doluysa @memoryqr.tr ya da @memoryqrtr). Profesyonel hesaba geç, kategori "Etkinlik planlama hizmeti".</li>
+      <li><b>Profil fotoğrafı:</b> MemoryQR logosu, bordo zemin üzerinde beyaz.</li>
+      <li><b>Bağlantı:</b> <code>memoryqr.bulqr.com.tr</code> ve WhatsApp butonu: 0531 677 59 97.</li>
+      <li><b>Öne çıkanlar (5 tane):</b> Nasıl çalışır · Tasarımlar · Paketler · Yorumlar · SSS. Kapakları bordo-altın düz renk yap.</li>
+      <li><b>İlk 9 gönderi</b> plandaki 1–9. günlerdir; profil boş görünmesin diye ilk gün 3 tanesini birden paylaşabilirsin.</li>
+    </ul>
+    <h3 style="margin-top:12px">Biyografi</h3>
+    <pre class="copy" id="bio">📸 Düğün · Nişan · Kına · Doğum günü
+Misafirler QR'ı okutur, fotoğraflar tek albümde
+Uygulama yok · Orijinal kalite · 30 gün saklama
+👇 Kartını seç, siparişini başlat</pre>
+    <button class="btn" data-copy="bio">Kopyala</button>
+  </div>
+
+  <h2>Her gün 15 dakika</h2>
+  <div class="grid">
+    <div class="card"><h3>Etkileşim</h3><ul><li>#düğünhazırlığı ve #kınagecesi etiketlerinde 10 gönderiye anlamlı yorum</li><li>Şehrindeki 5 düğün salonu, organizatör ve fotoğrafçı hesabına yorum</li><li>Gelen her DM'e aynı gün cevap</li></ul></div>
+    <div class="card"><h3>Hikâye</h3><ul><li>Günde en az 2 hikâye: o günün gönderisi + bir anket ya da soru kutusu</li><li>Tasarım linki çıkartması: <code>memoryqr.bulqr.com.tr/?tasarimlar</code></li></ul></div>
+    <div class="card"><h3>Paylaşım saati</h3><ul><li>Hafta içi 20.00–22.00</li><li>Hafta sonu 11.00–13.00</li><li>Reels'i hep aynı saatte at; Instagram düzeni sever</li></ul></div>
+  </div>
+
+  <h2>Etiketler</h2>
+  <div class="card">
+    <p class="small">Her gönderide 8–12 etiket: 4 genel + 4 konuya özel + 2 şehir. Şehir etiketlerini kendi şehrine göre değiştir.</p>
+    <pre class="copy" id="tags">#düğün #nişan #kınagecesi #düğünhazırlığı #gelin #damat #düğünfotoğrafları #anıalbümü #qrkod #misafirfotoğrafları #istanbuldüğün #düğünsalonu</pre>
+    <button class="btn" data-copy="tags">Kopyala</button>
+  </div>
+
+  <div id="plan"></div>
+
+  <h2>Hazır DM metinleri</h2>
+  <div class="grid">
+    <div class="card"><h3>Düğün salonu / organizatör</h3><pre class="copy" id="dm1">Merhaba, biz MemoryQR. Misafirlerin düğünde çektiği fotoğraf ve videoları tek QR ile tek albümde topluyoruz; uygulama gerekmiyor. Salonunuzdaki çiftlere sunabileceğiniz bir iş birliği önermek isteriz: size özel indirim kodu ve her satıştan pay. Kısa bir görüşme yapabilir miyiz? memoryqr.bulqr.com.tr</pre><button class="btn" data-copy="dm1">Kopyala</button></div>
+    <div class="card"><h3>Fotoğrafçı</h3><pre class="copy" id="dm2">Merhaba, işlerinizi çok beğeniyoruz. MemoryQR ile misafirlerin çektiği fotoğrafları tek albümde topluyoruz; sizin profesyonel çekimlerinizin yanında "misafir gözünden" anları tamamlıyor. Çiftlerinize paketinizle birlikte sunmak ister misiniz? Size özel fiyat konuşabiliriz.</pre><button class="btn" data-copy="dm2">Kopyala</button></div>
+    <div class="card"><h3>Soran müşteriye ilk cevap</h3><pre class="copy" id="dm3">Merhaba, ilginiz için teşekkürler! 💐 Tasarımları kendi isimlerinizle buradan görebilirsiniz: memoryqr.bulqr.com.tr/?tasarimlar
+Beğendiğiniz tasarımda "Siparişi başlat"a dokunmanız yeterli. Etkinlik tarihiniz ne zaman?</pre><button class="btn" data-copy="dm3">Kopyala</button></div>
+  </div>
+
+  <h2>Dikkat</h2>
+  <div class="card warn">
+    <ul>
+      <li><b>Misafir fotoğrafları:</b> pilot ve sonraki etkinliklerden içerik paylaşmadan önce çiftten yazılı izin al; misafirlerin yüzü görünen fotoğraflarda o kişilerin de iznini al ya da yüzleri gösterme. QR kart, masa, süsleme ve ekran kayıtları her zaman güvenli içeriktir.</li>
+      <li><b>Yorumlar ve rakamlar gerçek olsun:</b> "Bir gecede 480 fotoğraf" gibi sayıları yalnızca gerçekleşince kullan.</li>
+      <li><b>Çekiliş:</b> Türkiye'de hediyeli çekilişler Milli Piyango İdaresi iznine tabi olabilir. Planda çekiliş yerine "ilk 10 çifte hediye" kampanyası var; o daha güvenli.</li>
+    </ul>
+  </div>
+  <p class="small" style="margin-top:28px">MemoryQR · Bul QR. Plan ilk ayın sonunda en çok izlenen 3 içeriğe göre yenilenir.</p>
+</main>
+
+<script>
+"use strict";
+// gün: tür (reels | karusel | hikaye | gonderi), başlık, ne yapılacak, nasıl çekilir, açıklama metni; key: önemli gün
+const PLAN = [
+  {w: "1. hafta · Tanış", d: [
+    {t: "karusel", h: "Merhaba, biz MemoryQR", what: "5 slaytlık tanıtım: 1) \"Düğünden sonra herkes 'fotoğrafları atar mısın' diye yazar\" 2) Fotoğraflar telefonlarda kalır 3) Çözüm: masada tek QR 4) Misafir okutur, adını yazar, yükler 5) Hepsi tek albümde. Son slaytta link.",
+      how: "Görseller: sitedeki pleksi stand ve şövale fotoğrafları + tasarım sayfasından kart görselleri.",
+      cap: "Düğünün en güzel anları misafirlerin telefonunda kalmasın 💐\nMasaya tek QR koyun; misafirler okutur, fotoğraf ve videolarını yükler, hepsi tek albümde toplanır. Uygulama yok, kayıt yok.\n👉 Kartınızı seçin: link profilde"},
+    {t: "reels", h: "\"Fotoğrafları atar mısın?\"", what: "Kanca (ilk 2 sn): ekranda \"Düğünden 1 hafta sonra:\" yazısı + WhatsApp'ta 'fotoğrafları atar mısın' mesajları. Sonra: QR okutma → isim → yükle → albüm ekran kaydı. 12–15 sn.",
+      how: "Telefonla ekran kaydı: misafir sayfası (bir deneme etkinliği aç). Trend bir ses kullan, yazıları ekrana koy.",
+      cap: "Bu mesajları artık yazmak zorunda değilsiniz 😅\nMisafirler QR'ı okutur, fotoğraflar kendiliğinden albümünüze gelir.\n#düğünhazırlığı"},
+    {t: "hikaye", h: "Anket: misafir fotoğrafları", what: "Anket: \"Düğününüzde misafirlerin çektiği fotoğrafları toplayabildiniz mi?\" Evet / Hayat kurtaran olurdu. Ardından soru kutusu: \"Düğün hazırlığında en çok neyi dert ediyorsun?\"",
+      how: "Bordo düz zemin, Barlow yazı. Cevapları sonraki günlerde içerik fikri olarak kullan.", cap: ""},
+    {t: "karusel", h: "3 adımda nasıl çalışır", what: "1) Kart masada 2) Misafir okutur, adını yazar 3) Çift hepsini tek tıkla indirir. Her slaytta bir telefon ekranı görüntüsü.",
+      how: "Görseller: sitedeki telefon görseli ve ekran görüntüleri.",
+      cap: "3 adım, sıfır uygulama 📱\n1️⃣ QR kart masada\n2️⃣ Misafir okutur, adını yazar, yükler\n3️⃣ Siz hepsini tek tıkla indirirsiniz\nKına, nişan, düğün, doğum günü, mezuniyet… hepsinde çalışır."},
+    {t: "reels", h: "38 kart tasarımı", what: "Tasarım sayfasında kartların hızlı geçişi; her kartta 0,5 sn. Sonda: \"Kendi isminizle görün\" + link.",
+      how: "memoryqr.bulqr.com.tr/?tasarimlar sayfasında isim alanına \"Seda & Yusuf\" yaz, ekran kaydı al, ritimli bir sese kes.",
+      cap: "Hangisi sizin düğününüze yakışır? 👀\nYorumlara numarasını yazın 👇\nTasarımları kendi isminizle görmek için: link profilde"},
+    {t: "karusel", h: "Paketler ve fiyatlar", what: "Kapak: \"Abonelik yok, tek seferlik\". Sonra Dijital 499 · Standart 899 · Standart + Şövale 1.499 · Aile 1.999 ve 1 yıl saklama eki.",
+      how: "Sitedeki paket kartlarının ekran görüntüleri ya da aynı bilgiyle sade slaytlar.",
+      cap: "Tek seferlik ödeme, abonelik yok ✨\nDijital paketten şövaleli giriş panosuna kadar 4 seçenek. Hangisinin size uygun olduğunu DM'den sorabilirsiniz."},
+    {t: "hikaye", h: "Haftalık soru-cevap", what: "Soru kutusu: \"MemoryQR hakkında merak ettiğin ne?\" Gelen 3 soruya hikâyede cevap. Öne çıkanları düzenle.",
+      how: "Haftanın ölçümü: takipçi, erişim, profil ziyareti, link tıklaması, DM sayısı. Bir yere not et.", cap: ""},
+  ]},
+  {w: "2. hafta · Göster", d: [
+    {t: "reels", h: "Uygulama indirmeden", what: "Kanca: \"Misafirlerine uygulama indirtme.\" Telefon kamerası açılır, QR okunur, tarayıcıda sayfa açılır. 8 sn.",
+      how: "Masaya bir deneme kartı koy, ikinci telefonla okutma anını çek.",
+      cap: "Uygulama yok. Kayıt yok. Şifre yok.\nKamerayı aç, okut, yükle. Bu kadar 📸"},
+    {t: "karusel", h: "Her etkinliğe bir kart", what: "Kına · Nişan · Düğün · Doğum günü (Seda / Uras) · Mezuniyet balosu kart örnekleri.",
+      how: "Tasarım sayfasında etkinlik türünü değiştirip her birinden bir kart görseli kaydet (\"Görseli telefona kaydet\").",
+      cap: "Sadece düğün değil 🎈\nKına gecesi, nişan, doğum günü partisi, mezuniyet balosu… Her etkinliğe uygun tasarım var."},
+    {t: "reels", h: "Ürün çekimi: stand, şövale, kartvizit", what: "Gerçek baskılar Özalit'ten gelince: kartı standa takma, şövaleye panoyu koyma, kartvizit destesi. Yakın plan, yumuşak ışık.",
+      how: "Baskılar henüz yoksa sitedeki fotoğraflarla yavaş yakınlaştırma (Ken Burns) videosu yap.",
+      cap: "Masada, girişte, tabakta 🤍\nMasa kartı, kartvizit ya da şövaleli giriş panosu: hepsi aynı tasarımla."},
+    {t: "hikaye", h: "Geri sayım: ilk etkinlik", what: "\"Yarın ilk etkinliğimiz var!\" + geri sayım çıkartması. Kartların hazırlandığı an (isimler bulanık ya da izinli).",
+      how: "Sinem'den izin al; izin yoksa ismi gösterme.", cap: ""},
+    {t: "hikaye", key: true, h: "PİLOT: Sinem'in kına gecesi", what: "Gece boyunca hikâye: masadaki QR kart, okutma anı, \"şu ana kadar X fotoğraf yüklendi\" sayacı (sahip panelinden). Misafir yüzü yok ya da izinli.",
+      how: "Etkinlik öncesi kontrol: kartlar masada mı, salonun interneti/çekimi nasıl, bir deneme yüklemesi yap. Sahip panelinden sayıları anlık takip et.", cap: ""},
+    {t: "reels", key: true, h: "Bir gecede kaç fotoğraf?", what: "Pilotun gerçek sayıları: kaç misafir yükledi, kaç fotoğraf/video. Kart → okutma → sahip panelindeki galeri kaydırma.",
+      how: "Sinem'in izniyle; galeride yüzler bulanık ya da yalnızca süsleme/detay fotoğrafları.",
+      cap: "İlk kına gecemizde misafirler [GERÇEK SAYI] fotoğraf ve video yükledi 🔥\nHepsi tek albümde, tek tıkla indirildi. Teşekkürler Sinem 💜"},
+    {t: "gonderi", key: true, h: "İlk gerçek yorum", what: "Sinem'in kendi sözleriyle yorumu (siteden yazmasını iste; yönetimden yayınla). Gönderi: yorum metni + kına gecesinden detay fotoğrafı.",
+      how: "Sitedeki yorum formu: memoryqr.bulqr.com.tr/#yorum. Yorumu \"Yorumlar\" öne çıkanına da ekle.",
+      cap: "İlk yorumumuz geldi 🥹\n\"[SİNEM'İN GERÇEK YORUMU]\"\nSizin anılarınızı da toplamak için sabırsızlanıyoruz."},
+  ]},
+  {w: "3. hafta · Güven ver", d: [
+    {t: "karusel", h: "Sık sorulanlar", what: "Uygulama gerekir mi? Kalite düşer mi? Kaç fotoğraf? Misafirler birbirini görür mü? Ne kadar saklanır?",
+      how: "Sitedeki SSS cevaplarını kısaltarak her slayta bir soru.",
+      cap: "En çok sorulan 5 soru 👇\nBaşka sorun varsa yorumlara yaz, hepsine cevap veriyoruz."},
+    {t: "reels", h: "Çift paneli: hepsini indir", what: "Sahip panelinde tam ekran izleme, kalp ile favorileme, \"Favorileri indir\". 15 sn.",
+      how: "Deneme etkinliğinde 15–20 örnek fotoğraf yükle, ekran kaydı al.",
+      cap: "Düğünden sonraki sabah 💌\nBütün fotoğraflar tek yerde: beğendiklerini favorile, hepsini tek tıkla indir."},
+    {t: "hikaye", h: "Kartını seç, sevdiklerine sor", what: "Tasarım sayfası + \"Sevdiklerine sor\" butonu: kartı sevgiline gönder. Link çıkartması.",
+      how: "Kendi telefonundan gerçek bir \"Sevdiklerine sor\" mesajı atıp ekran görüntüsünü paylaş.", cap: ""},
+    {t: "gonderi", h: "Masa kartı mı, kartvizit mi?", what: "Yan yana iki fotoğraf: pleksi standda masa kartı / tabakta kartvizit. Hangisi ne zaman tercih edilir.",
+      how: "Sitedeki iki fotoğraf.",
+      cap: "Masa kartı mı, kartvizit mi? 🤔\nMasa kartı: her masaya bir tane.\nKartvizit: her misafirin tabağına.\nSiz hangisini seçerdiniz? Yorumlara yazın 👇"},
+    {t: "reels", h: "Düğün hazırlık listesi", what: "Trend \"liste\" formatı: gelinlik ✅ salon ✅ fotoğrafçı ✅ misafir fotoğrafları ❌ → MemoryQR ✅.",
+      how: "Elle yazılmış bir liste kâğıdı ya da ekranda yazı animasyonu.",
+      cap: "Listenizde eksik bir madde var 📝\nMisafirlerin çektiği yüzlerce fotoğraf da sizin olsun."},
+    {t: "karusel", h: "Gizlilik ve güven", what: "Albüm yalnızca sizin; misafirler yalnızca kendi yüklediklerini görür; 30 gün sonra kalıcı silinir; uygunsuz fotoğrafı tek dokunuşla gizlersiniz.",
+      how: "Sade metin slaytları, bordo-krem renkler.",
+      cap: "Anılarınız sizin 🔒\nAlbümün tamamını yalnızca siz görürsünüz, 30 gün sonra kalıcı olarak silinir."},
+    {t: "gonderi", key: true, h: "Kampanya: ilk 10 çifte hediye", what: "\"Kasım'da sipariş veren ilk 10 çifte 1 yıl saklama hediye.\" Sayaç: kalan yer sayısı (gerçek).",
+      how: "Kampanyayı WhatsApp siparişlerinde not et; kalan sayıyı hikâyede güncelle.",
+      cap: "🎁 İlk 10 çifte 1 yıl saklama hediye!\nKasım'da siparişini başlatan ilk 10 çiftin albümünü 1 yıl saklıyoruz (299 TL değerinde).\nKartını seç, siparişini başlat: link profilde"},
+  ]},
+  {w: "4. hafta · Büyü", d: [
+    {t: "reels", h: "Doğum günü partisi", what: "\"Uras'ın Doğum Günü Partisi\" kartı (Dinozorlar/Uzay): çocuk partisinde ebeveynlerin çektiği fotoğraflar tek albümde.",
+      how: "Tasarım sayfasında doğum günü kartları + basit animasyon.",
+      cap: "Çocuk partisinde herkes fotoğraf çeker, kimse göndermez 🎈\nTek QR ile hepsi sizde."},
+    {t: "hikaye", h: "Kampanya hatırlatma", what: "\"İlk 10 çiftten kalan: X\" + soru kutusu \"Düğün tarihin ne zaman?\"",
+      how: "Cevap verenlere DM'den tasarım linki gönder.", cap: ""},
+    {t: "gonderi", h: "İş birliği çağrısı", what: "Düğün salonları, organizatörler ve fotoğrafçılar için: \"Çiftlerinize MemoryQR sunun, her satıştan pay alın.\"",
+      how: "Bu gönderiyi aynı gün 10 salona/organizatöre DM ile gönder (aşağıdaki metin).",
+      cap: "Düğün salonları, organizatörler, fotoğrafçılar 🤝\nÇiftlerinize MemoryQR'ı sunun, size özel indirim kodu ve her satıştan pay. DM'den yazın."},
+    {t: "reels", h: "Kamera arkası: baskı ve paketleme", what: "Özalit'te baskı, kartların kesimi, paketleme, kargoya verme. Samimi, müziksiz ya da sakin müzik.",
+      how: "Telefonu sabitle, kısa kısa çek, 15 sn'ye kes.",
+      cap: "Siparişiniz böyle hazırlanıyor 🤍\nTasarım → baskı → paket → kapınızda."},
+    {t: "karusel", h: "Gelin ve damada 7 ipucu", what: "Misafir fotoğraflarını kaybetmemek için 7 ipucu: kartları her masaya koy, girişe pano, DJ anonsu, 30 gün içinde indir…",
+      how: "Faydalı içerik kaydedilir ve paylaşılır; erişimi büyütür.",
+      cap: "Kaydet, düğün günü lazım olacak 📌\nMisafir fotoğraflarını kaybetmemek için 7 ipucu."},
+    {t: "hikaye", h: "Kampanya son 3 gün", what: "Geri sayım çıkartması + kalan yer sayısı + link.", how: "", cap: ""},
+    {t: "reels", h: "Sorulara video cevap", what: "Gelen DM sorularından birini ekrana koy ve 10 sn'de cevapla (ör. \"Video da yüklenir mi?\").",
+      how: "Yüzünü göstermek istemezsen ekran kaydı + yazı yeterli.",
+      cap: "Evet, video da yükleniyor 🎥\nSoruların varsa yorumlara yaz, sıradaki videoda cevaplayalım."},
+    {t: "gonderi", h: "Ayın özeti", what: "Gerçek sayılar: kaç etkinlik, kaç fotoğraf toplandı, kaç yorum. Teşekkür.",
+      how: "Yönetim ekranındaki toplamlar.",
+      cap: "İlk ayımız 💜\n[GERÇEK SAYI] etkinlik, [GERÇEK SAYI] fotoğraf ve video. Anılarınızı bize emanet ettiğiniz için teşekkürler."},
+    {t: "hikaye", key: true, h: "Değerlendir ve yeni ayı planla", what: "En çok izlenen 3 içeriği bul (Instagram istatistikleri). Onların benzerlerini gelecek aya koy; en az izlenen türü azalt.",
+      how: "Ölçümler: erişim, kaydetme, paylaşım, profil ziyareti, link tıklaması, DM, sipariş. Bu sayfayı yeni planla güncelle.", cap: ""},
+  ]},
+];
+
+const TYPE = {reels: "Reels", karusel: "Karusel", hikaye: "Hikâye", gonderi: "Gönderi"};
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("mqr_ig_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("mqr_ig_" + k, JSON.stringify(v)); } catch (e) {} },
+};
+const done = new Set(store.get("done", []));
+const startEl = document.getElementById("start");
+startEl.value = store.get("start", "2026-10-27");
+
+function render() {
+  const start = new Date((startEl.value || "2026-10-27") + "T12:00:00");
+  let n = 0;
+  document.getElementById("plan").innerHTML = PLAN.map(wk => `<section class="week"><div class="eyebrow">Hafta</div><h2>${esc(wk.w)}</h2>` + wk.d.map(d => {
+    n++;
+    const dt = new Date(start.getTime() + (n - 1) * 864e5).toLocaleDateString("tr-TR", {weekday: "long", day: "numeric", month: "long"});
+    const id = "g" + n;
+    return `<article class="day${done.has(n) ? " done" : ""}${d.key ? " key" : ""}" data-n="${n}">
+      <input type="checkbox" class="chk" aria-label="${n}. gün yapıldı" ${done.has(n) ? "checked" : ""}>
+      <div class="head"><span class="num">${n}. gün</span><span class="date">${esc(dt)}</span><span class="pill ${d.t}">${TYPE[d.t]}</span><b>${esc(d.h)}</b></div>
+      <div class="body"><p>${esc(d.what)}</p>
+        ${d.how ? `<p class="small">${esc(d.how)}</p>` : ""}
+        ${d.cap ? `<details><summary>Açıklama metni</summary><pre class="copy" id="${id}">${esc(d.cap)}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>` : ""}
+      </div></article>`;
+  }).join("") + `</section>`).join("");
+  const total = n;
+  document.getElementById("progT").textContent = `${done.size} / ${total} gün tamamlandı`;
+  document.getElementById("progB").style.width = (done.size / total * 100) + "%";
+}
+
+document.addEventListener("change", e => {
+  if (e.target === startEl) { store.set("start", startEl.value); return render(); }
+  const day = e.target.closest(".day");
+  if (!day) return;
+  const n = +day.dataset.n;
+  e.target.checked ? done.add(n) : done.delete(n);
+  store.set("done", [...done]);
+  render();
+});
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-copy]");
+  if (!b) return;
+  const text = document.getElementById(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(text); b.textContent = "Kopyalandı"; }
+  catch (err) { const r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = "Seçildi, kopyalayın"; }
+  setTimeout(() => { b.textContent = "Kopyala"; }, 1800);
+});
+render();
+</script>
+</body>
+</html>

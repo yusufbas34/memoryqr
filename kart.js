@@ -495,33 +495,66 @@ const POSTERS = [
 // o: img, ink (isim), mc (yazılar), ac (küçük başlık), y (dikey kaydırma), qr (QR boyu), brand (alt yazı yüksekliği), eyebrow: false (üst başlık yok)
 function frame(o) {
   const ink = o.ink, mc = o.mc || ink, ac = o.ac || mc, y0 = o.y || 0, q = o.qr || 34;
+  // L: dikey yerleşim (mm); verilmeyenler varsayılan + y kaydırması
+  const L = {eb: 27 + y0, t: 43 + y0, d: 50.5 + y0, m: 58 + y0, box: 71 + y0, brand: o.brand || 127, ...o.L};
   return {id: o.id, name: o.name, cat: "dugun", img: o.img, full: true, theme: {bg: o.bg, ink, accent: ac, font: '400 {s}px "Great Vibes"'},
-    text: ev => `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları QR kodu okutarak bizimle paylaşın`,
+    text: ev => o.text || `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları QR kodu okutarak bizimle paylaşın`,
     draw(k, g, ev, text) {
       k.bg(o.bg);
       const im = CARD_IMAGES[o.img];
       if (im) coverImage(g, im, 0, 0, g.canvas.width, g.canvas.height);
-      if (o.eyebrow !== false) k.text("Anılarımızı paylaşın", 52.5, 27 + y0, '600 {s}px "Montserrat"', 2.6, ac, {upper: true, sp: .5});
-      k.text(ev.title, 52.5, 43 + y0, '400 {s}px "Great Vibes"', 12.5, ink, {max: o.w || 70});
-      k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 50.5 + y0, '600 {s}px "Cormorant Garamond"', 4, mc);
-      k.wrap(text, 52.5, 58 + y0, o.w || 66, '500 {s}px "Cormorant Garamond"', 3.9, mc, 4.6);
-      const bw = q + 6, bx = 52.5 - bw / 2, by = 71 + y0;
+      if (o.eyebrow !== false) k.text("Anılarımızı paylaşın", 52.5, L.eb, '600 {s}px "Montserrat"', 2.6, ac, {upper: true, sp: .5});
+      k.text(ev.title, 52.5, L.t, '400 {s}px "Great Vibes"', o.ts || 12.5, ink, {max: o.w || 70});
+      k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, L.d, '600 {s}px "Cormorant Garamond"', 4, mc);
+      k.wrap(text, 52.5, L.m, o.w || 66, '500 {s}px "Cormorant Garamond"', 3.9, mc, 4.6);
+      const bw = q + 6, bx = 52.5 - bw / 2, by = L.box;
       g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(bx), k.X(by), k.mm(bw), k.mm(bw), k.mm(2.5)); g.fill();
       g.strokeStyle = ac; g.lineWidth = k.mm(.25); g.stroke();
       k.qr(guestLink(ev.code), bx + 3, by + 3, q, "#111111");
-      k.text("Okut · adını yaz · yükle", 52.5, by + bw + 6, '600 {s}px "Montserrat"', 2.5, ac, {upper: true, sp: .3});
-      BRAND(k, ev, o.brand || 127, o.bc || "rgba(0,0,0,.42)");
+      k.text("Okut · adını yaz · yükle", 52.5, by + bw + (o.okY || 6), '600 {s}px "Montserrat"', 2.5, ac, {upper: true, sp: .3});
+      BRAND(k, ev, L.brand, o.bc || "rgba(0,0,0,.42)");
     }};
 }
+// el çizimi kırmızı fırça çerçeve: kenarlarda fırça darbeleri, isimler büyük harf, ortada "&"
+const FIRCA = {id: "kirmizi_firca", name: "Kırmızı Fırça", cat: "dugun", theme: {bg: "#f5f1ee", ink: "#c3161f", accent: "#c3161f", font: '400 {s}px "Great Vibes"'},
+  text: () => "Bu güzel günden kalan fotoğraf ve videoları QR kodu okutarak bizimle paylaşın",
+  draw(k, g, ev, text) {
+    const R = "#c3161f", r = rng(7);
+    k.bg("#f5f1ee");
+    g.fillStyle = R;
+    const dash = (x, y, len, wid, a) => { g.save(); g.translate(k.X(x), k.X(y)); g.rotate(a); g.beginPath(); g.ellipse(0, 0, k.mm(len / 2), k.mm(wid / 2), 0, 0, 7); g.fill(); g.restore(); };
+    for (let x = 4; x < CARD_W - 1; x += 4.4) { dash(x + r(), 4.5 + r(), 5 + r() * 2.5, 1.4 + r() * .6, Math.PI / 2 + r() * .3 - .15); dash(x + r(), CARD_H - 4.5 - r(), 5 + r() * 2.5, 1.4 + r() * .6, Math.PI / 2 + r() * .3 - .15); }
+    for (let y = 12; y < CARD_H - 10; y += 4.6) { dash(4.5 + r(), y + r(), 5 + r() * 2.5, 1.4 + r() * .6, r() * .3 - .15); dash(CARD_W - 4.5 - r(), y + r(), 5 + r() * 2.5, 1.4 + r() * .6, r() * .3 - .15); }
+    const parts = String(ev.title).split(/\s*(?:&|\bve\b)\s*/i).filter(Boolean);
+    let y = 30;
+    if (parts.length === 2) {
+      k.text(parts[0], 52.5, y, '400 {s}px "Bodoni Moda"', 7.5, R, {upper: true, sp: 1.6, max: 80});
+      k.text("&", 52.5, y + 10, '400 {s}px "Great Vibes"', 9, R);
+      k.text(parts[1], 52.5, y + 20, '400 {s}px "Bodoni Moda"', 7.5, R, {upper: true, sp: 1.6, max: 80});
+      y += 30;
+    } else { k.text(ev.title, 52.5, y + 8, '400 {s}px "Bodoni Moda"', 7, R, {upper: true, sp: 1.2, max: 80}); y += 20; }
+    k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, y, '400 {s}px "Playfair Display"', 3.6, R, {upper: true, sp: .6});
+    k.wrap(text, 52.5, y + 8, 64, '400 {s}px "Playfair Display"', 3.3, "#7a2a2e", 4.4);
+    const q = 32, bw = q + 6, by = y + 19;
+    g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(52.5 - bw / 2), k.X(by), k.mm(bw), k.mm(bw), k.mm(2)); g.fill();
+    g.strokeStyle = R; g.lineWidth = k.mm(.35); g.stroke();
+    k.qr(guestLink(ev.code), 52.5 - q / 2, by + 3, q, "#111111");
+    k.text("Okut · adını yaz · yükle", 52.5, by + bw + 6, '400 {s}px "Playfair Display"', 3.2, R, {upper: true, sp: .6});
+    BRAND(k, ev, 135, "rgba(120,30,35,.55)");
+  }};
 const FRAMES = [
   frame({id: "lacivert_barok", name: "Lacivert Barok", img: "kart/cerceve/barok.webp", bg: "#fbf7f0", ink: "#1f3358", mc: "#4a4f63", ac: "#a8832f", y: 2}),
   frame({id: "lacivert_dalga", name: "Lacivert Dalga", img: "kart/cerceve/dalga.webp", bg: "#fbf5ec", ink: "#22345a", mc: "#4a4f63", ac: "#a8832f", y: 2, brand: 125}),
   frame({id: "mavi_suluboya", name: "Mavi Suluboya", img: "kart/cerceve/suluboya.webp", bg: "#fdf8f3", ink: "#2e4a70", mc: "#4e5a6e", ac: "#a8832f", y: 6, w: 60, qr: 30, brand: 129, eyebrow: false}),
   frame({id: "adacayi", name: "Adaçayı", img: "kart/cerceve/adacayi.webp", bg: "#fbf7f0", ink: "#4d6248", mc: "#5b6656", ac: "#a8832f", y: 2}),
+  frame({id: "pembe_cicek", name: "Pembe Bahar", img: "kart/cerceve/pembe-cicek.webp", bg: "#f8f6f1", ink: "#9c4a55", mc: "#6e5a52", ac: "#a0785a", y: 2, w: 62}),
+  frame({id: "bordo_gul", name: "Bordo Güller", img: "kart/cerceve/bordo-gul.webp", bg: "#ffffff", ink: "#7a1a24", mc: "#5e4a46", ac: "#9a6b4f", eyebrow: false, ts: 11, qr: 26, okY: 4.5,
+    text: "Fotoğraf ve videolarınızı QR kodu okutarak bizimle paylaşın", L: {t: 49, d: 55.5, m: 62, box: 71, brand: 110.5}}),
+  frame({id: "altin_zambak", name: "Altın Zambak", img: "kart/cerceve/altin-zambak.webp", bg: "#ffffff", ink: "#6b5530", mc: "#5e5546", ac: "#b08a3e", y: 4, w: 56, qr: 30, brand: 124, eyebrow: false}),
   frame({id: "beyaz_cicek", name: "Beyaz Çiçekler", img: "kart/cerceve/beyaz-cicek.webp", bg: "#fbf8ef", ink: "#4f6a3c", mc: "#5b6656", ac: "#a8832f", y: 0, w: 60, qr: 28, brand: 118}),
 ];
 CARD_DESIGNS.push(...POSTERS);
-CARD_DESIGNS.push(...FRAMES);
+CARD_DESIGNS.push(...FRAMES, FIRCA);
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
 // ---------------------------------------------------------------- yazı tipi ve görsel yükleme

@@ -41,7 +41,7 @@ const staticBlock = `<!-- SEO:ICERIK (araclar/seo.cjs üretir; JavaScript açıl
 <h2>Paketler ve fiyatlar</h2>
 <ul>${PAKETLER.map(p => `<li><strong>${esc(p.ad)}: ${esc(p.fiyat)}</strong> · ${esc(p.ozellik.join(", "))}</li>`).join("")}<li><strong>Ek: ${esc(EK.ad)} ${esc(EK.fiyat)}</strong></li></ul>
 <h2>QR kart tasarımları</h2>
-<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 43 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
+<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 47 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
 <h2>Sık sorulan sorular</h2>
 ${FAQ.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("\n")}
 <h2>İletişim</h2>

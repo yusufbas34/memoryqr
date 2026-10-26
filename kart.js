@@ -491,7 +491,37 @@ const POSTERS = [
   poster({id: "kircicek", name: "Kır Çiçekleri", cat: "dugun", emojis: ["1f338", "1f33c", "1f337", "1f33f"], bg: "#fbf8f1", hc: "#4a3b2c", nf: F.play, ns: 8, h: [], L: {name: 34, msg: 46, qrY: 66, qr: 32},
     deco(k) { const r = rng(12); for (let i = 0; i < 22; i++) { const x = 6 + r() * 93, y = r() < .5 ? 118 + r() * 26 : 4 + r() * 14; k.emoji(["1f338", "1f33c", "1f337", "1f33f"][i % 4], x, y, 6 + r() * 5, r() - .5); } }}),
 ];
+// çerçeve tasarımları: hazır görsel kartın tamamını (taşma payıyla) kaplar, yazılar ve QR ortadaki boşluğa yerleşir
+// o: img, ink (isim), mc (yazılar), ac (küçük başlık), y (dikey kaydırma), qr (QR boyu), brand (alt yazı yüksekliği), eyebrow: false (üst başlık yok)
+function frame(o) {
+  const ink = o.ink, mc = o.mc || ink, ac = o.ac || mc, y0 = o.y || 0, q = o.qr || 34;
+  return {id: o.id, name: o.name, cat: "dugun", img: o.img, full: true, theme: {bg: o.bg, ink, accent: ac, font: '400 {s}px "Great Vibes"'},
+    text: ev => `${KIND_IN[ev.kind] || KIND_IN.diger} çektiğiniz fotoğraf ve videoları QR kodu okutarak bizimle paylaşın`,
+    draw(k, g, ev, text) {
+      k.bg(o.bg);
+      const im = CARD_IMAGES[o.img];
+      if (im) coverImage(g, im, 0, 0, g.canvas.width, g.canvas.height);
+      if (o.eyebrow !== false) k.text("Anılarımızı paylaşın", 52.5, 27 + y0, '600 {s}px "Montserrat"', 2.6, ac, {upper: true, sp: .5});
+      k.text(ev.title, 52.5, 43 + y0, '400 {s}px "Great Vibes"', 12.5, ink, {max: o.w || 70});
+      k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 50.5 + y0, '600 {s}px "Cormorant Garamond"', 4, mc);
+      k.wrap(text, 52.5, 58 + y0, o.w || 66, '500 {s}px "Cormorant Garamond"', 3.9, mc, 4.6);
+      const bw = q + 6, bx = 52.5 - bw / 2, by = 71 + y0;
+      g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(bx), k.X(by), k.mm(bw), k.mm(bw), k.mm(2.5)); g.fill();
+      g.strokeStyle = ac; g.lineWidth = k.mm(.25); g.stroke();
+      k.qr(guestLink(ev.code), bx + 3, by + 3, q, "#111111");
+      k.text("Okut · adını yaz · yükle", 52.5, by + bw + 6, '600 {s}px "Montserrat"', 2.5, ac, {upper: true, sp: .3});
+      BRAND(k, ev, o.brand || 127, o.bc || "rgba(0,0,0,.42)");
+    }};
+}
+const FRAMES = [
+  frame({id: "lacivert_barok", name: "Lacivert Barok", img: "kart/cerceve/barok.webp", bg: "#fbf7f0", ink: "#1f3358", mc: "#4a4f63", ac: "#a8832f", y: 2}),
+  frame({id: "lacivert_dalga", name: "Lacivert Dalga", img: "kart/cerceve/dalga.webp", bg: "#fbf5ec", ink: "#22345a", mc: "#4a4f63", ac: "#a8832f", y: 2, brand: 125}),
+  frame({id: "mavi_suluboya", name: "Mavi Suluboya", img: "kart/cerceve/suluboya.webp", bg: "#fdf8f3", ink: "#2e4a70", mc: "#4e5a6e", ac: "#a8832f", y: 6, w: 60, qr: 30, brand: 129, eyebrow: false}),
+  frame({id: "adacayi", name: "Adaçayı", img: "kart/cerceve/adacayi.webp", bg: "#fbf7f0", ink: "#4d6248", mc: "#5b6656", ac: "#a8832f", y: 2}),
+  frame({id: "beyaz_cicek", name: "Beyaz Çiçekler", img: "kart/cerceve/beyaz-cicek.webp", bg: "#fbf8ef", ink: "#4f6a3c", mc: "#5b6656", ac: "#a8832f", y: 0, w: 60, qr: 28, brand: 118}),
+];
 CARD_DESIGNS.push(...POSTERS);
+CARD_DESIGNS.push(...FRAMES);
 const cardDesign = id => CARD_DESIGNS.find(d => d.id === id) || CARD_DESIGNS[0];
 
 // ---------------------------------------------------------------- yazı tipi ve görsel yükleme
@@ -623,7 +653,12 @@ function drawBiz(ev, sel, pxmm) {
   if (sel.custom?.img) { coverImage(g, sel.custom.img, 0, 0, k.X(46), c.height); g.fillStyle = "#ffffff"; g.fillRect(k.X(46), 0, c.width, c.height); }
   else {
     const d = cardDesign(sel.design);
-    if (d.img && CARD_IMAGES[d.img]) { const im = CARD_IMAGES[d.img]; g.drawImage(im, k.X(31), k.X(3), k.mm(14), k.mm(14 * im.height / im.width)); }
+    if (d.full && CARD_IMAGES[d.img]) {
+      // çerçeve görseli: tüm kartı kaplar, yazıların arkasına yarı saydam zemin (süsler yazıya karışmasın)
+      coverImage(g, CARD_IMAGES[d.img], 0, 0, c.width, c.height);
+      g.fillStyle = t.bg + "e0"; g.beginPath(); g.roundRect(k.X(3), k.X(6), k.mm(43), k.mm(43), k.mm(2.5)); g.fill();
+    }
+    else if (d.img && CARD_IMAGES[d.img]) { const im = CARD_IMAGES[d.img]; g.drawImage(im, k.X(31), k.X(3), k.mm(14), k.mm(14 * im.height / im.width)); }
     (t.emojis || []).forEach((e, i) => k.emoji(e, 7 + i * 9, 49, 8, (i - .5) * .3));
     g.fillStyle = t.accent; g.fillRect(k.X(6), k.X(9), k.mm(10), k.mm(.6));
   }

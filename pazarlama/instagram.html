@@ -100,11 +100,26 @@ Uygulama yok · Orijinal kalite · 30 gün saklama
     <button class="btn" data-copy="bio">Kopyala</button>
   </div>
 
+  <h2>Bir oturuşta 30 günü planla (Meta Business Suite)</h2>
+  <div class="card">
+    <p class="small">Şifre kimseyle paylaşılmaz; paylaşımlar Meta'nın kendi planlayıcısıyla, belirlediğin saatte kendiliğinden çıkar. Ücretsiz. Bilgisayarda yaklaşık 1 saat.</p>
+    <ol>
+      <li><b>Hesabı hazırla:</b> Instagram → Ayarlar → Hesap türü → <b>Profesyonel hesaba geç</b> → İşletme.</li>
+      <li><b>Facebook sayfası bağla:</b> yoksa Facebook'ta "MemoryQR" adında bir sayfa aç; Instagram → Profili düzenle → Sayfa → bu sayfayı seç.</li>
+      <li><b>Planlayıcıyı aç:</b> bilgisayardan <a href="https://business.facebook.com/latest/content_calendar" target="_blank" rel="noopener">business.facebook.com</a> → İçerik → <b>Planlayıcı</b>.</li>
+      <li><b>Bu sayfayı yan sekmede aç.</b> Her gün için: görselleri ya da videoyu indir → Planlayıcı'da <b>Gönderi oluştur</b> (Reels için <b>Reels oluştur</b>, hikâye için <b>Hikâye oluştur</b>) → yalnızca Instagram'ı seç → görselleri sırayla ekle → "Açıklama ve etiketler"i kopyala-yapıştır.</li>
+      <li><b>Saat:</b> "Planla"yı seç; tarih kartın üstünde, saat de yanında yazıyor (hafta içi 20.30, hafta sonu 11.30).</li>
+      <li><b>Reels:</b> Planlayıcı'da müzik ekleyebilirsin; eklemezsen paylaşım saatinde telefondan Reels'i açıp sonradan ses ekle. Kapak olarak <code>kapak</code> görselini seç.</li>
+      <li>Planlanan günü bu sayfada işaretle. Ay boyunca sana kalan iş: yorumlara ve DM'lere cevap, günlük 15 dakika etkileşim.</li>
+    </ol>
+    <p class="small">13, 14 ve 29. günler gerçek veri bekliyor; onları kına gecesinden sonra ekleriz. Hikâyelerdeki anket/soru çıkartmaları planlayıcıda olmayabilir; o günleri telefondan elle at.</p>
+  </div>
+
   <h2>Her gün 15 dakika</h2>
   <div class="grid">
     <div class="card"><h3>Etkileşim</h3><ul><li>#düğünhazırlığı ve #kınagecesi etiketlerinde 10 gönderiye anlamlı yorum</li><li>Şehrindeki 5 düğün salonu, organizatör ve fotoğrafçı hesabına yorum</li><li>Gelen her DM'e aynı gün cevap</li></ul></div>
     <div class="card"><h3>Hikâye</h3><ul><li>Günde en az 2 hikâye: o günün gönderisi + bir anket ya da soru kutusu</li><li>Tasarım linki çıkartması: <code>memoryqr.bulqr.com.tr/?tasarimlar</code></li></ul></div>
-    <div class="card"><h3>Paylaşım saati</h3><ul><li>Hafta içi 20.00–22.00</li><li>Hafta sonu 11.00–13.00</li><li>Reels'i hep aynı saatte at; Instagram düzeni sever</li></ul></div>
+    <div class="card"><h3>Paylaşım saati</h3><ul><li>Hafta içi 20.30</li><li>Hafta sonu 11.30</li><li>Reels'i hep aynı saatte at; Instagram düzeni sever</li></ul></div>
   </div>
 
   <h2>Etiketler</h2>
@@ -173,7 +188,8 @@ function render() {
   firstOpen = PLAN.flatMap(w => w.d).findIndex((d, i) => !done.has(i + 1)) + 1;
   document.getElementById("plan").innerHTML = PLAN.map(wk => `<section class="week"><div class="eyebrow">Hafta</div><h2>${esc(wk.w)}</h2>` + wk.d.map(d => {
     n++;
-    const dt = new Date(start.getTime() + (n - 1) * 864e5).toLocaleDateString("tr-TR", {weekday: "long", day: "numeric", month: "long"});
+    const day = new Date(start.getTime() + (n - 1) * 864e5);
+    const dt = day.toLocaleDateString("tr-TR", {weekday: "long", day: "numeric", month: "long"}) + ([0, 6].includes(day.getDay()) ? " · 11.30" : " · 20.30");
     const id = "g" + n;
     return `<article class="day${done.has(n) ? " done" : ""}${d.key ? " key" : ""}" data-n="${n}">
       <input type="checkbox" class="chk" aria-label="${n}. gün yapıldı" ${done.has(n) ? "checked" : ""}>

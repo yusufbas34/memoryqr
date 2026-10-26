@@ -112,3 +112,11 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 
 ## Pazarlama
 - `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı).
+
+## Arama motorları (SEO)
+- `index.html` başlığı ve açıklaması "düğün QR kod", "misafir fotoğraf" aramalarına göre yazıldı; `og.jpg` paylaşım görseli, `apple-touch-icon.png`.
+- `<head>` içindeki yapılandırılmış veri (işletme, paketler ve fiyatlar, SSS) ve `<main>` içindeki sabit tanıtım metni (JavaScript çalışmadan okunur)
+  `araclar/seo.cjs` ile üretilir. **Paket, fiyat, SSS ya da telefon değişince:** `node araclar/seo.cjs` çalıştırıp gönderin.
+- `robots.txt` (albüm, yönetim ve pazarlama sayfaları taranmaz) ve `sitemap.xml` (ana sayfa, tasarımlar, gizlilik).
+- Yapılması gerekenler (hesap sahibi): Google Search Console'da alan adını doğrulayıp site haritasını gönderin; Google İşletme Profili açın
+  (hizmet bölgesi işletmesi, telefon, site); Instagram ve WhatsApp İşletme profillerine siteyi ekleyin; gerçek yorum isteyin.

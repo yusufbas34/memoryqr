@@ -3,14 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>MemoryQR</title>
-<meta name="description" content="Düğün, nişan, kına ve mezuniyet için tek QR: misafirler okutur, fotoğraf ve videolarını yükler, tüm anılar tek albümde toplanır.">
+<title>Düğün QR Kod ile Misafir Fotoğraf ve Video Toplama | MemoryQR</title>
+<meta name="description" content="Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu ortak albüm. Misafirler QR'ı okutur, fotoğraf ve videolarını uygulama indirmeden yükler. 499 TL'den başlayan paketler.">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
 <meta name="theme-color" content="#8c2f52">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MemoryQR">
-<meta property="og:title" content="MemoryQR | Anılarınız için tek QR">
-<meta property="og:description" content="Okut, yükle, tüm anılar tek yerde toplansın. Uygulama indirmek gerekmez.">
+<meta property="og:title" content="MemoryQR | Düğün için QR kodlu ortak fotoğraf albümü">
+<meta property="og:description" content="Misafirler QR'ı okutur, fotoğraf ve videolarını yükler; bütün anılar tek albümde. Uygulama indirmek gerekmez.">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:image" content="https://memoryqr.bulqr.com.tr/og.jpg">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Düğün salonunda pleksi standda MemoryQR QR kodlu masa kartı">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:url" content="https://memoryqr.bulqr.com.tr/">
 <link rel="canonical" href="https://memoryqr.bulqr.com.tr/">
 <link rel="stylesheet" href="fonts.css">
@@ -28,6 +34,9 @@
   // Boş bırakılan buton görünmez.
   const WHATSAPP = "905316775997";
   const INSTAGRAM = "";
+  // İletişim bölümü ve alt bilgi: telefon (görünen biçimde) ve e-posta (boşsa görünmez)
+  const TELEFON = "0531 677 59 97";
+  const EPOSTA = "";
   // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
   const PAKETLER = [
     {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
@@ -176,6 +185,10 @@ body.slide{background:#000;padding:0;overflow:hidden;cursor:none}
 /* iletişim kutuları */
 .modal{position:fixed;inset:0;background:rgba(20,14,20,.55);z-index:60;display:grid;place-items:center;padding:20px}
 .modal .card{max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+/* arama motorları için sabit içerik (JavaScript açılınca yerine sayfa çizilir) */
+.seo{max-width:760px;margin:0 auto;display:grid;gap:10px;line-height:1.6}
+.seo h1{font-size:36px}.seo h2{margin-top:14px}.seo h3{font-size:16px;margin-top:6px}
+
 /* tanıtım sayfası */
 main.home{max-width:1080px;gap:0}
 html{scroll-behavior:smooth}
@@ -224,6 +237,9 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 .lfaq details p{margin-top:8px}
 .lsplit{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:28px}
 @media (max-width:760px){.lsplit{grid-template-columns:1fr}}
+.lcontact{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.lcontact .card{gap:8px;align-content:start}
+.lcontact .big{font-family:"Barlow Condensed","Barlow",sans-serif;font-size:28px;font-weight:700;color:var(--ink);text-decoration:none;font-variant-numeric:tabular-nums}
 .lcta{text-align:center;justify-items:center;background:var(--soft);border-radius:16px;border-top:0;padding:40px 20px;margin-bottom:20px}
 
 .laddon{background:var(--soft);border-radius:14px;padding:18px 22px;margin-top:6px}
@@ -287,9 +303,38 @@ footer{text-align:center;font-size:13px;color:var(--muted);display:grid;gap:6px;
 footer a{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<!-- SEO:VERI (araclar/seo.cjs üretir, elle değiştirmeyin) -->
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ProfessionalService","@id":"https://memoryqr.bulqr.com.tr/#isletme","name":"MemoryQR","url":"https://memoryqr.bulqr.com.tr/","image":"https://memoryqr.bulqr.com.tr/og.jpg","logo":"https://memoryqr.bulqr.com.tr/logo.svg","description":"Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu ortak fotoğraf albümü. Misafirler QR kodu okutur, fotoğraf ve videolarını uygulama indirmeden tek albüme yükler.","telephone":"+905316775997","priceRange":"₺499–₺1999","areaServed":{"@type":"Country","name":"Türkiye"},"address":{"@type":"PostalAddress","addressCountry":"TR"},"makesOffer":[{"@type":"Offer","name":"Dijital paket","description":"1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, QR kart PDF'i (kendiniz basın), Tek tıkla hepsini indirme","price":"499","priceCurrency":"TRY","url":"https://memoryqr.bulqr.com.tr/#paketler","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"Standart paket","description":"1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)","price":"899","priceCurrency":"TRY","url":"https://memoryqr.bulqr.com.tr/#paketler","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"Standart + Şövale paket","description":"1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), Giriş panosu ve ahşap şövale","price":"1499","priceCurrency":"TRY","url":"https://memoryqr.bulqr.com.tr/#paketler","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"Aile paketi paket","description":"Kına + düğün, 2 ayrı albüm, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), 1 giriş panosu (50 × 70 cm) ve ahşap şövale, 60 gün saklama","price":"1999","priceCurrency":"TRY","url":"https://memoryqr.bulqr.com.tr/#paketler","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"1 yıl saklama","description":"Albümün Google Drive'da 1 yıl saklanması","price":"299","priceCurrency":"TRY","url":"https://memoryqr.bulqr.com.tr/#paketler"}]},{"@type":"WebSite","@id":"https://memoryqr.bulqr.com.tr/#site","url":"https://memoryqr.bulqr.com.tr/","name":"MemoryQR","inLanguage":"tr-TR","publisher":{"@id":"https://memoryqr.bulqr.com.tr/#isletme"}},{"@type":"FAQPage","@id":"https://memoryqr.bulqr.com.tr/#sss","mainEntity":[{"@type":"Question","name":"Misafirlerin uygulama indirmesi gerekiyor mu?","acceptedAnswer":{"@type":"Answer","text":"Hayır. Telefon kamerasıyla QR okutulur, sayfa tarayıcıda açılır. Adını yazar ve yükler."}},{"@type":"Question","name":"Fotoğraflar kalitesini kaybediyor mu?","acceptedAnswer":{"@type":"Answer","text":"Hayır, fotoğraflar orijinal haliyle yüklenir. Yalnızca iPhone'un HEIC dosyaları her telefonda açılabilsin diye aynı çözünürlükte JPEG'e çevrilir."}},{"@type":"Question","name":"Kaç fotoğraf ve video yüklenebilir?","acceptedAnswer":{"@type":"Answer","text":"Etkinlik başına 5.000 dosyaya kadar. Video başına en çok 300 MB (telefonla birkaç dakikalık kayıt)."}},{"@type":"Question","name":"Misafirler birbirinin fotoğraflarını görür mü?","acceptedAnswer":{"@type":"Answer","text":"Varsayılan olarak hayır: herkes yalnızca kendi yüklediklerini görür. İsterseniz panelden herkese açabilirsiniz."}},{"@type":"Question","name":"Fotoğraflar ne kadar saklanıyor?","acceptedAnswer":{"@type":"Answer","text":"Etkinlikten sonra 30 gün. Bu sürede hepsini tek tıkla indirirsiniz; süre dolunca dosyalar kalıcı olarak silinir."}},{"@type":"Question","name":"Daha uzun saklamak istersem?","acceptedAnswer":{"@type":"Answer","text":"1 yıl saklama ekini alabilirsiniz. Albümünüz Google Drive'da arşivlenir, bağlantısı albüm sayfanızda bir yıl boyunca durur."}},{"@type":"Question","name":"Uygunsuz bir fotoğraf yüklenirse?","acceptedAnswer":{"@type":"Answer","text":"Panelden tek dokunuşla gizler ya da silersiniz. Gizlenen fotoğraf misafirlere görünmez."}},{"@type":"Question","name":"Masa kartı mı, kartvizit mi?","acceptedAnswer":{"@type":"Answer","text":"Masa kartı A6 boyutundadır, masalara konur; her masaya bir tane yeter. Kartvizit küçüktür (8,5 × 5,5 cm), her misafirin tabağına ya da peçetesinin yanına konur. Standart pakette 10 masa kartı ya da 100 kartvizitten birini seçersiniz."}},{"@type":"Question","name":"Kartları kim basıyor?","acceptedAnswer":{"@type":"Answer","text":"Basılı paketlerde masa kartlarını biz bastırıp gönderiyoruz. Dijital pakette PDF'i alıp istediğiniz yerde bastırabilirsiniz."}}]}]}</script>
+<!-- /SEO:VERI -->
 </head>
 <body>
-<main id="app"><p>Yükleniyor…</p></main>
+<main id="app">
+<!-- SEO:ICERIK (araclar/seo.cjs üretir; JavaScript açılınca yerine sayfa çizilir) -->
+<article class="seo">
+<h1>Düğün QR kod ile misafir fotoğraflarını tek albümde toplayın</h1>
+<p>MemoryQR; düğün, nişan, kına gecesi, doğum günü ve mezuniyet için QR kodlu ortak fotoğraf albümüdür. Misafirler masadaki QR kodu telefon kamerasıyla okutur, adını yazar, fotoğraf ve videolarını orijinal kalitede yükler. Uygulama indirmek gerekmez; bütün anılar tek albümde toplanır ve tek tıkla indirilir.</p>
+<h2>Nasıl çalışır?</h2>
+<ol><li>QR kodlu masa kartı, kartvizit ya da giriş panosu masalara ve girişe konur.</li><li>Misafirler QR kodu okutur, adını yazar, galeriden seçer ya da anında çeker.</li><li>Etkinlik sahibi bütün fotoğraf ve videoları görür, favoriler, tek tıkla ZIP olarak indirir.</li></ol>
+<h2>Paketler ve fiyatlar</h2>
+<ul><li><strong>Dijital: 499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, QR kart PDF'i (kendiniz basın), Tek tıkla hepsini indirme</li><li><strong>Standart: 899 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)</li><li><strong>Standart + Şövale: 1.499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), Giriş panosu ve ahşap şövale</li><li><strong>Aile paketi: 1.999 TL</strong> · Kına + düğün, 2 ayrı albüm, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), 1 giriş panosu (50 × 70 cm) ve ahşap şövale, 60 gün saklama</li><li><strong>Ek: 1 yıl saklama +299 TL</strong></li></ul>
+<h2>QR kart tasarımları</h2>
+<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 38 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
+<h2>Sık sorulan sorular</h2>
+<h3>Misafirlerin uygulama indirmesi gerekiyor mu?</h3><p>Hayır. Telefon kamerasıyla QR okutulur, sayfa tarayıcıda açılır. Adını yazar ve yükler.</p>
+<h3>Fotoğraflar kalitesini kaybediyor mu?</h3><p>Hayır, fotoğraflar orijinal haliyle yüklenir. Yalnızca iPhone'un HEIC dosyaları her telefonda açılabilsin diye aynı çözünürlükte JPEG'e çevrilir.</p>
+<h3>Kaç fotoğraf ve video yüklenebilir?</h3><p>Etkinlik başına 5.000 dosyaya kadar. Video başına en çok 300 MB (telefonla birkaç dakikalık kayıt).</p>
+<h3>Misafirler birbirinin fotoğraflarını görür mü?</h3><p>Varsayılan olarak hayır: herkes yalnızca kendi yüklediklerini görür. İsterseniz panelden herkese açabilirsiniz.</p>
+<h3>Fotoğraflar ne kadar saklanıyor?</h3><p>Etkinlikten sonra 30 gün. Bu sürede hepsini tek tıkla indirirsiniz; süre dolunca dosyalar kalıcı olarak silinir.</p>
+<h3>Daha uzun saklamak istersem?</h3><p>1 yıl saklama ekini alabilirsiniz. Albümünüz Google Drive'da arşivlenir, bağlantısı albüm sayfanızda bir yıl boyunca durur.</p>
+<h3>Uygunsuz bir fotoğraf yüklenirse?</h3><p>Panelden tek dokunuşla gizler ya da silersiniz. Gizlenen fotoğraf misafirlere görünmez.</p>
+<h3>Masa kartı mı, kartvizit mi?</h3><p>Masa kartı A6 boyutundadır, masalara konur; her masaya bir tane yeter. Kartvizit küçüktür (8,5 × 5,5 cm), her misafirin tabağına ya da peçetesinin yanına konur. Standart pakette 10 masa kartı ya da 100 kartvizitten birini seçersiniz.</p>
+<h3>Kartları kim basıyor?</h3><p>Basılı paketlerde masa kartlarını biz bastırıp gönderiyoruz. Dijital pakette PDF'i alıp istediğiniz yerde bastırabilirsiniz.</p>
+<h2>İletişim</h2>
+<p>Telefon ve WhatsApp: <a href="tel:+905316775997">0531 677 59 97</a> · Türkiye geneli hizmet.</p>
+</article>
+<!-- /SEO:ICERIK -->
+</main>
+<script>/* albüm, yönetim ve diğer sayfalarda sabit tanıtım içeriği bir an bile görünmesin */if (location.search) document.getElementById("app").innerHTML = "<p>Yükleniyor…</p>";</script>
 
 <script>
 "use strict";
@@ -415,7 +460,9 @@ const ICON = {
   wa: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-3.3-.8-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.4.2.5.3.1.2.1.7-.1 1.3z"/></svg>`,
 };
 const brandHtml = `<a class="brand" href="${esc(BASE)}">${ICON.logo}MEMORYQR</a>`;
+const telHref = () => "tel:+90" + TELEFON.replace(/\D/g, "").replace(/^0/, "");
 const footerHtml = code => `<footer>${code ? `<a href="?e=${esc(code)}&sahip">Etkinlik sahibi girişi</a>` : ""}
+  ${TELEFON ? `<span>İletişim: <a href="${telHref()}">${esc(TELEFON)}</a>${EPOSTA ? ` · <a href="mailto:${esc(EPOSTA)}">${esc(EPOSTA)}</a>` : ""}</span>` : ""}
   <span>MemoryQR · Bul QR · <a href="gizlilik.html">Gizlilik</a></span></footer>`;
 
 // ---------------------------------------------------------------- görsel hazırlama
@@ -1308,6 +1355,12 @@ function adminPanel(key, list) {
 const SAMPLE_BY_CAT = {dogum_kiz: ["Seda'nın Doğum Günü", "dogum_gunu"], dogum_erkek: ["Uras'ın Doğum Günü Partisi", "dogum_gunu"],
   mezuniyet: ["Hukuk Fakültesi Mezuniyet Balosu", "mezuniyet"]};
 const sampleEv = (id, base) => { const x = SAMPLE_BY_CAT[cardDesign(id).cat]; return x ? {...base, title: x[0], kind: x[1]} : base; };
+// sayfaya özel arama motoru açıklaması ve asıl adres
+function setMeta(desc, canonical) {
+  document.querySelector('meta[name="description"]')?.setAttribute("content", desc);
+  document.querySelector('link[rel="canonical"]')?.setAttribute("href", canonical);
+  document.querySelector('meta[property="og:url"]')?.setAttribute("content", canonical);
+}
 const waLink = text => WHATSAPP ? `https://wa.me/${WHATSAPP.replace(/\D/g, "")}?text=${encodeURIComponent(text)}` : "";
 const FEATURES = [
   ["Uygulama yok", "Misafir telefon kamerasıyla okutur, tarayıcıda açılır. Kayıt, şifre, indirme yok."],
@@ -1336,13 +1389,13 @@ function homeView() {
     (INSTAGRAM ? `<a class="btn ghost" href="https://www.instagram.com/${esc(INSTAGRAM)}" target="_blank" rel="noopener">Instagram'da görün</a>` : "");
   app.innerHTML = `
     <nav class="lnav">${brandHtml}<div class="row">
-      <a href="#nasil">Nasıl çalışır</a><a href="?tasarimlar">Tasarımlar</a><a href="#paketler">Paketler</a><a href="#yorumlar">Yorumlar</a><a href="#sss">SSS</a>
+      <a href="#nasil">Nasıl çalışır</a><a href="?tasarimlar">Tasarımlar</a><a href="#paketler">Paketler</a><a href="#yorumlar">Yorumlar</a><a href="#sss">SSS</a><a href="#iletisim">İletişim</a>
       <a class="btn small" href="#albumum">Albümüme gir</a></div></nav>
 
     <section class="lhero">
       <div class="stack">
-        <div class="eyebrow">Düğün · Nişan · Kına · Mezuniyet</div>
-        <h1>Anılarınız için tek QR</h1>
+        <div class="eyebrow">Düğün · Nişan · Kına · Doğum günü · Mezuniyet</div>
+        <h1>Düğün anılarınız için tek QR</h1>
         <p class="lede">Misafirleriniz masadaki QR'ı okutur, adını yazar, fotoğraf ve videolarını yükler. Gecenin bütün anları tek albümde toplanır. Uygulama indirmek gerekmez.</p>
         <div class="row">${contact || `<a class="btn" href="#paketler">Paketleri görün</a>`}<a class="btn light" href="#nasil">Nasıl çalışır?</a></div>
       </div>
@@ -1402,6 +1455,14 @@ function homeView() {
     </section>
 
     ${contact ? `<section class="lsec lcta"><h2>Sizin gününüz için de hazırlayalım</h2><p>Tarihinizi ve isimlerinizi yazın, kart tasarımınızı birlikte seçelim.</p><div class="row">${contact}</div></section>` : ""}
+    <section class="lsec" id="iletisim"><div class="eyebrow">İletişim</div><h2>Bize ulaşın</h2>
+      <div class="lcontact">
+        ${TELEFON ? `<div class="card"><h3>Telefon</h3><a class="big" href="${telHref()}">${esc(TELEFON)}</a><span class="hint">Arayın ya da WhatsApp'tan yazın</span></div>` : ""}
+        ${wa ? `<div class="card"><h3>WhatsApp</h3><a class="btn" href="${esc(wa)}" target="_blank" rel="noopener">${ICON.wa}Mesaj gönderin</a><span class="hint">Mesajınıza en kısa sürede dönüyoruz</span></div>` : ""}
+        ${EPOSTA ? `<div class="card"><h3>E-posta</h3><a class="big" href="mailto:${esc(EPOSTA)}">${esc(EPOSTA)}</a></div>` : ""}
+        ${INSTAGRAM ? `<div class="card"><h3>Instagram</h3><a class="big" href="https://www.instagram.com/${esc(INSTAGRAM)}" target="_blank" rel="noopener">@${esc(INSTAGRAM)}</a></div>` : ""}
+        <div class="card"><h3>Hizmet bölgesi</h3><span class="big">Türkiye geneli</span><span class="hint">Basılı kartlar kargoyla gönderilir</span></div>
+      </div></section>
     ${footerHtml()}`;
   $("#cf").onsubmit = e => { e.preventDefault(); const c = $("#cc").value.replace(/[^A-Za-z0-9]/g, "").toUpperCase(); if (c) location.href = `?e=${c}`; };
   if (location.hash === "#yorum") $("#yorum").open = true;
@@ -1446,7 +1507,9 @@ function homeView() {
 // ---------------------------------------------------------------- tasarım seçme sayfası (?tasarimlar): müşteri kendi isimleriyle görür, seçip WhatsApp'tan gönderir
 async function designsView() {
   app.className = "home";
-  document.title = "Kart tasarımları · MemoryQR";
+  document.title = "Düğün QR Kod Kart Tasarımları: Masa Kartı, Kartvizit, Pano | MemoryQR";
+  setMeta("Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu masa kartı, kartvizit ve giriş panosu tasarımları. Kendi isminizle görün, beğendiğinizi seçin.",
+    SITE_URL + "?tasarimlar");
   const st = {title: "", kind: "dugun", date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), cat: ""};
   const sample = {dugun: "Seda & Yusuf", nisan: "Seda & Yusuf", kina: "Seda'nın Kına Gecesi", soz: "Seda & Yusuf", mezuniyet: "Hukuk Fakültesi Mezuniyet Balosu",
     dogum_gunu: "Seda'nın Doğum Günü", diger: "Seda & Yusuf"};

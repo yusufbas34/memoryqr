@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /pazarlama/
+Disallow: /*?e=
+Disallow: /*?admin
+Sitemap: https://memoryqr.bulqr.com.tr/sitemap.xml

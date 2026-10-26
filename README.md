@@ -18,7 +18,7 @@ dosyalar kalıcı olarak silinir. Bul QR ailesinin ürünüdür (Tasma QR, Araç
 | `?e=KOD&slayt` | Slayt gösterisi (şimdilik satılmıyor; panelde düğmesi yok, adresle açılır) |
 | `?admin` | **Yönetim**: etkinlik oluştur/düzenle (kod + 6 haneli PIN üretilir), masa kartı PDF'i, müşteriye WhatsApp, dosyaları/etkinliği sil |
 
-**Masa kartı:** 59 tasarım, 6 kategori (Düğün · Nişan · Kına, Doğum günü kız/erkek, Mezuniyet, Retro & eğlenceli,
+**Masa kartı:** 60 tasarım, 6 kategori (Düğün · Nişan · Kına, Doğum günü kız/erkek, Mezuniyet, Retro & eğlenceli,
 Modern & renkli). Süslemeler kodla çizilir; çocuk ve retro kartlardaki çizimler Twemoji (`kart/emoji/`, CC-BY 4.0),
 Çiçek Bahçesi'nin madalyonu `kart/cicek.webp`; çerçeve tasarımlarının (Lacivert Barok, Lacivert Dalga, Mavi Suluboya, Adaçayı, Beyaz Çiçekler, Pembe Bahar, Bordo Güller, Altın Zambak, Beyaz Güller ve Yüzük, Kırmızı Çiçekler) görselleri `kart/cerceve/`. Kart yazısı değiştirilebilir; boş bırakılırsa tasarımın kendi metni kullanılır.
 İsimler, baş harfler ve tarih etkinlik bilgilerinden gelir. A6 (105×148 mm); iki PDF iner: 3 mm taşma paylı tek kart

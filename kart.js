@@ -389,7 +389,7 @@ function poster(o) {
       k.wrap(text, 52.5, L.msg, o.mw || 70, o.mf || F.mont, o.ms || 3, o.mc || o.hc || "#333333", (o.ms || 3) * 1.42, {upper: o.mUpper});
       if (o.box !== false) { g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(52.5 - L.qr / 2 - 3), k.X(L.qrY - 3), k.mm(L.qr + 6), k.mm(L.qr + 6), k.mm(2)); g.fill(); }
       k.qr(guestLink(ev.code), 52.5 - L.qr / 2, L.qrY, L.qr, o.qc || "#111111", {bg: o.box === false ? o.bg : "#ffffff"});
-      if (o.name !== false) k.text(ev.title, 52.5, L.name, o.nf || F.vibes, o.ns || 9, o.nc || o.hc || "#222222", {max: 76});
+      if (o.name !== false) k.text(ev.title, 52.5, L.name, o.nf || F.vibes, o.ns || 9, o.nc || o.hc || "#222222", {max: 76, upper: o.nUpper, sp: o.nUpper ? .4 : 0});
       o.after?.(k, g, ev);
       BRAND(k, ev, L.brand, o.bc || "rgba(0,0,0,.45)");
     }};
@@ -744,6 +744,24 @@ const FRAMES = [
       g.fillStyle = "rgba(255,255,255,.35)"; g.beginPath(); g.ellipse(k.X(47.5), k.X(20.5), k.mm(1.8), k.mm(1), -.6, 0, 7); g.fill();
     },
     after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 132, F.mont, 3, "#2d2420", {upper: true, sp: .6}); }}),
+  // ---- esinlenme: ince çerçeve, el yazısı havasında "Sevgiyle…", kırmızı kalpler
+  poster({id: "sevgiyle", name: "Sevgiyle", cat: "dugun", bg: "#fdfcf9", hc: "#151515", h: [], mf: F.mont, ms: 2.8, mw: 62, mc: "#333333",
+    nf: F.mont, ns: 5.2, nc: "#151515", nUpper: true, L: {msg: 56, qrY: 68, qr: 30, name: 115, brand: 139},
+    deco(k, g, ev) {
+      const R = "#e0444a";
+      g.strokeStyle = "#151515"; g.lineWidth = k.mm(.25); g.strokeRect(k.X(6), k.X(6), k.mm(93), k.mm(136));
+      g.save(); g.translate(k.X(50), k.X(30)); g.rotate(-.08); g.translate(-k.X(50), -k.X(30));
+      k.text("Sevgiyle…", 50, 30, F.kid, 14, "#151515", {max: 76});
+      g.restore();
+      g.save(); g.translate(k.X(56), k.X(40)); g.rotate(-.08); g.translate(-k.X(56), -k.X(40));
+      k.text("…hep birlikte, her zaman", 56, 40, '400 {s}px "Courier Prime"', 3.4, "#333333", {max: 60});
+      g.restore();
+      for (const [x, y, z] of [[86, 17, 4.5], [84, 41, 3.4], [20, 92, 3], [88, 98, 3.6]]) { k.heartPath(x, y, z); g.fillStyle = R; g.fill(); }
+      g.strokeStyle = "#151515"; g.lineWidth = k.mm(.25);
+      g.beginPath(); g.moveTo(k.X(32), k.X(125)); g.lineTo(k.X(48), k.X(125)); g.moveTo(k.X(57), k.X(125)); g.lineTo(k.X(73), k.X(125)); g.stroke();
+      k.heartPath(52.5, 125.6, 3); g.fillStyle = R; g.fill();
+    },
+    after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 132.5, F.mont, 2.8, "#333333", {upper: true, sp: .5}); }}),
 ];
 CARD_DESIGNS.push(...POSTERS);
 CARD_DESIGNS.push(...FRAMES, FIRCA);

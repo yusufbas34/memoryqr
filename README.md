@@ -112,6 +112,8 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 
 ## Pazarlama
 - `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı).
+- `pazarlama/ig/`: her günün hazır görselleri (`gun-NN-K.jpg`; karusel 1080×1350, hikâye 1080×1920), Reels videoları (`gun-NN.mp4`, müziksiz) ve kapakları. Plan, açıklamalar ve etiketler tek kaynakta: `pazarlama/ig/gunler.js` (tasarım şablonu `pazarlama/ig/sablon.html`).
+  Metni ya da görseli değiştirince yeniden üretin: `node araclar/ig-uret.cjs` (Playwright ve ffmpeg gerekir; tek gün için `node araclar/ig-uret.cjs 7`).
 
 ## Arama motorları (SEO)
 - `index.html` başlığı ve açıklaması "düğün QR kod", "misafir fotoğraf" aramalarına göre yazıldı; `og.jpg` paylaşım görseli, `apple-touch-icon.png`.

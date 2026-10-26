@@ -53,6 +53,12 @@ pre.copy{white-space:pre-wrap;background:var(--soft);border-radius:10px;padding:
 .day details summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:15px}
 ul{padding-left:20px;margin:6px 0}
 li{margin:3px 0}
+.media{display:flex;gap:8px;overflow-x:auto;padding:4px 0 6px;scroll-snap-type:x mandatory}
+.media .th{position:relative;flex:0 0 132px;aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:var(--soft);scroll-snap-align:start;border:1px solid var(--line)}
+.media.tall .th{aspect-ratio:9/16;flex-basis:120px}
+.media img,.media video{width:100%;height:100%;object-fit:cover;display:block}
+.media .th span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:600;padding:1px 7px;border-radius:999px}
+.note{border-left:3px solid var(--gold);padding-left:8px}
 .warn{border-left:5px solid #c0392b}
 @media print{body{background:#fff}.controls,.btn{display:none}.day,.card{break-inside:avoid}details{display:block}details>*{display:block}}
 @media (max-width:520px){.day{grid-template-columns:1fr}.day .body{grid-column:1}}
@@ -63,7 +69,7 @@ li{margin:3px 0}
 <main class="wrap">
   <div class="eyebrow">MemoryQR · Instagram</div>
   <h1>30 günlük Instagram planı</h1>
-  <p class="lead">Her gün ne paylaşılacağı, nasıl çekileceği ve açıklama metni. Amaç ilk ayda hesabı kurmak, pilot kına gecesinden gerçek içerik çıkarmak ve ilk siparişleri almak. Yaptığın günü işaretle; işaretler bu telefonda kalır.</p>
+  <p class="lead">Her gün için hazır görseller ve Reels videoları, açıklama metni ve etiketler. Görsele dokun, indir; açıklamayı kopyala, paylaş. Amaç ilk ayda hesabı kurmak, pilot kına gecesinden gerçek içerik çıkarmak ve ilk siparişleri almak. Yaptığın günü işaretle; işaretler bu telefonda kalır.</p>
 
   <div class="controls">
     <label for="start">Başlangıç günü<input type="date" id="start"></label>
@@ -103,7 +109,7 @@ Uygulama yok · Orijinal kalite · 30 gün saklama
 
   <h2>Etiketler</h2>
   <div class="card">
-    <p class="small">Her gönderide 8–12 etiket: 4 genel + 4 konuya özel + 2 şehir. Şehir etiketlerini kendi şehrine göre değiştir.</p>
+    <p class="small">Her günün açıklamasına etiketler hazır eklendi (genel + konuya özel + şehir). Şehir etiketlerini kendi şehrine göre değiştir.</p>
     <pre class="copy" id="tags">#düğün #nişan #kınagecesi #düğünhazırlığı #gelin #damat #düğünfotoğrafları #anıalbümü #qrkod #misafirfotoğrafları #istanbuldüğün #düğünsalonu</pre>
     <button class="btn" data-copy="tags">Kopyala</button>
   </div>
@@ -129,100 +135,11 @@ Beğendiğiniz tasarımda "Siparişi başlat"a dokunmanız yeterli. Etkinlik tar
   <p class="small" style="margin-top:28px">MemoryQR · Bul QR. Plan ilk ayın sonunda en çok izlenen 3 içeriğe göre yenilenir.</p>
 </main>
 
+<script src="ig/gunler.js"></script>
 <script>
 "use strict";
-// gün: tür (reels | karusel | hikaye | gonderi), başlık, ne yapılacak, nasıl çekilir, açıklama metni; key: önemli gün
-const PLAN = [
-  {w: "1. hafta · Tanış", d: [
-    {t: "karusel", h: "Merhaba, biz MemoryQR", what: "5 slaytlık tanıtım: 1) \"Düğünden sonra herkes 'fotoğrafları atar mısın' diye yazar\" 2) Fotoğraflar telefonlarda kalır 3) Çözüm: masada tek QR 4) Misafir okutur, adını yazar, yükler 5) Hepsi tek albümde. Son slaytta link.",
-      how: "Görseller: sitedeki pleksi stand ve şövale fotoğrafları + tasarım sayfasından kart görselleri.",
-      cap: "Düğünün en güzel anları misafirlerin telefonunda kalmasın 💐\nMasaya tek QR koyun; misafirler okutur, fotoğraf ve videolarını yükler, hepsi tek albümde toplanır. Uygulama yok, kayıt yok.\n👉 Kartınızı seçin: link profilde"},
-    {t: "reels", h: "\"Fotoğrafları atar mısın?\"", what: "Kanca (ilk 2 sn): ekranda \"Düğünden 1 hafta sonra:\" yazısı + WhatsApp'ta 'fotoğrafları atar mısın' mesajları. Sonra: QR okutma → isim → yükle → albüm ekran kaydı. 12–15 sn.",
-      how: "Telefonla ekran kaydı: misafir sayfası (bir deneme etkinliği aç). Trend bir ses kullan, yazıları ekrana koy.",
-      cap: "Bu mesajları artık yazmak zorunda değilsiniz 😅\nMisafirler QR'ı okutur, fotoğraflar kendiliğinden albümünüze gelir.\n#düğünhazırlığı"},
-    {t: "hikaye", h: "Anket: misafir fotoğrafları", what: "Anket: \"Düğününüzde misafirlerin çektiği fotoğrafları toplayabildiniz mi?\" Evet / Hayat kurtaran olurdu. Ardından soru kutusu: \"Düğün hazırlığında en çok neyi dert ediyorsun?\"",
-      how: "Bordo düz zemin, Barlow yazı. Cevapları sonraki günlerde içerik fikri olarak kullan.", cap: ""},
-    {t: "karusel", h: "3 adımda nasıl çalışır", what: "1) Kart masada 2) Misafir okutur, adını yazar 3) Çift hepsini tek tıkla indirir. Her slaytta bir telefon ekranı görüntüsü.",
-      how: "Görseller: sitedeki telefon görseli ve ekran görüntüleri.",
-      cap: "3 adım, sıfır uygulama 📱\n1️⃣ QR kart masada\n2️⃣ Misafir okutur, adını yazar, yükler\n3️⃣ Siz hepsini tek tıkla indirirsiniz\nKına, nişan, düğün, doğum günü, mezuniyet… hepsinde çalışır."},
-    {t: "reels", h: "38 kart tasarımı", what: "Tasarım sayfasında kartların hızlı geçişi; her kartta 0,5 sn. Sonda: \"Kendi isminizle görün\" + link.",
-      how: "memoryqr.bulqr.com.tr/?tasarimlar sayfasında isim alanına \"Seda & Yusuf\" yaz, ekran kaydı al, ritimli bir sese kes.",
-      cap: "Hangisi sizin düğününüze yakışır? 👀\nYorumlara numarasını yazın 👇\nTasarımları kendi isminizle görmek için: link profilde"},
-    {t: "karusel", h: "Paketler ve fiyatlar", what: "Kapak: \"Abonelik yok, tek seferlik\". Sonra Dijital 499 · Standart 899 · Standart + Şövale 1.499 · Aile 1.999 ve 1 yıl saklama eki.",
-      how: "Sitedeki paket kartlarının ekran görüntüleri ya da aynı bilgiyle sade slaytlar.",
-      cap: "Tek seferlik ödeme, abonelik yok ✨\nDijital paketten şövaleli giriş panosuna kadar 4 seçenek. Hangisinin size uygun olduğunu DM'den sorabilirsiniz."},
-    {t: "hikaye", h: "Haftalık soru-cevap", what: "Soru kutusu: \"MemoryQR hakkında merak ettiğin ne?\" Gelen 3 soruya hikâyede cevap. Öne çıkanları düzenle.",
-      how: "Haftanın ölçümü: takipçi, erişim, profil ziyareti, link tıklaması, DM sayısı. Bir yere not et.", cap: ""},
-  ]},
-  {w: "2. hafta · Göster", d: [
-    {t: "reels", h: "Uygulama indirmeden", what: "Kanca: \"Misafirlerine uygulama indirtme.\" Telefon kamerası açılır, QR okunur, tarayıcıda sayfa açılır. 8 sn.",
-      how: "Masaya bir deneme kartı koy, ikinci telefonla okutma anını çek.",
-      cap: "Uygulama yok. Kayıt yok. Şifre yok.\nKamerayı aç, okut, yükle. Bu kadar 📸"},
-    {t: "karusel", h: "Her etkinliğe bir kart", what: "Kına · Nişan · Düğün · Doğum günü (Seda / Uras) · Mezuniyet balosu kart örnekleri.",
-      how: "Tasarım sayfasında etkinlik türünü değiştirip her birinden bir kart görseli kaydet (\"Görseli telefona kaydet\").",
-      cap: "Sadece düğün değil 🎈\nKına gecesi, nişan, doğum günü partisi, mezuniyet balosu… Her etkinliğe uygun tasarım var."},
-    {t: "reels", h: "Ürün çekimi: stand, şövale, kartvizit", what: "Gerçek baskılar Özalit'ten gelince: kartı standa takma, şövaleye panoyu koyma, kartvizit destesi. Yakın plan, yumuşak ışık.",
-      how: "Baskılar henüz yoksa sitedeki fotoğraflarla yavaş yakınlaştırma (Ken Burns) videosu yap.",
-      cap: "Masada, girişte, tabakta 🤍\nMasa kartı, kartvizit ya da şövaleli giriş panosu: hepsi aynı tasarımla."},
-    {t: "hikaye", h: "Geri sayım: ilk etkinlik", what: "\"Yarın ilk etkinliğimiz var!\" + geri sayım çıkartması. Kartların hazırlandığı an (isimler bulanık ya da izinli).",
-      how: "Sinem'den izin al; izin yoksa ismi gösterme.", cap: ""},
-    {t: "hikaye", key: true, h: "PİLOT: Sinem'in kına gecesi", what: "Gece boyunca hikâye: masadaki QR kart, okutma anı, \"şu ana kadar X fotoğraf yüklendi\" sayacı (sahip panelinden). Misafir yüzü yok ya da izinli.",
-      how: "Etkinlik öncesi kontrol: kartlar masada mı, salonun interneti/çekimi nasıl, bir deneme yüklemesi yap. Sahip panelinden sayıları anlık takip et.", cap: ""},
-    {t: "reels", key: true, h: "Bir gecede kaç fotoğraf?", what: "Pilotun gerçek sayıları: kaç misafir yükledi, kaç fotoğraf/video. Kart → okutma → sahip panelindeki galeri kaydırma.",
-      how: "Sinem'in izniyle; galeride yüzler bulanık ya da yalnızca süsleme/detay fotoğrafları.",
-      cap: "İlk kına gecemizde misafirler [GERÇEK SAYI] fotoğraf ve video yükledi 🔥\nHepsi tek albümde, tek tıkla indirildi. Teşekkürler Sinem 💜"},
-    {t: "gonderi", key: true, h: "İlk gerçek yorum", what: "Sinem'in kendi sözleriyle yorumu (siteden yazmasını iste; yönetimden yayınla). Gönderi: yorum metni + kına gecesinden detay fotoğrafı.",
-      how: "Sitedeki yorum formu: memoryqr.bulqr.com.tr/#yorum. Yorumu \"Yorumlar\" öne çıkanına da ekle.",
-      cap: "İlk yorumumuz geldi 🥹\n\"[SİNEM'İN GERÇEK YORUMU]\"\nSizin anılarınızı da toplamak için sabırsızlanıyoruz."},
-  ]},
-  {w: "3. hafta · Güven ver", d: [
-    {t: "karusel", h: "Sık sorulanlar", what: "Uygulama gerekir mi? Kalite düşer mi? Kaç fotoğraf? Misafirler birbirini görür mü? Ne kadar saklanır?",
-      how: "Sitedeki SSS cevaplarını kısaltarak her slayta bir soru.",
-      cap: "En çok sorulan 5 soru 👇\nBaşka sorun varsa yorumlara yaz, hepsine cevap veriyoruz."},
-    {t: "reels", h: "Çift paneli: hepsini indir", what: "Sahip panelinde tam ekran izleme, kalp ile favorileme, \"Favorileri indir\". 15 sn.",
-      how: "Deneme etkinliğinde 15–20 örnek fotoğraf yükle, ekran kaydı al.",
-      cap: "Düğünden sonraki sabah 💌\nBütün fotoğraflar tek yerde: beğendiklerini favorile, hepsini tek tıkla indir."},
-    {t: "hikaye", h: "Kartını seç, sevdiklerine sor", what: "Tasarım sayfası + \"Sevdiklerine sor\" butonu: kartı sevgiline gönder. Link çıkartması.",
-      how: "Kendi telefonundan gerçek bir \"Sevdiklerine sor\" mesajı atıp ekran görüntüsünü paylaş.", cap: ""},
-    {t: "gonderi", h: "Masa kartı mı, kartvizit mi?", what: "Yan yana iki fotoğraf: pleksi standda masa kartı / tabakta kartvizit. Hangisi ne zaman tercih edilir.",
-      how: "Sitedeki iki fotoğraf.",
-      cap: "Masa kartı mı, kartvizit mi? 🤔\nMasa kartı: her masaya bir tane.\nKartvizit: her misafirin tabağına.\nSiz hangisini seçerdiniz? Yorumlara yazın 👇"},
-    {t: "reels", h: "Düğün hazırlık listesi", what: "Trend \"liste\" formatı: gelinlik ✅ salon ✅ fotoğrafçı ✅ misafir fotoğrafları ❌ → MemoryQR ✅.",
-      how: "Elle yazılmış bir liste kâğıdı ya da ekranda yazı animasyonu.",
-      cap: "Listenizde eksik bir madde var 📝\nMisafirlerin çektiği yüzlerce fotoğraf da sizin olsun."},
-    {t: "karusel", h: "Gizlilik ve güven", what: "Albüm yalnızca sizin; misafirler yalnızca kendi yüklediklerini görür; 30 gün sonra kalıcı silinir; uygunsuz fotoğrafı tek dokunuşla gizlersiniz.",
-      how: "Sade metin slaytları, bordo-krem renkler.",
-      cap: "Anılarınız sizin 🔒\nAlbümün tamamını yalnızca siz görürsünüz, 30 gün sonra kalıcı olarak silinir."},
-    {t: "gonderi", key: true, h: "Kampanya: ilk 10 çifte hediye", what: "\"Kasım'da sipariş veren ilk 10 çifte 1 yıl saklama hediye.\" Sayaç: kalan yer sayısı (gerçek).",
-      how: "Kampanyayı WhatsApp siparişlerinde not et; kalan sayıyı hikâyede güncelle.",
-      cap: "🎁 İlk 10 çifte 1 yıl saklama hediye!\nKasım'da siparişini başlatan ilk 10 çiftin albümünü 1 yıl saklıyoruz (299 TL değerinde).\nKartını seç, siparişini başlat: link profilde"},
-  ]},
-  {w: "4. hafta · Büyü", d: [
-    {t: "reels", h: "Doğum günü partisi", what: "\"Uras'ın Doğum Günü Partisi\" kartı (Dinozorlar/Uzay): çocuk partisinde ebeveynlerin çektiği fotoğraflar tek albümde.",
-      how: "Tasarım sayfasında doğum günü kartları + basit animasyon.",
-      cap: "Çocuk partisinde herkes fotoğraf çeker, kimse göndermez 🎈\nTek QR ile hepsi sizde."},
-    {t: "hikaye", h: "Kampanya hatırlatma", what: "\"İlk 10 çiftten kalan: X\" + soru kutusu \"Düğün tarihin ne zaman?\"",
-      how: "Cevap verenlere DM'den tasarım linki gönder.", cap: ""},
-    {t: "gonderi", h: "İş birliği çağrısı", what: "Düğün salonları, organizatörler ve fotoğrafçılar için: \"Çiftlerinize MemoryQR sunun, her satıştan pay alın.\"",
-      how: "Bu gönderiyi aynı gün 10 salona/organizatöre DM ile gönder (aşağıdaki metin).",
-      cap: "Düğün salonları, organizatörler, fotoğrafçılar 🤝\nÇiftlerinize MemoryQR'ı sunun, size özel indirim kodu ve her satıştan pay. DM'den yazın."},
-    {t: "reels", h: "Kamera arkası: baskı ve paketleme", what: "Özalit'te baskı, kartların kesimi, paketleme, kargoya verme. Samimi, müziksiz ya da sakin müzik.",
-      how: "Telefonu sabitle, kısa kısa çek, 15 sn'ye kes.",
-      cap: "Siparişiniz böyle hazırlanıyor 🤍\nTasarım → baskı → paket → kapınızda."},
-    {t: "karusel", h: "Gelin ve damada 7 ipucu", what: "Misafir fotoğraflarını kaybetmemek için 7 ipucu: kartları her masaya koy, girişe pano, DJ anonsu, 30 gün içinde indir…",
-      how: "Faydalı içerik kaydedilir ve paylaşılır; erişimi büyütür.",
-      cap: "Kaydet, düğün günü lazım olacak 📌\nMisafir fotoğraflarını kaybetmemek için 7 ipucu."},
-    {t: "hikaye", h: "Kampanya son 3 gün", what: "Geri sayım çıkartması + kalan yer sayısı + link.", how: "", cap: ""},
-    {t: "reels", h: "Sorulara video cevap", what: "Gelen DM sorularından birini ekrana koy ve 10 sn'de cevapla (ör. \"Video da yüklenir mi?\").",
-      how: "Yüzünü göstermek istemezsen ekran kaydı + yazı yeterli.",
-      cap: "Evet, video da yükleniyor 🎥\nSoruların varsa yorumlara yaz, sıradaki videoda cevaplayalım."},
-    {t: "gonderi", h: "Ayın özeti", what: "Gerçek sayılar: kaç etkinlik, kaç fotoğraf toplandı, kaç yorum. Teşekkür.",
-      how: "Yönetim ekranındaki toplamlar.",
-      cap: "İlk ayımız 💜\n[GERÇEK SAYI] etkinlik, [GERÇEK SAYI] fotoğraf ve video. Anılarınızı bize emanet ettiğiniz için teşekkürler."},
-    {t: "hikaye", key: true, h: "Değerlendir ve yeni ayı planla", what: "En çok izlenen 3 içeriği bul (Instagram istatistikleri). Onların benzerlerini gelecek aya koy; en az izlenen türü azalt.",
-      how: "Ölçümler: erişim, kaydetme, paylaşım, profil ziyareti, link tıklaması, DM, sipariş. Bu sayfayı yeni planla güncelle.", cap: ""},
-  ]},
-];
+// plan ve her günün içeriği ig/gunler.js dosyasında; görseller ve videolar araclar/ig-uret.cjs ile üretilir
+const PLAN = IG_PLAN;
 
 const TYPE = {reels: "Reels", karusel: "Karusel", hikaye: "Hikâye", gonderi: "Gönderi"};
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -234,9 +151,26 @@ const done = new Set(store.get("done", []));
 const startEl = document.getElementById("start");
 startEl.value = store.get("start", "2026-10-27");
 
+const nn = n => String(n).padStart(2, "0");
+// açıklama + genel etiketler + o güne özel etiketler + şehir etiketleri (tekrarsız, en fazla 15)
+const caption = d => d.cap + (d.tags?.length || d.cap ? "\n.\n" + [...new Set([...IG_ETIKET, ...(d.tags || []), ...IG_YEREL])].slice(0, 15).join(" ") : "");
+function media(d, n) {
+  if (d.sonra) return `<p class="small note">Görseli gerçek veriyle hazırlanacak (yukarıdaki adım).</p>`;
+  const files = d.reels ? [[`ig/gun-${nn(n)}-kapak.jpg`, "Kapak"], [`ig/gun-${nn(n)}.mp4`, "Video"]]
+    : (d.slides || []).map((_, i) => [`ig/gun-${nn(n)}-${i + 1}.jpg`, `${i + 1}`]);
+  if (!files.length) return "";
+  const tall = d.reels || d.t === "hikaye";
+  return `<div class="media${tall ? " tall" : ""}">` + files.map(([f, l]) => f.endsWith(".mp4")
+    ? `<a class="th" href="${f}" download><video src="${f}" muted playsinline loop preload="none" poster="ig/gun-${nn(n)}-kapak.jpg"></video><span>▶ Video</span></a>`
+    : `<a class="th" href="${f}" download><img src="${f}" alt="${n}. gün görsel ${esc(l)}" loading="lazy" decoding="async"><span>${esc(l)}</span></a>`).join("") +
+    `</div><p class="small">Görsele dokun → indir. ${d.reels ? "Videoyu indir, Instagram'da müzik ekle, kapağı seç." : d.t === "hikaye" ? "Sırayla hikâye olarak paylaş." : files.length > 1 ? "Sırayla tek gönderide paylaş." : ""}</p>`;
+}
+let firstOpen = 0;
+
 function render() {
   const start = new Date((startEl.value || "2026-10-27") + "T12:00:00");
   let n = 0;
+  firstOpen = PLAN.flatMap(w => w.d).findIndex((d, i) => !done.has(i + 1)) + 1;
   document.getElementById("plan").innerHTML = PLAN.map(wk => `<section class="week"><div class="eyebrow">Hafta</div><h2>${esc(wk.w)}</h2>` + wk.d.map(d => {
     n++;
     const dt = new Date(start.getTime() + (n - 1) * 864e5).toLocaleDateString("tr-TR", {weekday: "long", day: "numeric", month: "long"});
@@ -246,7 +180,8 @@ function render() {
       <div class="head"><span class="num">${n}. gün</span><span class="date">${esc(dt)}</span><span class="pill ${d.t}">${TYPE[d.t]}</span><b>${esc(d.h)}</b></div>
       <div class="body"><p>${esc(d.what)}</p>
         ${d.how ? `<p class="small">${esc(d.how)}</p>` : ""}
-        ${d.cap ? `<details><summary>Açıklama metni</summary><pre class="copy" id="${id}">${esc(d.cap)}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>` : ""}
+        ${media(d, n)}
+        ${d.cap ? `<details${n === firstOpen ? " open" : ""}><summary>Açıklama ve etiketler</summary><pre class="copy" id="${id}">${esc(caption(d))}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>` : ""}
       </div></article>`;
   }).join("") + `</section>`).join("");
   const total = n;
@@ -271,6 +206,8 @@ document.addEventListener("click", async e => {
   catch (err) { const r = document.createRange(); r.selectNodeContents(document.getElementById(b.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = "Seçildi, kopyalayın"; }
   setTimeout(() => { b.textContent = "Kopyala"; }, 1800);
 });
+document.addEventListener("pointerover", e => { const v = e.target.closest(".th")?.querySelector("video"); if (v && v.paused) v.play().catch(() => {}); });
+document.addEventListener("pointerout", e => { const v = e.target.closest(".th")?.querySelector("video"); if (v && !e.relatedTarget?.closest?.(".th")) v.pause(); });
 render();
 </script>
 </body>

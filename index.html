@@ -220,11 +220,13 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 .lcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:18px;margin-top:10px}
 .lcards figure{margin:0;display:grid;gap:8px;text-align:center;font-weight:600;font-size:14px}
 .lcards img{width:100%;height:auto;border-radius:4px;box-shadow:0 6px 20px rgba(0,0,0,.14)}
-.lpack{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:10px;align-items:start}
-.lpack>div{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:10px}
-.lpack>div.on{border:2px solid var(--accent)}
+.lpack{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:10px}
+/* kartlar aynı boyda; görsel, başlık, fiyat, liste ve buton her kartta aynı hizada (subgrid) */
+.lpack>div{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:10px;grid-row:span 5;grid-template-rows:subgrid;align-content:start}
+.lpack>div>.btn{align-self:end;border:2px solid var(--accent)}
+.lpack>div.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .lpack .price{font-family:"Barlow Condensed","Barlow",sans-serif;font-size:36px;font-weight:700;color:var(--accent)}
-.lpack ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--muted)}
+.lpack ul{margin:0;padding-left:18px;display:grid;gap:6px;align-content:start;color:var(--muted)}
 .tagp{position:absolute;top:-12px;left:18px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
 @media (max-width:760px){.lpack{grid-template-columns:1fr}}
 .lrev{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}

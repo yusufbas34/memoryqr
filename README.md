@@ -111,7 +111,8 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - Yükleme kuyruğunun sayfa kapanınca da sürmesi (IndexedDB)
 
 ## Pazarlama
-- `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı).
+- `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı). Hesap: [@memoryqrtr](https://www.instagram.com/memoryqrtr) (`index.html` → `INSTAGRAM`).
+- `pazarlama/logo/`: logo dosyaları (Instagram profil fotoğrafı, yatay logo şeffaf ve bordo, SVG işaret); `logo.html`'den üretilir.
 - `pazarlama/ig/`: her günün hazır görselleri (`gun-NN-K.jpg`; karusel 1080×1350, hikâye 1080×1920), Reels videoları (`gun-NN.mp4`, müziksiz) ve kapakları. Plan, açıklamalar ve etiketler tek kaynakta: `pazarlama/ig/gunler.js` (tasarım şablonu `pazarlama/ig/sablon.html`).
   Metni ya da görseli değiştirince yeniden üretin: `node araclar/ig-uret.cjs` (Playwright ve ffmpeg gerekir; tek gün için `node araclar/ig-uret.cjs 7`).
 

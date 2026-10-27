@@ -465,7 +465,7 @@ const ICON = {
 const brandHtml = `<a class="brand" href="${esc(BASE)}">${ICON.logo}MEMORYQR</a>`;
 const telHref = () => "tel:+90" + TELEFON.replace(/\D/g, "").replace(/^0/, "");
 const footerHtml = code => `<footer>${code ? `<a href="?e=${esc(code)}&sahip">Etkinlik sahibi girişi</a>` : ""}
-  ${TELEFON ? `<span>İletişim: <a href="${telHref()}">${esc(TELEFON)}</a>${EPOSTA ? ` · <a href="mailto:${esc(EPOSTA)}">${esc(EPOSTA)}</a>` : ""}</span>` : ""}
+  ${TELEFON ? `<span>İletişim: <a href="${telHref()}">${esc(TELEFON)}</a>${EPOSTA ? ` · <a href="mailto:${esc(EPOSTA)}">${esc(EPOSTA)}</a>` : ""}${INSTAGRAM ? ` · <a href="https://www.instagram.com/${esc(INSTAGRAM)}" target="_blank" rel="noopener">@${esc(INSTAGRAM)}</a>` : ""}</span>` : ""}
   <span>MemoryQR · Bul QR · <a href="gizlilik.html">Gizlilik</a></span></footer>`;
 
 // ---------------------------------------------------------------- görsel hazırlama

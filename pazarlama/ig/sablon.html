@@ -87,7 +87,7 @@ const fmtDate = d => new Date(String(d) + "T12:00:00").toLocaleDateString("tr-TR
 function loadScript(src) { return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src.endsWith(src))) return res(); const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.append(el); }); }
 
 const LOGO = `<svg class="logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5c1.6-1.6 4 .7 2.4 2.4l-2.4 2.6-2.4-2.6c-1.6-1.7.8-4 2.4-2.4z" fill="currentColor" stroke="none"/></svg>`;
-const FOOT = `<div class="foot"><b>MEMORYQR</b><span>memoryqr.bulqr.com.tr</span></div>`;
+const FOOT = `<div class="foot"><b style="letter-spacing:.04em">@memoryqrtr</b><span>memoryqr.bulqr.com.tr</span></div>`;
 const foto = n => `kart/foto/${n}.webp`;
 const ekran = n => `pazarlama/ig/ekran/${n}.png`;
 const evOf = s => ({code: "ORNEK1", title: "Seda & Yusuf", kind: "dugun", event_date: "2026-06-14", ...(s.ev || {})});

@@ -53,15 +53,15 @@ const IG_PLAN = [
         {tpl: "adim", no: 2, baslik: "Misafir okutur, yükler", alt: "Adını yazar, galeriden seçer ya da anında çeker", ekran: "misafir"},
         {tpl: "adim", no: 3, baslik: "Siz hepsini indirirsiniz", alt: "Favorileyin, tek tıkla ZIP olarak indirin", ekran: "sahip"},
         {tpl: "son", baslik: "Sizin gününüz için de", alt: "Kartınızı seçin"}]},
-    {t: "reels", h: "38 kart tasarımı",
+    {t: "reels", h: "60 kart tasarımı",
       what: "Kart tasarımları hızlı geçiş; her kartta yarım saniye.",
       how: "Video hazır. Ritimli bir ses ekle, yorumlara \"hangisi?\" sorusu.",
       cap: "Hangisi sizin düğününüze yakışır? 👀\n\nYorumlara numarasını yazın 👇\nTasarımları kendi isminizle görmek için: link profilde",
       tags: ["#düğünkartı", "#davetiye", "#masakartı", "#düğündekorasyonu"],
-      reels: {kapak: {tpl: "kartlar", dikey: true, tasarimlar: ["bordo", "cicek", "halka", "yaprak"], baslik: "Hangisi sizin?"},
+      reels: {kapak: {tpl: "kartlar", dikey: true, tasarimlar: ["lacivert_barok", "love_bordo", "yaprak", "bordo_gul"], baslik: "Hangisi sizin?"},
         sahneler: [
-          {tpl: "kapak", tema: "bordo", sure: 1.4, baslik: "38 tasarım", alt: "Hangisi sizin?"},
-          ...["bordo", "yaprak", "cicek", "halka", "cini", "yakala", "deco_oval", "kemer", "altin_geo", "tropik", "kircicek", "konfeti"].map((id, i) =>
+          {tpl: "kapak", tema: "bordo", sure: 1.4, baslik: "60 tasarım", alt: "Hangisi sizin?"},
+          ...["yaprak", "kalpli_dal", "love_kirmizi", "love_bordo", "lacivert_barok", "lacivert_dalga", "mavi_suluboya", "adacayi", "bordo_gul", "kirmizi_ip", "pudra_yuzuk", "sevgiyle"].map((id, i) =>
             ({tpl: "tekkart", sure: .55, tasarim: id, no: i + 1})),
           {tpl: "son", sure: 2, baslik: "Kendi isminizle görün", alt: "Link profilde"}]}},
     {t: "karusel", h: "Paketler ve fiyatlar",
@@ -107,7 +107,7 @@ const IG_PLAN = [
         {tpl: "urun", urun: "kart", tasarim: "unicorn", ev: {title: "Seda'nın Doğum Günü", kind: "dogum_gunu"}, baslik: "Kız doğum günü"},
         {tpl: "urun", urun: "kart", tasarim: "dinozor", ev: {title: "Uras'ın Doğum Günü Partisi", kind: "dogum_gunu"}, baslik: "Erkek doğum günü"},
         {tpl: "urun", urun: "kart", tasarim: "mezun_lacivert", ev: {title: "Hukuk Fakültesi Mezuniyet Balosu", kind: "mezuniyet"}, baslik: "Mezuniyet balosu"},
-        {tpl: "son", baslik: "38 tasarım", alt: "Kendi isminizle görün"}]},
+        {tpl: "son", baslik: "60 tasarım", alt: "Kendi isminizle görün"}]},
     {t: "reels", h: "Masada, girişte, tabakta",
       what: "Ürün fotoğraflarında yavaş yakınlaştırma: stand, kartvizit, şövale.",
       how: "Video hazır. Gerçek baskılar gelince onları çekip yenisini yaparız.",

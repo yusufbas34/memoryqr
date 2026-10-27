@@ -11,7 +11,7 @@ const grab = name => {
   if (!m) throw new Error(name + " bulunamadı");
   return Function(`return (${m[1]})`)();
 };
-const SITE = grab("SITE_URL"), TEL = grab("TELEFON"), MAIL = grab("EPOSTA"), PAKETLER = grab("PAKETLER"), EK = grab("EK_ARSIV"), FAQ = grab("FAQ");
+const SITE = grab("SITE_URL"), TEL = grab("TELEFON"), MAIL = grab("EPOSTA"), IG = grab("INSTAGRAM"), PAKETLER = grab("PAKETLER"), EK = grab("EK_ARSIV"), FAQ = grab("FAQ");
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const price = s => (String(s).match(/[\d.]+/) || ["0"])[0].replace(/\./g, "");
 const tel = "+90" + TEL.replace(/\D/g, "").replace(/^0/, "");
@@ -19,7 +19,7 @@ const tel = "+90" + TEL.replace(/\D/g, "").replace(/^0/, "");
 const business = {
   "@type": "ProfessionalService", "@id": SITE + "#isletme", name: "MemoryQR", url: SITE, image: SITE + "og.jpg", logo: SITE + "logo.svg",
   description: "Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu ortak fotoğraf albümü. Misafirler QR kodu okutur, fotoğraf ve videolarını uygulama indirmeden tek albüme yükler.",
-  telephone: tel, ...(MAIL ? {email: MAIL} : {}), priceRange: `₺${price(PAKETLER[0].fiyat)}–₺${price(PAKETLER[PAKETLER.length - 1].fiyat)}`,
+  telephone: tel, ...(MAIL ? {email: MAIL} : {}), ...(IG ? {sameAs: [`https://www.instagram.com/${IG}`]} : {}), priceRange: `₺${price(PAKETLER[0].fiyat)}–₺${price(PAKETLER[PAKETLER.length - 1].fiyat)}`,
   areaServed: {"@type": "Country", name: "Türkiye"}, address: {"@type": "PostalAddress", addressCountry: "TR"},
   makesOffer: [...PAKETLER.map(p => ({"@type": "Offer", name: `${p.ad} paket`, description: p.ozellik.join(", "), price: price(p.fiyat), priceCurrency: "TRY",
     url: SITE + "#paketler", availability: "https://schema.org/InStock"})),
@@ -45,7 +45,7 @@ const staticBlock = `<!-- SEO:ICERIK (araclar/seo.cjs üretir; JavaScript açıl
 <h2>Sık sorulan sorular</h2>
 ${FAQ.map(([q, a]) => `<h3>${esc(q)}</h3><p>${esc(a)}</p>`).join("\n")}
 <h2>İletişim</h2>
-<p>Telefon ve WhatsApp: <a href="tel:${tel}">${esc(TEL)}</a>${MAIL ? ` · E-posta: <a href="mailto:${esc(MAIL)}">${esc(MAIL)}</a>` : ""} · Türkiye geneli hizmet.</p>
+<p>Telefon ve WhatsApp: <a href="tel:${tel}">${esc(TEL)}</a>${MAIL ? ` · E-posta: <a href="mailto:${esc(MAIL)}">${esc(MAIL)}</a>` : ""}${IG ? ` · Instagram: <a href="https://www.instagram.com/${esc(IG)}">@${esc(IG)}</a>` : ""} · Türkiye geneli hizmet.</p>
 </article>
 <!-- /SEO:ICERIK -->`;
 

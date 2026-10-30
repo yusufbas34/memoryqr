@@ -2,15 +2,19 @@
 //   ekran/*.png          sitenin telefon ekranı görüntüleri (örnek verilerle)
 //   gun-NN-K.jpg         karusel/gönderi (1080×1350) ve hikâye (1080×1920) görselleri
 //   gun-NN.mp4, gun-NN-kapak.jpg   Reels videosu (müziksiz, 1080×1920) ve kapağı
-// Gerekenler: Playwright (Chromium) ve ffmpeg.   Çalıştırma: node araclar/ig-uret.cjs [gün numarası…]  (EKRANSIZ=1: ekran görüntülerini yeniden alma)
+//   ek-NN-*                içerik bankası (pazarlama/ig/ekstra.js), aynı adlandırma
+// Gerekenler: Playwright (Chromium) ve ffmpeg.
+// Çalıştırma: node araclar/ig-uret.cjs [7 12 …] [ek | ek3 …]  (argümansız: hepsi; EKRANSIZ=1: ekran görüntülerini yeniden alma)
 const path = require("path"), fs = require("fs"), http = require("http"), os = require("os");
 const {execFileSync} = require("child_process");
 const {chromium} = require(process.env.PW || "playwright");
 const ROOT = path.join(__dirname, ".."), OUT = path.join(ROOT, "pazarlama", "ig");
 const {IG_PLAN} = require(path.join(OUT, "gunler.js"));
-const only = process.argv.slice(2).map(Number).filter(Boolean);
-const days = IG_PLAN.flatMap(w => w.d).map((d, i) => ({...d, n: i + 1}));
+const {IG_EKSTRA} = require(path.join(OUT, "ekstra.js"));
+const args = process.argv.slice(2), only = args.map(Number).filter(Boolean), ekArgs = args.filter(a => /^ek\d*$/.test(a));
 const nn = n => String(n).padStart(2, "0");
+const days = [...IG_PLAN.flatMap(w => w.d).map((d, i) => ({...d, n: i + 1, f: `gun-${nn(i + 1)}`, sec: !args.length || only.includes(i + 1)})),
+  ...IG_EKSTRA.map((d, i) => ({...d, n: i + 1, f: `ek-${nn(i + 1)}`, sec: !args.length || ekArgs.includes("ek") || ekArgs.includes(`ek${i + 1}`)}))];
 
 // küçük statik sunucu (yazı tipleri ve görseller dosyadan değil, http'den yüklensin)
 const TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".json": "application/json"};
@@ -28,7 +32,7 @@ const server = http.createServer((q, r) => {
   fs.mkdirSync(path.join(OUT, "ekran"), {recursive: true});
 
   // ---------------------------------------------------------------- 1) telefon ekranları
-  if (!only.length && !process.env.EKRANSIZ) {
+  if (!args.length && !process.env.EKRANSIZ) {
     // galeri için örnek fotoğraflar: ürün fotoğraflarından farklı kırpımlar
     const crop = await b.newPage();
     await crop.goto(BASE + "pazarlama/ig/sablon.html");
@@ -93,14 +97,14 @@ const server = http.createServer((q, r) => {
     await page.evaluate(el => el.remove(), h);
   };
   for (const d of days) {
-    if (only.length && !only.includes(d.n)) continue;
-    for (const old of fs.readdirSync(OUT).filter(f => f.startsWith(`gun-${nn(d.n)}`))) fs.unlinkSync(path.join(OUT, old));
+    if (!d.sec) continue;
+    for (const old of fs.readdirSync(OUT).filter(f => f.startsWith(d.f + "-") || f === d.f + ".mp4")) fs.unlinkSync(path.join(OUT, old));
     if (d.slides) for (let i = 0; i < d.slides.length; i++) {
-      await draw(d.slides[i], d.t === "hikaye", path.join(OUT, `gun-${nn(d.n)}-${i + 1}.jpg`));
-      console.log(`gün ${d.n}: görsel ${i + 1}/${d.slides.length}`);
+      await draw(d.slides[i], d.t === "hikaye", path.join(OUT, `${d.f}-${i + 1}.jpg`));
+      console.log(`${d.f}: görsel ${i + 1}/${d.slides.length}`);
     }
     if (d.reels) {
-      await draw(d.reels.kapak, true, path.join(OUT, `gun-${nn(d.n)}-kapak.jpg`));
+      await draw(d.reels.kapak, true, path.join(OUT, `${d.f}-kapak.jpg`));
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "reels-")), sc = d.reels.sahneler, X = .25;
       for (let i = 0; i < sc.length; i++) await draw(sc[i], true, path.join(tmp, `s${i}.png`), "png");
       // her sahne hafifçe yakınlaşır, sahneler arası yumuşak geçiş
@@ -109,10 +113,10 @@ const server = http.createServer((q, r) => {
         f.push(`[${i}:v]zoompan=z='min(zoom+0.0007,1.05)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30,setsar=1,format=yuv420p[v${i}]`); });
       let last = "v0", off = 0;
       for (let i = 1; i < sc.length; i++) { off += sc[i - 1].sure; f.push(`[${last}][v${i}]xfade=transition=fade:duration=${X}:offset=${off.toFixed(2)}[x${i}]`); last = `x${i}`; }
-      args.push("-filter_complex", f.join(";"), "-map", `[${last}]`, "-c:v", "libx264", "-preset", "medium", "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(OUT, `gun-${nn(d.n)}.mp4`));
+      args.push("-filter_complex", f.join(";"), "-map", `[${last}]`, "-c:v", "libx264", "-preset", "medium", "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", path.join(OUT, `${d.f}.mp4`));
       execFileSync("ffmpeg", args, {stdio: "ignore"});
       fs.rmSync(tmp, {recursive: true});
-      console.log(`gün ${d.n}: Reels (${sc.reduce((a, s) => a + s.sure, 0).toFixed(1)} sn)`);
+      console.log(`${d.f}: Reels (${sc.reduce((a, s) => a + s.sure, 0).toFixed(1)} sn)`);
     }
   }
   await b.close(); server.close();

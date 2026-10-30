@@ -131,6 +131,10 @@ Uygulama yok · Orijinal kalite · 30 gün saklama
 
   <div id="plan"></div>
 
+  <h2 id="banka">İçerik bankası: istediğin gün paylaş</h2>
+  <p class="small">Plan dışı hazır gönderiler (yeni marka tasarımı). Boş kalan günlerde, hafta sonları ya da plan bittikten sonra kullan. "MemoryQR nedir?" karuselini profilin en üstüne sabitle.</p>
+  <div id="ek"></div>
+
   <h2>Hazır DM metinleri</h2>
   <div class="grid">
     <div class="card"><h3>Düğün salonu / organizatör</h3><pre class="copy" id="dm1">Merhaba, biz MemoryQR. Misafirlerin düğünde çektiği fotoğraf ve videoları tek QR ile tek albümde topluyoruz; uygulama gerekmiyor. Salonunuzdaki çiftlere sunabileceğiniz bir iş birliği önermek isteriz: size özel indirim kodu ve her satıştan pay. Kısa bir görüşme yapabilir miyiz? memoryqr.bulqr.com.tr</pre><button class="btn" data-copy="dm1">Kopyala</button></div>
@@ -151,6 +155,7 @@ Beğendiğiniz tasarımda "Siparişi başlat"a dokunmanız yeterli. Etkinlik tar
 </main>
 
 <script src="ig/gunler.js"></script>
+<script src="ig/ekstra.js"></script>
 <script>
 "use strict";
 // plan ve her günün içeriği ig/gunler.js dosyasında; görseller ve videolar araclar/ig-uret.cjs ile üretilir
@@ -163,21 +168,23 @@ const store = {
   set(k, v) { try { localStorage.setItem("mqr_ig_" + k, JSON.stringify(v)); } catch (e) {} },
 };
 const done = new Set(store.get("done", []));
+const doneEk = new Set(store.get("doneEk", []));
 const startEl = document.getElementById("start");
 startEl.value = store.get("start", "2026-10-27");
 
 const nn = n => String(n).padStart(2, "0");
 // açıklama + genel etiketler + o güne özel etiketler + şehir etiketleri (tekrarsız, en fazla 15)
 const caption = d => d.cap + (d.tags?.length || d.cap ? "\n.\n" + [...new Set([...IG_ETIKET, ...(d.tags || []), ...IG_YEREL])].slice(0, 15).join(" ") : "");
-function media(d, n) {
+function media(d, n, pre = "gun") {
   if (d.sonra) return `<p class="small note">Görseli gerçek veriyle hazırlanacak (yukarıdaki adım).</p>`;
-  const files = d.reels ? [[`ig/gun-${nn(n)}-kapak.jpg`, "Kapak"], [`ig/gun-${nn(n)}.mp4`, "Video"]]
-    : (d.slides || []).map((_, i) => [`ig/gun-${nn(n)}-${i + 1}.jpg`, `${i + 1}`]);
+  const b = `ig/${pre}-${nn(n)}`;
+  const files = d.reels ? [[`${b}-kapak.jpg`, "Kapak"], [`${b}.mp4`, "Video"]]
+    : (d.slides || []).map((_, i) => [`${b}-${i + 1}.jpg`, `${i + 1}`]);
   if (!files.length) return "";
   const tall = d.reels || d.t === "hikaye";
   return `<div class="media${tall ? " tall" : ""}">` + files.map(([f, l]) => f.endsWith(".mp4")
-    ? `<a class="th" href="${f}" download><video src="${f}" muted playsinline loop preload="none" poster="ig/gun-${nn(n)}-kapak.jpg"></video><span>▶ Video</span></a>`
-    : `<a class="th" href="${f}" download><img src="${f}" alt="${n}. gün görsel ${esc(l)}" loading="lazy" decoding="async"><span>${esc(l)}</span></a>`).join("") +
+    ? `<a class="th" href="${f}" download><video src="${f}" muted playsinline loop preload="none" poster="${b}-kapak.jpg"></video><span>▶ Video</span></a>`
+    : `<a class="th" href="${f}" download><img src="${f}" alt="${esc(d.h)}: görsel ${esc(l)}" loading="lazy" decoding="async"><span>${esc(l)}</span></a>`).join("") +
     `</div><p class="small">Görsele dokun → indir. ${d.reels ? "Videoyu indir, Instagram'da müzik ekle, kapağı seç." : d.t === "hikaye" ? "Sırayla hikâye olarak paylaş." : files.length > 1 ? "Sırayla tek gönderide paylaş." : ""}</p>`;
 }
 let firstOpen = 0;
@@ -200,6 +207,15 @@ function render() {
         ${d.cap ? `<details${n === firstOpen ? " open" : ""}><summary>Açıklama ve etiketler</summary><pre class="copy" id="${id}">${esc(caption(d))}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>` : ""}
       </div></article>`;
   }).join("") + `</section>`).join("");
+  document.getElementById("ek").innerHTML = IG_EKSTRA.map((d, i) => {
+    const k = i + 1, id = "e" + k;
+    return `<article class="day${doneEk.has(k) ? " done" : ""}" data-e="${k}">
+      <input type="checkbox" class="chk" aria-label="${esc(d.h)} paylaşıldı" ${doneEk.has(k) ? "checked" : ""}>
+      <div class="head"><span class="num">E${k}</span><span class="pill ${d.t}">${TYPE[d.t]}</span><b>${esc(d.h)}</b></div>
+      <div class="body">${d.ne ? `<p class="small">${esc(d.ne)}</p>` : ""}${media(d, k, "ek")}
+        <details><summary>Açıklama ve etiketler</summary><pre class="copy" id="${id}">${esc(caption(d))}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>
+      </div></article>`;
+  }).join("");
   const total = n;
   document.getElementById("progT").textContent = `${done.size} / ${total} gün tamamlandı`;
   document.getElementById("progB").style.width = (done.size / total * 100) + "%";
@@ -209,6 +225,7 @@ document.addEventListener("change", e => {
   if (e.target === startEl) { store.set("start", startEl.value); return render(); }
   const day = e.target.closest(".day");
   if (!day) return;
+  if (day.dataset.e) { const k = +day.dataset.e; e.target.checked ? doneEk.add(k) : doneEk.delete(k); store.set("doneEk", [...doneEk]); return render(); }
   const n = +day.dataset.n;
   e.target.checked ? done.add(n) : done.delete(n);
   store.set("done", [...done]);

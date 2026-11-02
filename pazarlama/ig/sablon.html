@@ -125,6 +125,32 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m .btns{display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
 .m .btns span{background:#120a0e;color:#fff;border-radius:26px;padding:24px 36px;font:700 36px var(--body);display:flex;gap:16px;align-items:center}
 .m .btns span.l{background:#fff;color:var(--md)}
+
+/* söz slaytı (m-soz): duygusal anlatım; koyu, krem ya da fotoğraflı zemin, serif metin, altın el yazısı vurgu */
+.m.soz{background:radial-gradient(120% 90% at 30% 20%,#3a1d2b 0%,#1a0d13 70%);color:#fff}
+.m.soz.krem{background:#f6efe8;color:var(--mi)}
+.m.soz .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.05) 1.5px,transparent 1.5px);background-size:22px 22px}
+.m.soz.krem .grain{background-image:radial-gradient(rgba(90,28,54,.05) 1.5px,transparent 1.5px)}
+.m.soz .mpad{justify-content:center;gap:44px;padding:120px 90px}
+.m.soz .tag{background:rgba(232,196,120,.14);color:#e8c478}
+.m.soz.krem .tag{background:rgba(140,47,82,.1);color:var(--mb)}
+.m.soz .q{font:400 92px/1.12 var(--serif);margin:0;letter-spacing:-.01em;text-wrap:balance}
+.d.m.soz .q{font-size:104px}
+.m.soz .q em{font:400 1.3em/0.9 var(--script);color:#e8c478;font-style:normal;padding:0 .08em}
+.m.soz.krem .q em{color:var(--mb)}
+.m.soz .s{font:400 40px/1.5 var(--body);color:#d9c3cc;margin:0;max-width:860px;text-wrap:pretty}
+.m.soz.krem .s{color:#6d5a63}
+.m.soz .line{width:120px;height:3px;background:#e8c478;border-radius:2px}
+.m.soz.krem .line{background:var(--mb)}
+.m.soz .sig{position:absolute;left:90px;right:90px;bottom:70px;display:flex;justify-content:space-between;font:600 28px var(--body);color:rgba(255,255,255,.55)}
+.d.m.soz .sig{bottom:150px}
+.m.soz.krem .sig{color:rgba(90,28,54,.5)}
+.m.soz.foto{background:#000}
+.m.soz.foto .bgf{position:absolute;inset:0;background:center/cover no-repeat;filter:saturate(.85)}
+.m.soz.foto .shd{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,6,10,.35),rgba(15,6,10,.55) 45%,rgba(15,6,10,.88))}
+.m.soz.foto .mpad{justify-content:flex-end;padding-bottom:200px}
+.d.m.soz.foto .mpad{padding-bottom:330px}
+.m.soz .no{font:700 30px var(--body);letter-spacing:.2em;color:#e8c478}
 </style>
 </head>
 <body>
@@ -218,6 +244,13 @@ async function renderM(el, s, d) {
   } else if (t === "m-soru") {
     el.innerHTML = `${circles(1)}<div style="position:absolute;right:40px;top:${d ? 160 : 40}px;font:700 620px/1 var(--body);color:rgba(140,47,82,.07)">?</div><div class="mpad" style="justify-content:center"><div class="tag">${esc(s.etiket || "Sık sorulan")}</div>
       <h1 class="qbig">${esc(s.soru)}</h1><div class="abox">${md(s.cevap)}</div></div>${band(s)}`;
+  } else if (t === "m-soz") {
+    el.classList.add("soz", s.zemin || "koyu");
+    const q = (s.soz || []).map(x => esc(x).replace(/\*(.+?)\*/g, "<em>$1</em>")).join("<br>");
+    el.innerHTML = `${s.zemin === "foto" ? `<div class="bgf" style="background-image:url(${foto(s.foto)})"></div><div class="shd"></div>` : `<div class="grain"></div>`}
+      <div class="mpad">${s.etiket ? `<div class="tag">${esc(s.etiket)}</div>` : ""}<h1 class="q">${q}</h1>
+      ${s.alt ? `<div class="line"></div><p class="s">${md(s.alt)}</p>` : ""}</div>
+      <div class="sig"><span>${s.no ? `<span class="no">${esc(s.no)}</span>` : "@memoryqrtr"}</span><span>${s.kaydir ? esc(s.kaydir) + "  ⟶" : ""}</span></div>`;
   } else if (t === "m-cta") {
     el.classList.add("cta");
     el.innerHTML = `${circles(2)}<div class="mpad" style="align-items:center;text-align:center;justify-content:center;gap:${d ? 50 : 34}px">

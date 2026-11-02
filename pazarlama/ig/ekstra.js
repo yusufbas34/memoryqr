@@ -146,5 +146,31 @@ const IG_EKSTRA = [
         ...["love_kirmizi", "love_bordo", "lacivert_barok", "beyaz_gul_yuzuk", "bordo_gul", "kirmizi_cicek", "sevgiyle", "pudra_yuzuk", "kalpli_dal", "altin_zambak"].map((id, i) =>
           ({tpl: "tekkart", sure: .6, tasarim: id, no: i + 1})),
         {...CTA(["Tasarımını seç,", "siparişi başlat."]), sure: 2.4}]}},
+  // ---- duygusal anlatım: fotoğrafların önemi, sonunda MemoryQR
+  {t: "karusel", h: "Bir gün en değerli şey (fotoğrafların önemi)",
+    ne: "Duygusal anlatım; kaydedilir ve paylaşılır. Pazar akşamı ya da bir düğün sezonu başında paylaş.",
+    cap: "Bir gün bu fotoğraflar sahip olduğun en değerli şey olacak. 🤍\n\nO gece herkes oradaydı. Babaannenin dansı, kuzenlerin kahkahası, arka sırada sessizce silinen gözyaşı… Fotoğrafçı her şeyi göremez; misafirler görür. Ama o kareler telefonlarda kalır.\n\nMemoryQR ile misafirlerinin çektiği her fotoğraf ve video tek albümde toplanır. Uygulama yok, orijinal kalite.\n\nSevdiğin biriyle paylaş, o da bilsin 👇\n🔗 Link profilde",
+    tags: ["#anılar", "#düğünanıları", "#aile", "#düğünfotoğrafları"],
+    slides: [
+      {tpl: "m-soz", zemin: "foto", foto: "sovale-pano", etiket: "Bir gün", soz: ["Bu fotoğraflar", "sahip olduğun en", "*değerli* şey olacak."], kaydir: "Kaydır"},
+      {tpl: "m-soz", no: "01", soz: ["O gece", "herkes *oradaydı.*"], alt: "Aynı kalabalığı bir daha bir araya getirmek belki **hiç mümkün olmayacak.**"},
+      {tpl: "m-soz", no: "02", soz: ["Babaannenin", "dans ettiği", "o *kısa* video."], alt: "Yıllar sonra en çok izleyeceğin şey, belki de **bir misafirin telefonunda.**"},
+      {tpl: "m-soz", no: "03", soz: ["Fotoğrafçı", "her şeyi *göremez.*"], alt: "Masalardaki kahkahayı, arka sıradaki gözyaşını, çocukların dansını **misafirler yakalar.**"},
+      {tpl: "m-soz", zemin: "krem", no: "04", soz: ["Ama o anlar", "*telefonlarda* kalır."], alt: "Galerinin derinliğinde, grup mesajlarında kaybolur. Kimse \"bana da at\" demeyi hatırlamaz."},
+      {tpl: "m-cta", b: ["Hepsini bir araya", "getirelim."], ust: "Misafirlerin çektiği her an, tek albümde", alt: "Tek QR · Uygulama yok · Orijinal kalite"}]},
+
+  {t: "reels", h: "Bir gün en değerli şey (video)",
+    ne: "Karuselin video hâli. Duygusal, yavaş bir piyano sesi seç; yazılar okunacak kadar ağır akıyor (~20 sn).",
+    cap: "Bir gün bu fotoğraflar sahip olduğun en değerli şey olacak. 🤍\n\nMisafirlerinin çektiği her an tek albümde: MemoryQR.\n\n🔗 Link profilde",
+    tags: ["#reels", "#anılar", "#düğünanıları", "#aile"],
+    reels: {kapak: {tpl: "m-soz", zemin: "foto", foto: "sovale-pano", etiket: "Bir gün", soz: ["Bu fotoğraflar", "sahip olduğun en", "*değerli* şey olacak."]},
+      sahneler: [
+        {tpl: "m-soz", sure: 3.2, zemin: "foto", foto: "sovale-pano", etiket: "Bir gün", soz: ["Bu fotoğraflar", "sahip olduğun en", "*değerli* şey olacak."]},
+        {tpl: "m-soz", sure: 3, soz: ["O gece", "herkes *oradaydı.*"], alt: "Aynı kalabalığı bir daha bir araya getirmek belki **hiç mümkün olmayacak.**"},
+        {tpl: "m-soz", sure: 3.2, soz: ["Babaannenin", "dans ettiği", "o *kısa* video."], alt: "Yıllar sonra en çok izleyeceğin şey, belki de **bir misafirin telefonunda.**"},
+        {tpl: "m-soz", sure: 3, soz: ["Fotoğrafçı", "her şeyi *göremez.*"], alt: "Kahkahayı, gözyaşını, çocukların dansını **misafirler yakalar.**"},
+        {tpl: "m-soz", sure: 3, zemin: "krem", soz: ["Ama o anlar", "*telefonlarda* kalır."]},
+        {tpl: "kamera", sure: 2.2, baslik: "Bu sefer değil."},
+        {tpl: "m-cta", sure: 3, b: ["Hepsini bir araya", "getirelim."], ust: "Misafirlerin çektiği her an, tek albümde", alt: "Tek QR · Uygulama yok · Orijinal kalite"}]}},
 ];
 if (typeof module !== "undefined") module.exports = {IG_EKSTRA};

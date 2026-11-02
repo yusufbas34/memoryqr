@@ -322,6 +322,8 @@ footer a{color:var(--muted)}
 <ul><li><strong>Dijital: 499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, QR kart PDF'i (kendiniz basın), Tek tıkla hepsini indirme</li><li><strong>Standart: 899 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)</li><li><strong>Standart + Şövale: 1.499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), Giriş panosu ve ahşap şövale</li><li><strong>Aile paketi: 1.999 TL</strong> · Kına + düğün, 2 ayrı albüm, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), 1 giriş panosu (50 × 70 cm) ve ahşap şövale, 60 gün saklama</li><li><strong>Ek: 1 yıl saklama +299 TL</strong></li></ul>
 <h2>QR kart tasarımları</h2>
 <p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 60 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
+<h2>Etkinliğe göre QR kodlu albüm</h2>
+<ul><li><a href="dugun-qr-kod/">Düğün QR kod</a></li><li><a href="kina-gecesi-qr-kod/">Kına gecesi QR kod</a></li><li><a href="nisan-qr-kod/">Nişan ve söz QR kod</a></li><li><a href="dogum-gunu-qr-kod/">Doğum günü partisi QR kod</a></li><li><a href="mezuniyet-qr-kod/">Mezuniyet balosu QR kod</a></li><li><a href="rehber/dugunde-misafir-fotograflari-nasil-toplanir/">Düğünde misafir fotoğrafları nasıl toplanır?</a></li></ul>
 <h2>Sık sorulan sorular</h2>
 <h3>Misafirlerin uygulama indirmesi gerekiyor mu?</h3><p>Hayır. Telefon kamerasıyla QR okutulur, sayfa tarayıcıda açılır. Adını yazar ve yükler.</p>
 <h3>Fotoğraflar kalitesini kaybediyor mu?</h3><p>Hayır, fotoğraflar orijinal haliyle yüklenir. Yalnızca iPhone'un HEIC dosyaları her telefonda açılabilsin diye aynı çözünürlükte JPEG'e çevrilir.</p>
@@ -466,7 +468,11 @@ const brandHtml = `<a class="brand" href="${esc(BASE)}">${ICON.logo}MEMORYQR</a>
 const telHref = () => "tel:+90" + TELEFON.replace(/\D/g, "").replace(/^0/, "");
 const footerHtml = code => `<footer>${code ? `<a href="?e=${esc(code)}&sahip">Etkinlik sahibi girişi</a>` : ""}
   ${TELEFON ? `<span>İletişim: <a href="${telHref()}">${esc(TELEFON)}</a>${EPOSTA ? ` · <a href="mailto:${esc(EPOSTA)}">${esc(EPOSTA)}</a>` : ""}${INSTAGRAM ? ` · <a href="https://www.instagram.com/${esc(INSTAGRAM)}" target="_blank" rel="noopener">@${esc(INSTAGRAM)}</a>` : ""}</span>` : ""}
+  ${code ? "" : `<span>${SAYFA_LINK.map(([u, t]) => `<a href="${u}">${t}</a>`).join(" · ")}</span>`}
   <span>MemoryQR · Bul QR · <a href="gizlilik.html">Gizlilik</a></span></footer>`;
+// arama motorları için statik sayfalar (araclar/sayfalar.cjs)
+const SAYFA_LINK = [["dugun-qr-kod/", "Düğün QR kod"], ["kina-gecesi-qr-kod/", "Kına gecesi"], ["nisan-qr-kod/", "Nişan"], ["dogum-gunu-qr-kod/", "Doğum günü"],
+  ["mezuniyet-qr-kod/", "Mezuniyet"], ["rehber/dugunde-misafir-fotograflari-nasil-toplanir/", "Fotoğraf toplama rehberi"]];
 
 // ---------------------------------------------------------------- görsel hazırlama
 // Fotoğraf orijinal kalitesiyle yüklenir; yalnızca galeri için 480 px küçük resim üretilir.

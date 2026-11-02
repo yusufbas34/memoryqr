@@ -121,6 +121,9 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - `index.html` başlığı ve açıklaması "düğün QR kod", "misafir fotoğraf" aramalarına göre yazıldı; `og.jpg` paylaşım görseli, `apple-touch-icon.png`.
 - `<head>` içindeki yapılandırılmış veri (işletme, paketler ve fiyatlar, SSS) ve `<main>` içindeki sabit tanıtım metni (JavaScript çalışmadan okunur)
   `araclar/seo.cjs` ile üretilir. **Paket, fiyat, SSS ya da telefon değişince:** `node araclar/seo.cjs` çalıştırıp gönderin.
-- `robots.txt` (albüm, yönetim ve pazarlama sayfaları taranmaz) ve `sitemap.xml` (ana sayfa, tasarımlar, gizlilik).
+- Etkinlik türüne göre statik sayfalar (`dugun-qr-kod/`, `kina-gecesi-qr-kod/`, `nisan-qr-kod/`, `dogum-gunu-qr-kod/`, `mezuniyet-qr-kod/`) ve rehber yazısı
+  (`rehber/dugunde-misafir-fotograflari-nasil-toplanir/`), stil `sayfa.css`, kart örnekleri `kart/ornek/`. Hepsi ve `sitemap.xml`
+  `araclar/sayfalar.cjs` ile üretilir; paket ya da telefon değişince `node araclar/seo.cjs && node araclar/sayfalar.cjs` çalıştırın.
+- `robots.txt` (albüm, yönetim ve pazarlama sayfaları taranmaz), `404.html`.
 - Yapılması gerekenler (hesap sahibi): Google Search Console'da alan adını doğrulayıp site haritasını gönderin; Google İşletme Profili açın
   (hizmet bölgesi işletmesi, telefon, site); Instagram ve WhatsApp İşletme profillerine siteyi ekleyin; gerçek yorum isteyin.

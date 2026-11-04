@@ -359,7 +359,8 @@ async function rpc(fn, args = {}) {
   if (SUPABASE_KEY.startsWith("eyJ")) headers.Authorization = "Bearer " + SUPABASE_KEY; // eski tip anon key
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {method: "POST", headers, body: JSON.stringify(args)});
   const data = await r.json().catch(() => null);
-  if (!r.ok) { const e = new Error(data?.message || r.statusText); e.status = r.status; throw e; }
+  // PGRST202: fonksiyon yok ya da imzası farklı → veritabanı eski sürümde kalmış
+  if (!r.ok) { const e = new Error(data?.code === "PGRST202" ? "Veritabanı güncel değil. Supabase'de kurulum.sql'i çalıştırın." : data?.message || r.statusText); e.status = r.status; throw e; }
   return data;
 }
 

@@ -110,6 +110,12 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - Aile paketi: kına + nişan + düğün için tek QR'dan ayrı albümler
 - Yükleme kuyruğunun sayfa kapanınca da sürmesi (IndexedDB)
 
+## Sipariş akışı
+- Ana sayfadaki "Bu paketi isteyin" → `?tasarimlar&paket=<kod>` (kodlar `PAKETLER[].kod`: dijital, standart, sovale, aile). Müşteri paketini, isimlerini,
+  tasarımını, basılı ürünü (masa kartı / yatay-dikey kartvizit) ve iletişim bilgisini seçer; `memory_order_add` ile `memory_orders` tablosuna kaydedilir.
+- Yönetim panelinin en üstünde "Siparişler": yeni olanlar vurgulu. Ara, WhatsApp, Arandı, İptal; "Onayla, etkinlik oluştur" etkinlik formunu siparişle
+  doldurur, etkinlik oluşunca sipariş onaylanır ve seçilen tasarım ile kartvizit yönü etkinliğe aktarılır (veritabanı sürüm 8).
+
 ## Pazarlama
 - `pazarlama/instagram.html`: 30 günlük Instagram planı (gün gün içerik, çekim notu, kopyalanabilir açıklama metinleri, etiketler, DM metinleri; yapılan günler o cihazda işaretli kalır). Adres: `https://memoryqr.bulqr.com.tr/pazarlama/instagram.html` (arama motorlarına kapalı). Hesap: [@memoryqrtr](https://www.instagram.com/memoryqrtr) (`index.html` → `INSTAGRAM`).
 - `pazarlama/logo/`: logo dosyaları (Instagram profil fotoğrafı, yatay logo şeffaf ve bordo, SVG işaret); `logo.html`'den üretilir.

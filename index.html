@@ -39,12 +39,12 @@
   const EPOSTA = "";
   // Tanıtım sayfasındaki paketler (fiyatı boş bırakılırsa "Fiyat için yazın" görünür)
   const PAKETLER = [
-    {ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
-    {ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:tabak-kartvizit", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "Tek tıkla hepsini indirme",
+    {kod: "dijital", ad: "Dijital", fiyat: "499 TL", gorsel: "phone", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "QR kart PDF'i (kendiniz basın)", "Tek tıkla hepsini indirme"]},
+    {kod: "standart", ad: "Standart", fiyat: "899 TL", one: true, gorsel: "foto:tabak-kartvizit", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "Tek tıkla hepsini indirme",
       "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)"]},
-    {ad: "Standart + Şövale", fiyat: "1.499 TL", gorsel: "foto:sovale-pano", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "Tek tıkla hepsini indirme",
+    {kod: "sovale", ad: "Standart + Şövale", fiyat: "1.499 TL", gorsel: "foto:sovale-pano", ozellik: ["1 etkinlik, sınırsız fotoğraf ve video", "30 gün saklama", "Tek tıkla hepsini indirme",
       "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)", "Giriş panosu ve ahşap şövale"]},
-    {ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:pleksi-stand", ozellik: ["Kına + düğün, 2 ayrı albüm", "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)",
+    {kod: "aile", ad: "Aile paketi", fiyat: "1.999 TL", gorsel: "foto:pleksi-stand", ozellik: ["Kına + düğün, 2 ayrı albüm", "10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)",
       "1 giriş panosu (50 × 70 cm) ve ahşap şövale", "60 gün saklama"]},
   ];
   // Her pakete eklenebilen 1 yıl saklama (albüm Google Drive'a arşivlenir, bağlantısı albüm sayfasında görünür)
@@ -289,6 +289,21 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 img[data-d]:not(.ready){aspect-ratio:111/154;background:linear-gradient(110deg,var(--soft) 40%,#fbf6f8 50%,var(--soft) 60%) 0 0/200% 100%;animation:shim 1.4s linear infinite}
 @keyframes shim{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){img[data-d]:not(.ready){animation:none}}
+
+/* sipariş sayfası: adımlar ve paket seçimi */
+.dstep{display:flex;align-items:center;gap:12px;font-size:clamp(22px,3.4vw,28px);margin:26px 0 12px}
+.dstep span{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:18px;flex:none}
+.dpk{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.dpk-i{text-align:left;border:2px solid var(--line);background:var(--card);border-radius:14px;padding:14px;cursor:pointer;font:inherit;color:var(--ink);display:grid;gap:4px;align-content:start}
+.dpk-i b{font-size:17px}.dpk-i .pr{font:700 26px "Barlow Condensed",sans-serif;color:var(--accent)}
+.dpk-i small{color:var(--muted);font-size:13px;line-height:1.35}
+.dpk-i.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;background:var(--soft)}
+@media (max-width:860px){.dpk{grid-template-columns:1fr 1fr}}
+.okmark{width:64px;height:64px;border-radius:50%;background:var(--ok);color:#fff;display:grid;place-items:center;font-size:34px;font-weight:700}
+.ordn{border:2px solid var(--accent)!important;background:color-mix(in srgb,var(--accent) 6%,var(--card))}
+.pill.new{background:var(--accent);color:#fff}
+.ordrow{display:flex;gap:14px;align-items:flex-start}
+.ordimg{width:72px;height:auto;border-radius:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);flex:none}
 
 /* masa kartı seçici */
 .cardpick{place-items:start center;overflow-y:auto}
@@ -618,14 +633,20 @@ function lightbox(list, index, {owner = null, onChange, play = false} = {}) {
         <div style="font-size:13px;opacity:.75">${esc(fmtTime(f.created_at))} · ${i + 1}/${list.length}</div></div>
         <div class="row" style="gap:4px">${list.length > 1 ? `<button class="ic" data-a="play" aria-label="${playing ? "Durdur" : "Otomatik oynat"}">${playing ? "❚❚" : "▶"}</button>` : ""}
           ${document.fullscreenEnabled ? `<button class="ic" data-a="full" aria-label="Tam ekran">⛶</button>` : ""}<button class="x" aria-label="Kapat">×</button></div></div>
-      <div class="media">${f.kind === "video" ? `<video src="${esc(fileUrl(f.key))}" controls playsinline autoplay ${playing ? "muted" : ""}></video>` : `<img src="${esc(fileUrl(f.key))}" alt="${esc(f.guest)} yükledi">`}
+      <div class="media">${f.kind === "video" ? `<video src="${esc(fileUrl(f.key))}" controls playsinline autoplay ${playing ? "muted" : ""}></video>` : `<img src="${esc(fileUrl(f.thumb_key || f.key))}" data-full="${esc(fileUrl(f.key))}" alt="${esc(f.guest)} yükledi">`}
         ${list.length > 1 ? `<button class="nav l" aria-label="Önceki">‹</button><button class="nav r" aria-label="Sonraki">›</button>` : ""}</div>
       <div class="bot">${owner ? `<button class="btn light${f.favorite ? " on" : ""}" data-a="fav">${heart(f.favorite)}${f.favorite ? "Favoride" : "Favori"}</button>` : ""}
         <a class="btn light" href="${esc(fileUrl(f.key))}?dl=${encodeURIComponent(fileName(f))}">${ICON.download}İndir</a>
         ${owner ? `<button class="btn light" data-a="hide">${f.hidden ? "Göster" : "Gizle"}</button><button class="btn light" data-a="del">Sil</button>` : ""}</div>`;
-    // sonraki fotoğrafı önceden yükle: geçiş beklemesin
-    const n = list[(i + 1) % list.length];
-    if (n && n.kind === "photo") { const pre = new Image(); pre.src = fileUrl(n.key); }
+    // önce küçük önizleme görünür, orijinal yüklenince yerine geçer (birkaç MB'lık fotoğrafta boş ekran beklenmez)
+    const im = $(".media img", el);
+    if (im && im.dataset.full !== im.src) {
+      const full = new Image(); full.decoding = "async";
+      full.onload = () => { if (im.isConnected) im.src = full.src; };
+      full.src = im.dataset.full;
+    }
+    // önceki ve sonraki fotoğrafları önceden yükle: geçiş beklemesin
+    for (const d of [1, -1, 2]) { const n = list[(i + d + list.length) % list.length]; if (n && n.kind === "photo") { const pre = new Image(); pre.src = fileUrl(n.key); } }
     schedule();
   }
   el.addEventListener("click", async e => {
@@ -1251,6 +1272,8 @@ function adminPanel(key, list) {
   const total = list.reduce((s, e) => s + Number(e.bytes), 0);
   const today = new Date().toISOString().slice(0, 10);
   app.innerHTML = `<div class="row" style="justify-content:space-between">${brandHtml}<button class="linkbtn" id="aout">Çıkış</button></div>
+    <section class="stack" id="ordsBox"><div class="row" style="justify-content:space-between;align-items:baseline"><h1 id="ordsH">Siparişler</h1>
+      <label class="switch"><input type="checkbox" id="ordsAll"> Kapananları da göster</label></div><div class="stack" id="ords"><p class="hint">Yükleniyor…</p></div></section>
     <h1>Etkinlikler</h1>
     ${FILES_URL.includes("BURAYA") ? `<p class="err">index.html başındaki FILES_URL henüz ayarlanmadı: misafirler yükleme yapamaz. Kurulum: README.md</p>` : ""}
     <div class="stats"><div class="stat"><b>${list.length}</b><span>etkinlik</span></div>
@@ -1275,6 +1298,71 @@ function adminPanel(key, list) {
     </form>
     <section class="stack" id="evs">${list.length ? "" : `<p class="hint">Henüz etkinlik yok.</p>`}</section>
     <section class="stack"><h2>Yorumlar</h2><p class="hint">Tanıtım sayfasından gelen yorumlar. Yalnızca yayınladıklarınız sayfada görünür.</p><div class="stack" id="revs"></div></section>`;
+  // ---- siparişler: tasarım sayfasından gelen talepler; yeni olanlar vurgulu, onaylanınca etkinliğe dönüştürülür
+  const ST_TR = {yeni: "Yeni", arandi: "Arandı", onaylandi: "Onaylandı", iptal: "İptal"};
+  const PKG_TR = Object.fromEntries(PAKETLER.map(p => [p.kod, `${p.ad} (${p.fiyat})`]));
+  let orders = [], pendingOrder = null;
+  const telOf = ph => { const d = String(ph || "").replace(/\D/g, ""); return d.startsWith("90") ? "+" + d : d.startsWith("0") ? "+90" + d.slice(1) : "+90" + d; };
+  const drawOrders = () => {
+    const all = $("#ordsAll").checked, yeni = orders.filter(o => o.status === "yeni").length;
+    $("#ordsH").innerHTML = `Siparişler${yeni ? ` <span class="pill new">${yeni} yeni</span>` : ""}`;
+    document.title = (yeni ? `(${yeni}) ` : "") + "Yönetim · MemoryQR";
+    const v = orders.filter(o => all || o.status === "yeni" || o.status === "arandi");
+    $("#ords").innerHTML = v.length ? v.map(o => `<div class="card ev${o.status === "yeni" ? " ordn" : ""}" data-o="${o.id}">
+      <div class="row" style="justify-content:space-between"><h3>#${o.no} · ${esc(o.title)}</h3>
+        <span class="pill ${o.status === "yeni" ? "new" : o.status === "onaylandi" ? "on" : o.status === "iptal" ? "off" : ""}">${ST_TR[o.status]}${o.event_code ? ` · ${esc(o.event_code)}` : ""}</span></div>
+      <div class="ordrow"><img data-od="${esc(o.design || "")}" alt="" class="ordimg">
+        <div class="meta" style="flex:1"><span><b>${esc(o.name)}</b></span><a href="tel:${esc(telOf(o.phone))}"><b>${esc(o.phone)}</b></a>
+          <span>${esc(KINDS[o.kind] || o.kind)}${o.event_date ? ` · ${esc(fmtDate(o.event_date))}` : ""}</span>
+          <span>Paket: <b>${esc(PKG_TR[o.package] || "seçilmedi")}</b></span>
+          ${o.product ? `<span>${esc(PROD_TR[o.product])}${o.product === "kartvizit" && o.card_biz ? `, ${esc(o.card_biz)}` : ""}</span>` : ""}
+          <span>Tasarım: <b>${esc(!o.design ? "—" : typeof cardDesign === "function" ? cardDesign(o.design).name : o.design)}</b></span>${o.archive ? `<span><b>+ ${esc(EK_ARSIV.ad)}</b></span>` : ""}
+          ${o.card_text ? `<span>Kart yazısı: “${esc(o.card_text)}”</span>` : ""}<span class="hint">${esc(fmtTime(o.created_at))}</span></div></div>
+      ${o.note ? `<p class="hint" style="margin:0">Not: ${esc(o.note)}</p>` : ""}
+      <div class="row">
+        <a class="btn small" href="tel:${esc(telOf(o.phone))}">Ara</a>
+        <a class="btn small light" href="https://wa.me/${esc(telOf(o.phone).replace("+", ""))}?text=${encodeURIComponent(`Merhaba ${o.name}, MemoryQR siparişiniz (#${o.no}) için yazıyorum.`)}" target="_blank" rel="noopener">WhatsApp</a>
+        ${o.status === "yeni" ? `<button class="btn small light" data-s="arandi">Arandı</button>` : ""}
+        ${o.status !== "onaylandi" ? `<button class="btn small light" data-s="onay">Onayla, etkinlik oluştur</button>` : ""}
+        ${o.status !== "iptal" && o.status !== "onaylandi" ? `<button class="btn small light" data-s="iptal">İptal</button>` : ""}
+        ${o.status === "iptal" ? `<button class="btn small light" data-s="yeni">Geri al</button><button class="btn small danger" data-s="sil">Sil</button>` : ""}
+      </div></div>`).join("") : `<p class="hint">${orders.length ? "Açık sipariş yok." : "Henüz sipariş yok."} Tasarım sayfasından gelen siparişler burada görünür.</p>`;
+    // tasarım küçük resimleri
+    if (typeof drawCard === "function") $("#ords").querySelectorAll("img[data-od]").forEach(im => {
+      const o = orders.find(x => x.id === im.closest("[data-o]").dataset.o);
+      if (!o?.design) return im.remove();
+      designReady(o.design).then(() => { im.src = drawCard({code: "ORNEK1", title: o.title, kind: o.kind, event_date: o.event_date || "2026-01-01"}, o.design, o.card_text || "", 1.6).toDataURL("image/jpeg", .85); });
+    });
+  };
+  const loadOrders = async () => {
+    try { orders = await rpc("memory_admin_orders", {p_key: key}); }
+    catch (e) { $("#ords").innerHTML = `<p class="err">${esc(/güncel değil/.test(e.message) ? "Siparişler için veritabanını güncelleyin: Supabase'de kurulum.sql'i çalıştırın." : "Siparişler yüklenemedi.")}</p>`; return; }
+    drawOrders();
+    loadScript("kart.js").then(drawOrders).catch(() => {});
+  };
+  $("#ordsAll").onchange = drawOrders;
+  $("#ords").onclick = async e => {
+    const b = e.target.closest("[data-s]"); if (!b) return;
+    const o = orders.find(x => x.id === b.closest("[data-o]").dataset.o); if (!o) return;
+    const s2 = b.dataset.s;
+    if (s2 === "onay") {
+      // etkinlik formu siparişle dolar; "Etkinliği oluştur" deyince sipariş onaylanır ve etkinliğe bağlanır
+      pendingOrder = o.id;
+      $("#efT").textContent = `Sipariş #${o.no} → yeni etkinlik`; $("#eCancel").hidden = false;
+      $("#eCode").value = ""; $("#eTitle").value = o.title; $("#eKind").value = o.kind; if (o.event_date) $("#eDate").value = o.event_date;
+      $("#ePkg").value = o.package || "standart"; $("#eDays").value = o.package === "aile" ? 60 : 30;
+      $("#eOwner").value = o.name; $("#ePhone").value = o.phone; $("#eArchive").value = "";
+      $("#eNote").value = [`Sipariş #${o.no}`, o.product ? PROD_TR[o.product] + (o.product === "kartvizit" && o.card_biz ? ` (${o.card_biz})` : "") : "",
+        o.archive ? `+ ${EK_ARSIV.ad}` : "", o.note || ""].filter(Boolean).join(" · ");
+      return $("#ef").scrollIntoView({behavior: "smooth"});
+    }
+    if (s2 === "sil" && !await ask("Sipariş silinsin mi?", `#${o.no} · ${o.name}`, "Sil", true)) return;
+    const r = await rpc("memory_admin_order_set", {p_key: key, p_id: o.id, p_status: s2}).catch(() => null);
+    if (!r?.ok) return toast("Kaydedilemedi");
+    loadOrders();
+  };
+  loadOrders();
+
   const loadRevs = async () => {
     const revs = await rpc("memory_admin_reviews", {p_key: key}).catch(() => []);
     $("#revs").innerHTML = revs.length ? revs.map(r => `<div class="card ev"><div class="row" style="justify-content:space-between"><b>${esc(r.name)}${r.event_text ? ` · ${esc(r.event_text)}` : ""}</b>
@@ -1363,6 +1451,8 @@ function adminPanel(key, list) {
       p_note: $("#eNote").value, p_archive_url: $("#eArchive").value, p_package: $("#ePkg").value}).catch(err => ({ok: false, error: err.message}));
     if (!r.ok) return toast(r.error === "bad_url" ? "Arşiv bağlantısı https:// ile başlamalı" : "Kaydedilemedi: " + (r.error || ""));
     toast($("#eCode").value ? "Kaydedildi" : `Oluşturuldu: ${r.code} · PIN ${r.pin}`, 5000);
+    // siparişten oluşturulduysa: sipariş onaylanır, seçtiği tasarım ve kartvizit yönü etkinliğe aktarılır
+    if (pendingOrder && r.code) await rpc("memory_admin_order_set", {p_key: key, p_id: pendingOrder, p_status: "onaylandi", p_code: r.code}).catch(() => toast("Sipariş etkinliğe bağlanamadı"));
     adminPanel(key, await rpc("memory_admin_events", {p_key: key}));
   };
 }
@@ -1446,7 +1536,7 @@ function homeView() {
           : pk.gorsel ? `<img class="mock" data-mock="${pk.gorsel}" alt="${esc(pk.ad)} paketi örnek görseli">` : ""}
         <h3>${esc(pk.ad)}</h3><div class="price">${esc(pk.fiyat || "Fiyat için yazın")}</div>
         <ul>${pk.ozellik.map(o => `<li>${esc(o)}</li>`).join("")}</ul>
-        ${wa ? `<a class="btn ${pk.one ? "" : "ghost"}" href="${esc(waLink(`Merhaba, MemoryQR ${pk.ad} paketi hakkında bilgi almak istiyorum.`))}" target="_blank" rel="noopener">Bu paketi isteyin</a>` : ""}</div>`).join("")}</div>
+        <a class="btn ${pk.one ? "" : "ghost"}" href="?tasarimlar&paket=${esc(pk.kod)}">Bu paketi isteyin</a></div>`).join("")}</div>
       <div class="laddon"><div><h3>Ek: ${esc(EK_ARSIV.ad)} <span class="price-s">${esc(EK_ARSIV.fiyat)}</span></h3>
         <p>30 gün size yetmezse albümünüzü Google Drive'da bir yıl saklarız. Bağlantısı albüm sayfanızda durur, istediğiniz zaman indirirsiniz.</p></div></div></section>
 
@@ -1521,26 +1611,40 @@ function homeView() {
   }).catch(() => { $("#lcards").innerHTML = ""; });
 }
 
-// ---------------------------------------------------------------- tasarım seçme sayfası (?tasarimlar): müşteri kendi isimleriyle görür, seçip WhatsApp'tan gönderir
+// ---------------------------------------------------------------- tasarım ve sipariş sayfası (?tasarimlar[&paket=kod])
+// Müşteri paketini seçer, isimlerini yazar, tasarıma dokunur, iletişim bilgisini bırakır: sipariş veritabanına kaydedilir
+// (memory_order_add), yönetim panelinde "yeni" olarak görünür. WhatsApp gerekmez.
+const PROD_TR = {kart: "Masa kartı (10 adet)", kartvizit: "Kartvizit (100 adet)"};
 async function designsView() {
   app.className = "home";
-  document.title = "Düğün QR Kod Kart Tasarımları: Masa Kartı, Kartvizit, Pano | MemoryQR";
-  setMeta("Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu masa kartı, kartvizit ve giriş panosu tasarımları. Kendi isminizle görün, beğendiğinizi seçin.",
+  document.title = "Düğün QR Kod Kart Tasarımları ve Sipariş | MemoryQR";
+  setMeta("Düğün, nişan, kına, doğum günü ve mezuniyet için QR kodlu masa kartı, kartvizit ve giriş panosu tasarımları. Paketinizi seçin, kartınızı kendi isminizle görün, siparişinizi verin.",
     SITE_URL + "?tasarimlar");
-  const st = {title: "", kind: "dugun", date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), cat: ""};
+  const st = {title: "", kind: "dugun", date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), cat: "",
+    pkg: PAKETLER.find(p => p.kod === params.get("paket"))?.kod || null};
   const sample = {dugun: "Seda & Yusuf", nisan: "Seda & Yusuf", kina: "Seda'nın Kına Gecesi", soz: "Seda & Yusuf", mezuniyet: "Hukuk Fakültesi Mezuniyet Balosu",
     dogum_gunu: "Seda'nın Doğum Günü", diger: "Seda & Yusuf"};
   app.innerHTML = `<nav class="lnav">${brandHtml}<div class="row"><a href="./#paketler">Paketler</a><a href="./#sss">SSS</a><a class="btn small" href="./">Ana sayfa</a></div></nav>
-    <section class="stack" style="padding:28px 0 8px"><div class="eyebrow">Masa kartları</div><h1 style="font-size:clamp(36px,6vw,54px)">Kartınızı seçin</h1>
-      <p class="lede">İsimlerinizi ve tarihinizi yazın, bütün tasarımları kendi kartınız olarak görün. Beğendiğinize dokunun ve WhatsApp'tan bize gönderin.</p></section>
+    <section class="stack" style="padding:28px 0 8px"><div class="eyebrow">Sipariş</div><h1 style="font-size:clamp(36px,6vw,54px)">Kartınızı seçin, siparişinizi verin</h1>
+      <p class="lede">Paketinizi seçin, isimlerinizi yazın ve beğendiğiniz tasarıma dokunun. İletişim bilgilerinizi bırakın; sizi arayıp siparişinizi birlikte onaylayalım.</p></section>
+    <h2 class="dstep"><span>1</span>Paketinizi seçin</h2>
+    <div class="dpk" id="dzP"></div>
+    <h2 class="dstep"><span>2</span>Bilgilerinizi yazın</h2>
     <form class="card dz" id="dzf" onsubmit="return false">
       <div class="stack"><label for="dzT">İsimler ya da başlık</label><input type="text" id="dzT" maxlength="60" placeholder="Ör. Seda & Yusuf"></div>
       <div class="stack"><label for="dzK">Etkinlik</label><select id="dzK">${Object.entries(KINDS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div>
       <div class="stack"><label for="dzD">Tarih</label><input type="date" id="dzD" value="${st.date}"></div>
     </form>
+    <h2 class="dstep"><span>3</span>Tasarımınıza dokunun</h2>
     <div class="cp-cats" id="dzC"></div>
     <div class="lcards" id="dzG" style="padding:6px 0 30px"><p class="hint">Tasarımlar hazırlanıyor…</p></div>
     ${footerHtml()}`;
+  const pkgs = () => {
+    $("#dzP").innerHTML = PAKETLER.map(p => `<button type="button" class="dpk-i${st.pkg === p.kod ? " on" : ""}" data-p="${esc(p.kod)}" aria-pressed="${st.pkg === p.kod}">
+      <b>${esc(p.ad)}</b><span class="pr">${esc(p.fiyat)}</span><small>${esc(p.ozellik.join(" · "))}</small></button>`).join("");
+  };
+  pkgs();
+  $("#dzP").onclick = e => { const b = e.target.closest("[data-p]"); if (b) { st.pkg = b.dataset.p; pkgs(); } };
   try { await loadScript("kart.js"); } catch (e) { $("#dzG").innerHTML = `<p class="err">Tasarımlar yüklenemedi, sayfayı yenileyin.</p>`; return; }
   const ev = () => ({code: "ORNEK1", title: st.title || sample[st.kind], kind: st.kind, event_date: st.date || new Date().toISOString().slice(0, 10)});
   // isim yazılmadıysa her kart kendi türüne uygun örnekle görünür (doğum günü, mezuniyet)
@@ -1550,7 +1654,7 @@ async function designsView() {
       .map(([k, v]) => `<button type="button" class="chip${st.cat === k ? " on" : ""}" data-c="${k}">${esc(v)}</button>`).join("");
   };
   const grid = () => {
-    $("#dzG").innerHTML = CARD_DESIGNS.filter(d => !st.cat || d.cat === st.cat).map(d => `<figure><button class="dz-item" data-d="${d.id}" aria-label="${esc(d.name)} tasarımını aç">
+    $("#dzG").innerHTML = CARD_DESIGNS.filter(d => !st.cat || d.cat === st.cat).map(d => `<figure><button class="dz-item" data-d="${d.id}" aria-label="${esc(d.name)} tasarımını seç">
       <img data-d="${d.id}" alt=""></button><figcaption>${esc(d.name)}</figcaption></figure>`).join("");
     lazyThumbs($("#dzG"), id => drawCard(evFor(id), id, "", 2.4).toDataURL("image/jpeg", .85));
   };
@@ -1568,44 +1672,58 @@ async function designsView() {
   $("#dzC").onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; st.cat = b.dataset.c; cats(); grid(); };
   $("#dzG").onclick = e => { const b = e.target.closest("[data-d]"); if (b) openOrder(b.dataset.d); };
 
-  // seçim penceresi: paket, ek, kart yazısı, not → WhatsApp mesajı + birebir açılan önizleme linki + görsel
-  const order = {pkg: (PAKETLER.find(p => p.one) || PAKETLER[0])?.ad, archive: false, text: "", note: ""};
+  // sipariş penceresi: paket, basılı ürün, ek, kart yazısı, iletişim → veritabanına kayıt
+  const saved = store.get("order_contact", {}) || {};
+  const order = {archive: false, text: "", note: "", product: "kart", biz: "yatay", name: saved.name || "", phone: saved.phone || ""};
   async function openOrder(id) {
     const d = cardDesign(id);
     await designReady(id);
     const m = document.createElement("div");
     m.className = "modal cardpick";
-    m.innerHTML = `<div class="card" role="dialog" aria-modal="true" style="max-width:820px">
-      <div class="row" style="justify-content:space-between"><h2>${esc(d.name)}</h2><button class="linkbtn" data-x>Kapat</button></div>
+    m.innerHTML = `<div class="card" role="dialog" aria-modal="true" aria-labelledby="oTitle" style="max-width:860px">
+      <div class="row" style="justify-content:space-between"><h2 id="oTitle">${esc(d.name)}</h2><button class="linkbtn" data-x>Kapat</button></div>
       <div class="ord">
         <div class="stack"><img id="oImg" alt="${esc(d.name)} önizleme" style="width:100%;height:auto;border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.18)">
-          <p class="hint">Kartınızdaki QR sizin albümünüzü açar; buradaki QR örnektir.</p></div>
+          <p class="hint">Kartınızdaki QR sizin albümünüzü açar; buradaki QR örnektir.</p>
+          <button type="button" class="linkbtn" id="oSave" style="justify-self:start">Görseli telefona kaydet</button></div>
         <div class="stack" style="min-width:0">
           <label>Paket</label>
-          <div class="opkg" id="oPkg">${PAKETLER.map(p => `<button type="button" class="chip" data-p="${esc(p.ad)}">${esc(p.ad)}${p.fiyat ? ` · ${esc(p.fiyat)}` : ""}</button>`).join("")}</div>
+          <div class="opkg" id="oPkg">${PAKETLER.map(p => `<button type="button" class="chip" data-p="${esc(p.kod)}">${esc(p.ad)}${p.fiyat ? ` · ${esc(p.fiyat)}` : ""}</button>`).join("")}</div>
           <p class="hint" id="oPkgInfo"></p>
+          <div class="stack" id="oProdBox"><label>Basılı ürün</label>
+            <div class="seg" id="oProd">${Object.entries(PROD_TR).map(([k, v]) => `<button type="button" data-r="${k}">${v}</button>`).join("")}</div>
+            <div class="seg" id="oBiz"><button type="button" data-y="yatay">Yatay kartvizit</button><button type="button" data-y="dikey">Dikey kartvizit</button></div></div>
           <label class="switch"><input type="checkbox" id="oArc"> ${esc(EK_ARSIV.ad)} (${esc(EK_ARSIV.fiyat)})</label>
+          <div class="grid2"><div class="stack"><label for="oT">Kartta yazacak isimler</label><input type="text" id="oT" maxlength="60" placeholder="Ör. Seda & Yusuf" required></div>
+            <div class="stack"><label for="oD">Etkinlik tarihi</label><input type="date" id="oD" required></div></div>
           <label for="oText">Kart yazısı <span class="opt">(isteğe bağlı)</span></label>
           <textarea id="oText" rows="2" maxlength="120" placeholder="${esc(d.text(evFor(d.id)))}"></textarea>
+          <h3 style="margin:10px 0 0">İletişim bilgileriniz</h3>
+          <div class="grid2"><div class="stack"><label for="oName">Adınız soyadınız</label><input type="text" id="oName" maxlength="60" autocomplete="name" required></div>
+            <div class="stack"><label for="oPhone">Telefonunuz</label><input type="tel" id="oPhone" maxlength="20" autocomplete="tel" placeholder="05xx xxx xx xx" required></div></div>
           <label for="oNote">Notunuz <span class="opt">(isteğe bağlı)</span></label>
-          <textarea id="oNote" rows="3" maxlength="500" placeholder="Ör. masa sayısı, kart adedi, teslim tarihi, renk isteği…"></textarea>
+          <textarea id="oNote" rows="2" maxlength="500" placeholder="Ör. masa sayısı, teslim tarihi, aramamızı istediğiniz saat…"></textarea>
+          <label class="switch" style="align-items:flex-start"><input type="checkbox" id="oOk"> <span>Siparişim için benimle telefonla iletişime geçilmesini kabul ediyorum (<a href="gizlilik.html" target="_blank" rel="noopener">Gizlilik</a>).</span></label>
+          <div class="err" id="oErr" role="alert" hidden></div>
         </div>
       </div>
       <div class="ord-act">
         <div class="stack"><button type="button" class="btn ghost" id="oAsk">${ICON.wa}Sevdiklerine sor</button>
-          <span class="hint">Kartı sevgilinize, ailenize, arkadaşlarınıza gönderin; beğenip beğenmediklerini yazsınlar.</span></div>
-        <div class="stack">${WHATSAPP ? `<a class="btn" id="oSend" target="_blank" rel="noopener">Siparişi başlat</a>` : `<button class="btn" id="oCopy">Seçimi kopyala</button>`}
-          <span class="hint">Seçiminiz kart görseliyle birlikte bize gelir; ödeme ve teslimatı WhatsApp'tan konuşuruz.</span></div>
-      </div>
-      <button type="button" class="linkbtn" id="oSave" style="justify-self:start">Görseli telefona kaydet</button></div>`;
+          <span class="hint">Kartı sevgilinize, ailenize gönderin; fikirlerini sorun.</span></div>
+        <div class="stack"><button type="button" class="btn" id="oSend">Siparişi gönder</button>
+          <span class="hint">Ödeme şimdi alınmaz. Sizi arayıp siparişinizi onaylarız.</span></div>
+      </div></div>`;
     document.body.append(m);
     const e2 = () => evFor(d.id);
+    const sel = () => ({design: d.id, text: order.text, biz: order.biz});
+    const printed = () => st.pkg && st.pkg !== "dijital";
     const previewLink = () => {
       const q = new URLSearchParams({d: d.id, t: e2().title, k: e2().kind, tarih: e2().event_date});
       if (order.text) q.set("y", order.text);
+      if (st.pkg) q.set("paket", st.pkg);
       return `${SITE_URL}?tasarimlar&${q}`;
     };
-    // kart görseli dosya sunucusuna yüklenir; /p/<id> bağlantısı WhatsApp'ta görselle görünür ve tasarımı açar
+    // "Sevdiklerine sor": kart görseli dosya sunucusuna yüklenir; /p/<id> bağlantısı WhatsApp'ta görselle görünür ve tasarımı açar
     let share = null, shareSig = "", shareTm;
     const sig = () => JSON.stringify([d.id, order.text, e2().title, e2().kind, e2().event_date]);
     const shareLink = () => share && shareSig === sig() ? share : previewLink();
@@ -1618,49 +1736,84 @@ async function designsView() {
         if (!t?.ok) return;
         const r = await fetch(`${FILES_URL}/u/${t.key}?max=${t.max}&exp=${t.exp}&sig=${t.sig}`, {method: "PUT", body: b,
           headers: {"Content-Type": "image/jpeg", "X-Share-Title": encodeURIComponent(`${e2().title} · ${d.name}`), "X-Share-Url": encodeURIComponent(previewLink())}});
-        if (r.ok && want === sig()) { share = `${FILES_URL}/p/${t.id}`; shareSig = want; sync(); }
+        if (r.ok && want === sig()) { share = `${FILES_URL}/p/${t.id}`; shareSig = want; }
       } catch (err) {}
     }
     const queueShare = () => { clearTimeout(shareTm); shareTm = setTimeout(makeShare, 900); };
     const friendMsg = () => `Selam! ${KINDS[e2().kind] || "Etkinlik"} kartımızı seçiyorum, sence bu nasıl? 👇\n${shareLink()}\n\nBeğendin mi, yoksa başka bir tasarıma mı bakalım? Fikrini yaz 🙏`;
-    const message = () => {
-      const pk = PAKETLER.find(p => p.ad === order.pkg);
-      return [`Merhaba, MemoryQR siparişi vermek istiyorum.`, ``,
-        `Tasarım: ${d.name} (${d.id})`, `İsimler: ${e2().title}`, `Etkinlik: ${KINDS[e2().kind]} · ${fmtDate(e2().event_date)}`,
-        pk ? `Paket: ${pk.ad}${pk.fiyat ? ` (${pk.fiyat})` : ""}` : null, order.archive ? `Ek: ${EK_ARSIV.ad} (${EK_ARSIV.fiyat})` : null,
-        order.text ? `Kart yazısı: ${order.text}` : null, order.note ? `Not: ${order.note}` : null, ``, `Kart görseli: ${shareLink()}`]
-        .filter(l => l !== null).join("\n");
-    };
-    const canvas = () => drawCard(e2(), d.id, order.text, 7);
     const sync = () => {
-      $("#oPkg", m).querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p === order.pkg));
-      const pk = PAKETLER.find(p => p.ad === order.pkg);
-      $("#oPkgInfo", m).textContent = pk ? pk.ozellik.join(" · ") : "";
-      if ($("#oSend", m)) $("#oSend", m).href = waLink(message());
+      $("#oPkg", m).querySelectorAll("[data-p]").forEach(b => b.classList.toggle("on", b.dataset.p === st.pkg));
+      const pk = PAKETLER.find(p => p.kod === st.pkg);
+      $("#oPkgInfo", m).textContent = pk ? pk.ozellik.join(" · ") : "Paket seçin; sonradan telefonda değiştirebiliriz.";
+      $("#oProdBox", m).hidden = !printed();
+      $("#oProd", m).querySelectorAll("[data-r]").forEach(b => b.classList.toggle("on", b.dataset.r === order.product));
+      $("#oBiz", m).hidden = order.product !== "kartvizit";
+      $("#oBiz", m).querySelectorAll("[data-y]").forEach(b => b.classList.toggle("on", b.dataset.y === order.biz));
     };
-    const drawImg = () => { $("#oImg", m).src = drawCard(e2(), d.id, order.text, 4.5).toDataURL("image/jpeg", .9); };
+    const drawImg = () => {
+      const kv = printed() && order.product === "kartvizit", im = $("#oImg", m);
+      if (!im) return;  // sipariş gönderildi, pencere teşekkür ekranına döndü
+      im.src = (kv ? drawBiz(e2(), sel(), 7) : drawCard(e2(), d.id, order.text, 4.5)).toDataURL("image/jpeg", .9);
+    };
     $("#oArc", m).checked = order.archive; $("#oText", m).value = order.text; $("#oNote", m).value = order.note;
+    $("#oName", m).value = order.name; $("#oPhone", m).value = order.phone;
+    $("#oT", m).value = st.title; $("#oD", m).value = st.date;
+    // pencerede değişen isim/tarih sayfadaki forma ve kart önizlemelerine de yansır
+    $("#oT", m).oninput = ev2 => { st.title = ev2.target.value.trim(); $("#dzT").value = ev2.target.value; clearTimeout(tm); tm = setTimeout(drawImg, 300); redraw(); };
+    $("#oD", m).oninput = ev2 => { st.date = ev2.target.value; $("#dzD").value = st.date; clearTimeout(tm); tm = setTimeout(drawImg, 300); redraw(); };
     drawImg(); sync();
     let tm;
-    makeShare();
-    $("#oPkg", m).onclick = ev2 => { const b = ev2.target.closest("[data-p]"); if (b) { order.pkg = b.dataset.p; sync(); } };
-    $("#oArc", m).onchange = ev2 => { order.archive = ev2.target.checked; sync(); };
-    $("#oText", m).oninput = ev2 => { order.text = ev2.target.value.trim(); sync(); clearTimeout(tm); tm = setTimeout(drawImg, 300); queueShare(); };
-    $("#oNote", m).oninput = ev2 => { order.note = ev2.target.value.trim(); sync(); };
+    $("#oPkg", m).onclick = ev2 => { const b = ev2.target.closest("[data-p]"); if (b) { st.pkg = b.dataset.p; pkgs(); sync(); drawImg(); } };
+    $("#oProd", m).onclick = ev2 => { const b = ev2.target.closest("[data-r]"); if (b) { order.product = b.dataset.r; sync(); drawImg(); } };
+    $("#oBiz", m).onclick = ev2 => { const b = ev2.target.closest("[data-y]"); if (b) { order.biz = b.dataset.y; sync(); drawImg(); } };
+    $("#oArc", m).onchange = ev2 => { order.archive = ev2.target.checked; };
+    $("#oText", m).oninput = ev2 => { order.text = ev2.target.value.trim(); clearTimeout(tm); tm = setTimeout(drawImg, 300); queueShare(); };
+    $("#oNote", m).oninput = ev2 => { order.note = ev2.target.value.trim(); };
+    $("#oName", m).oninput = ev2 => { order.name = ev2.target.value; };
+    $("#oPhone", m).oninput = ev2 => { order.phone = ev2.target.value; };
+    const canvas = () => printed() && order.product === "kartvizit" ? drawBiz(e2(), sel(), 12) : drawCard(e2(), d.id, order.text, 7);
     const blob = () => new Promise(res => canvas().toBlob(res, "image/jpeg", .92));
     const fname = () => `memoryqr-${d.id}-${slug(e2().title)}.jpg`;
     $("#oSave", m).onclick = async () => saveBlob(await blob(), fname());
     // telefonda paylaş menüsü kart resmini doğrudan ekler; olmayan yerde WhatsApp bağlantısı (önizlemede görsel çıkar)
-    let file = null;
+    let file = null, shareStarted = false;
     blob().then(b => { try { const f = new File([b], fname(), {type: "image/jpeg"}); if (navigator.canShare?.({files: [f]})) file = f; } catch (err) {} });
     $("#oAsk", m).onclick = async () => {
       if (file) {
         try { file = new File([await blob()], fname(), {type: "image/jpeg"}); await navigator.share({files: [file], text: friendMsg()}); return; }
         catch (err) { if (err?.name === "AbortError") return; }
       }
+      if (!shareStarted) { shareStarted = true; await makeShare(); }
       window.open("https://wa.me/?text=" + encodeURIComponent(friendMsg()), "_blank");
     };
-    $("#oCopy", m)?.addEventListener("click", () => copy(message(), "Seçiminiz kopyalandı"));
+    const err = msg => { $("#oErr", m).hidden = !msg; $("#oErr", m).textContent = msg || ""; };
+    $("#oSend", m).onclick = async () => {
+      const name = order.name.trim(), phone = order.phone.trim(), digits = phone.replace(/\D/g, "");
+      if (!st.pkg) { err("Önce paketinizi seçin."); return $("#oPkg", m).scrollIntoView({behavior: "smooth", block: "center"}); }
+      if (st.title.length < 2) { err("Kartta yazacak isimleri yazın."); return $("#oT", m).focus(); }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date || "")) { err("Etkinlik tarihini seçin."); return $("#oD", m).focus(); }
+      if (name.length < 2) { err("Adınızı ve soyadınızı yazın."); return $("#oName", m).focus(); }
+      if (digits.length < 10 || digits.length > 13) { err("Telefon numaranızı kontrol edin (ör. 0532 123 45 67)."); return $("#oPhone", m).focus(); }
+      if (!$("#oOk", m).checked) return err("Sizi arayabilmemiz için onay kutusunu işaretleyin.");
+      err("");
+      const b = $("#oSend", m); b.disabled = true; b.textContent = "Gönderiliyor…";
+      const r = await rpc("memory_order_add", {p_name: name, p_phone: phone, p_title: e2().title, p_kind: e2().kind, p_event_date: e2().event_date,
+        p_package: st.pkg, p_product: printed() ? order.product : null, p_biz: printed() && order.product === "kartvizit" ? order.biz : null,
+        p_design: d.id, p_text: order.text, p_archive: order.archive, p_note: order.note}).catch(e3 => ({ok: false, error: e3.message}));
+      b.disabled = false; b.textContent = "Siparişi gönder";
+      if (!r?.ok) {
+        const wa = waLink(`Merhaba, MemoryQR siparişi vermek istiyorum: ${d.name}, ${e2().title}, ${PAKETLER.find(p => p.kod === st.pkg)?.ad || ""} paket.`);
+        return err({phone: "Telefon numaranızı kontrol edin.", name: "Adınızı yazın.", title: "Yukarıya isimleri ya da başlığı yazın.",
+          busy: "Çok fazla deneme yapıldı, biraz sonra tekrar deneyin."}[r?.error] || `Sipariş şu an gönderilemedi.${wa ? " WhatsApp'tan da yazabilirsiniz: " + TELEFON : ""}`);
+      }
+      store.set("order_contact", {name, phone});
+      const pk = PAKETLER.find(p => p.kod === st.pkg);
+      $(".card", m).innerHTML = `<div class="stack" style="text-align:center;align-items:center;padding:20px 6px">
+        <div class="okmark" aria-hidden="true">✓</div><h2>Siparişiniz alındı</h2>
+        <p class="lede" style="margin:0">Sipariş no <b>#${esc(r.no)}</b>. En kısa sürede <b>${esc(phone)}</b> numarasından sizi arayıp siparişinizi onaylayacağız.</p>
+        <p class="hint">${esc(d.name)} · ${esc(e2().title)} · ${esc(pk ? `${pk.ad} (${pk.fiyat})` : "")}${printed() ? ` · ${esc(PROD_TR[order.product])}${order.product === "kartvizit" ? `, ${order.biz}` : ""}` : ""}</p>
+        <button class="btn" data-x>Tamam</button></div>`;
+    };
     m.addEventListener("click", ev2 => { if (ev2.target === m || ev2.target.closest("[data-x]")) m.remove(); });
   }
 

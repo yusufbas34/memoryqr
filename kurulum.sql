@@ -578,6 +578,98 @@ begin
 end $$;
 grant execute on function public.memory_admin_review_set(text, uuid, boolean) to anon, authenticated;
 
+-- ---------------------------------------------------------------- siparişler (sürüm 8)
+-- Tasarım sayfasından gelen sipariş talepleri: müşteri paket ve tasarım seçer, iletişim bilgisini bırakır.
+-- Yönetim panelinde "yeni" olarak görünür; müşteri aranıp onaylanınca etkinliğe dönüştürülür.
+create table if not exists public.memory_orders (
+  id uuid primary key default gen_random_uuid(),
+  no bigint generated always as identity,
+  status text not null default 'yeni' check (status in ('yeni', 'arandi', 'onaylandi', 'iptal')),
+  name text not null,
+  phone text not null,
+  title text not null,
+  kind text not null default 'dugun',
+  event_date date,
+  package text,
+  product text,                 -- kart | kartvizit (basılı paketlerde)
+  card_biz text,                -- kartvizitte yatay | dikey
+  design text,
+  card_text text,
+  archive boolean not null default false,
+  note text,
+  event_code text,              -- onaylanıp oluşturulan etkinlik
+  created_at timestamptz not null default now()
+);
+create index if not exists memory_orders_idx on public.memory_orders (created_at desc);
+alter table public.memory_orders enable row level security;
+revoke all on public.memory_orders from anon, authenticated;
+
+create or replace function public.memory_order_add(p_name text, p_phone text, p_title text, p_kind text, p_event_date date,
+  p_package text, p_product text, p_biz text, p_design text, p_text text, p_archive boolean, p_note text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare
+  v_name text := left(regexp_replace(trim(coalesce(p_name, '')), '\s+', ' ', 'g'), 60);
+  v_phone text := regexp_replace(coalesce(p_phone, ''), '[^0-9+]', '', 'g');
+  v_title text := left(regexp_replace(trim(coalesce(p_title, '')), '\s+', ' ', 'g'), 60);
+  v_no bigint;
+begin
+  if length(v_name) < 2 then return json_build_object('ok', false, 'error', 'name'); end if;
+  if length(regexp_replace(v_phone, '\D', '', 'g')) not between 10 and 13 then return json_build_object('ok', false, 'error', 'phone'); end if;
+  if length(v_title) < 2 then return json_build_object('ok', false, 'error', 'title'); end if;
+  -- kötüye kullanım sınırı: aynı numaradan saatte 3, toplamda saatte 60 talep
+  if (select count(*) from memory_orders where phone = v_phone and created_at > now() - interval '1 hour') >= 3
+     or (select count(*) from memory_orders where created_at > now() - interval '1 hour') >= 60 then
+    return json_build_object('ok', false, 'error', 'busy');
+  end if;
+  insert into memory_orders (name, phone, title, kind, event_date, package, product, card_biz, design, card_text, archive, note)
+    values (v_name, v_phone, v_title,
+      case when p_kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'diger') then p_kind else 'diger' end,
+      p_event_date,
+      case when p_package in ('dijital', 'standart', 'sovale', 'aile') then p_package end,
+      case when p_product in ('kart', 'kartvizit') then p_product end,
+      case when p_biz in ('yatay', 'dikey') then p_biz end,
+      left(p_design, 20), nullif(left(trim(coalesce(p_text, '')), 120), ''), coalesce(p_archive, false),
+      nullif(left(trim(coalesce(p_note, '')), 500), ''))
+    returning no into v_no;
+  return json_build_object('ok', true, 'no', v_no);
+end $$;
+grant execute on function public.memory_order_add(text, text, text, text, date, text, text, text, text, text, boolean, text) to anon, authenticated;
+
+create or replace function public.memory_admin_orders(p_key text)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+begin
+  perform memory_admin_check(p_key);
+  return (select coalesce(json_agg(row_to_json(o) order by (o.status = 'yeni') desc, o.created_at desc), '[]'::json)
+    from (select * from memory_orders order by created_at desc limit 300) o);
+end $$;
+grant execute on function public.memory_admin_orders(text) to anon, authenticated;
+
+-- durum değiştir; p_code verilirse sipariş o etkinliğe bağlanır, tasarım ve kartvizit yönü etkinliğe aktarılır
+create or replace function public.memory_admin_order_set(p_key text, p_id uuid, p_status text, p_code text default null)
+returns json
+language plpgsql security definer set search_path = public
+as $$
+declare o memory_orders;
+begin
+  perform memory_admin_check(p_key);
+  if p_status = 'sil' then delete from memory_orders where id = p_id; return json_build_object('ok', found); end if;
+  if p_status not in ('yeni', 'arandi', 'onaylandi', 'iptal') then return json_build_object('ok', false, 'error', 'status'); end if;
+  update memory_orders set status = p_status,
+      event_code = case when nullif(p_code, '') is not null then memory_norm(p_code) else event_code end
+    where id = p_id returning * into o;
+  if not found then return json_build_object('ok', false); end if;
+  if nullif(p_code, '') is not null and o.design is not null then
+    update memory_events set card_design = o.design, card_text = coalesce(card_text, o.card_text), card_biz = coalesce(o.card_biz, card_biz)
+      where code = memory_norm(p_code) and card_design is null and card_custom_key is null;
+  end if;
+  return json_build_object('ok', true);
+end $$;
+grant execute on function public.memory_admin_order_set(text, uuid, text, text) to anon, authenticated;
+
 -- ---------------------------------------------------------------- tasarım paylaşımı (sürüm 6)
 -- Tasarım sayfasından "Siparişi başlat" / "Sevdiklerine sor": kart görseli R2'ye (s/…) yüklenir, Worker'ın /p/<id> sayfası
 -- WhatsApp önizlemesinde görseli gösterir. Herkese açık olduğu için saatlik sınır ve küçük dosya sınırı var.
@@ -606,4 +698,4 @@ begin
 end $$;
 grant execute on function public.memory_share_begin(bigint) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 7';
+create or replace function public.memory_version() returns integer language sql immutable as 'select 8';

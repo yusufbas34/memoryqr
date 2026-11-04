@@ -180,7 +180,7 @@ function sayfa(p) {
   ${p.bolumler.map(([h, t]) => `<section><h2>${esc(h)}</h2><p>${md(t)}</p></section>`).join("\n  ")}
   ${kartlar ? `<section><h2>${esc(p.kisa)} için QR kart tasarımları</h2><div class="kartlar">${kartlar}</div>
     <p><a href="${up}?tasarimlar">Bütün tasarımları kendi isminizle görün →</a></p></section>` : ""}
-  ${rehber ? "" : `<section><h2>Paketler ve fiyatlar</h2><div class="paket">${PAKETLER.map(k => `<div${k.one ? ' class="on"' : ""}><h3>${esc(k.ad)}</h3><p class="fiyat">${esc(k.fiyat)}</p><ul>${k.ozellik.map(o => `<li>${esc(o)}</li>`).join("")}</ul></div>`).join("")}</div>
+  ${rehber ? "" : `<section><h2>Paketler ve fiyatlar</h2><div class="paket">${PAKETLER.map(k => `<div${k.one ? ' class="on"' : ""}><h3>${esc(k.ad)}</h3><p class="fiyat">${esc(k.fiyat)}</p><ul>${k.ozellik.map(o => `<li>${esc(o)}</li>`).join("")}</ul><a class="btn${k.one ? "" : " ghost"} pbtn" href="${up}?tasarimlar&paket=${esc(k.kod)}">Bu paketi isteyin</a></div>`).join("")}</div>
     <p class="not">Ek: ${esc(EK.ad)} ${esc(EK.fiyat)} (albüm Google Drive'da bir yıl arşivlenir). Tek seferlik ödeme, abonelik yok.</p></section>`}
   <section><h2>Sık sorulan sorular</h2>${p.sss.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}
     <p><a href="${up}#sss">Bütün sorular →</a></p></section>

@@ -856,7 +856,7 @@ async function cardPdf(ev, designId, text) {
 // sel = {design, text, custom: null | {img, pos, size}}: hazır tasarım ya da etkinlik sahibinin yüklediği görsel
 const CARD_PRODUCTS = {
   kart: {name: "Masa kartı", note: "A6 · 10,5 × 14,8 cm"},
-  kartvizit: {name: "Kartvizit", note: "8,5 × 5,5 cm"},
+  kartvizit: {name: "Kartvizit", note: "5,5 × 8,5 cm, dikey"},
   pano: {name: "Ayaklı pano", note: "Düğün girişi · 50 × 70 cm"},
 };
 const PANO_SIZES = {"50x70": [500, 700], "35x50": [350, 500]};
@@ -886,37 +886,22 @@ function drawCustomCard(ev, custom, pxmm) {
 
 function drawKart(ev, sel, pxmm) { return sel.custom ? drawCustomCard(ev, sel.custom, pxmm) : drawCard(ev, sel.design, sel.text, pxmm); }
 
-// kartvizit (yatay): solda isimler ve yönlendirme, sağda QR
+// kartvizit (dikey 55 × 85 mm): seçilen masa kartı tasarımının küçültülmüş hâli; süsleme, yazı ve renkler birebir aynı.
+// A6 kart genişliğe oturtulur (kenarlardan ~1 mm kırpılır); üstte ve altta kalan ince şerit kartın kenarı aynalanarak doldurulur.
+const BIZ_W = 55, BIZ_H = 85, BIZ_S = 57 / CARD_W;
 function drawBiz(ev, sel, pxmm) {
-  const W = 85, H = 55, BL = CARD_BL;
+  const BL = CARD_BL, s = BIZ_S, src = drawKart(ev, sel, pxmm * s);
   const c = document.createElement("canvas");
-  c.width = Math.round((W + 2 * BL) * pxmm); c.height = Math.round((H + 2 * BL) * pxmm);
-  const g = c.getContext("2d"), k = cardKit(g, pxmm, W, H), t = cardTheme(sel);
-  k.bg(t.bg);
-  if (sel.custom?.img) { coverImage(g, sel.custom.img, 0, 0, k.X(46), c.height); g.fillStyle = "#ffffff"; g.fillRect(k.X(46), 0, c.width, c.height); }
-  else {
-    const d = cardDesign(sel.design);
-    if (d.full && CARD_IMAGES[d.img]) {
-      // çerçeve görseli: tüm kartı kaplar, yazıların arkasına yarı saydam zemin (süsler yazıya karışmasın)
-      coverImage(g, CARD_IMAGES[d.img], 0, 0, c.width, c.height);
-      g.fillStyle = t.bg + "e0"; g.beginPath(); g.roundRect(k.X(3), k.X(6), k.mm(43), k.mm(43), k.mm(2.5)); g.fill();
-    }
-    else if (d.img && CARD_IMAGES[d.img]) { const im = CARD_IMAGES[d.img]; g.drawImage(im, k.X(31), k.X(3), k.mm(14), k.mm(14 * im.height / im.width)); }
-    (t.emojis || []).forEach((e, i) => k.emoji(e, 7 + i * 9, 49, 8, (i - .5) * .3));
-    g.fillStyle = t.accent; g.fillRect(k.X(6), k.X(9), k.mm(10), k.mm(.6));
-  }
-  const ink = sel.custom ? "#ffffff" : t.ink, x0 = 6, colW = 38;
-  if (!sel.custom) {
-    k.text("Anılarımızı paylaşın", x0, 15, '600 {s}px "Montserrat"', 2.1, t.accent, {align: "left", upper: true, sp: .25, max: colW});
-    k.text(ev.title, x0, 26, t.font, 7.5, ink, {align: "left", max: colW});
-    k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, x0, 32, '400 {s}px "Montserrat"', 2.4, ink, {align: "left", max: colW});
-    k.wrap("QR kodu okutun, fotoğraf ve videolarınızı albümümüze yükleyin.", x0, 39, colW, '400 {s}px "Montserrat"', 2.1, ink, 3, {align: "left"});
-  }
-  g.fillStyle = "#ffffff"; g.beginPath(); g.roundRect(k.X(50), k.X(9), k.mm(29), k.mm(36), k.mm(2)); g.fill();
-  if (!sel.custom && lum(t.bg) > .85) { g.strokeStyle = "rgba(0,0,0,.12)"; g.lineWidth = k.mm(.2); g.stroke(); }
-  k.qr(guestLink(ev.code), 52, 11, 25, "#111111");
-  k.text(`Albüm kodu ${ev.code}`, 64.5, 41.5, '600 {s}px "Barlow"', 2.2, "#555555", {max: 27});
-  k.text("MemoryQR", 64.5, 50, '600 {s}px "Barlow"', 2, sel.custom ? "#999999" : (lum(t.bg) < .45 ? "rgba(255,255,255,.6)" : "rgba(0,0,0,.4)"));
+  const CW = c.width = Math.round((BIZ_W + 2 * BL) * pxmm), CH = c.height = Math.round((BIZ_H + 2 * BL) * pxmm);
+  // son satır/sütun yuvarlamadan yarı saydam kalabilir: kullanılmaz, aynalanan kenar üstüne biner
+  const g = c.getContext("2d"), w = src.width - 1, h = src.height - 1;
+  const x0 = Math.round((CW - w) / 2), y0 = Math.round((CH - h) / 2), bb = CH - y0 - h, rb = CW - x0 - w;
+  g.drawImage(src, 0, 0, w, h, x0, y0, w, h);
+  const mirror = (img, sx, sy, sw, sh, tx, ty, fx, fy) => { if (sw <= 0 || sh <= 0) return; g.save(); g.translate(tx, ty); g.scale(fx, fy); g.drawImage(img, sx, sy, sw, sh, fx < 0 ? -sw : 0, fy < 0 ? -sh : 0, sw, sh); g.restore(); };
+  if (y0 > 0) mirror(src, 0, 0, w, y0, x0, 0, 1, -1);
+  if (bb > 0) mirror(src, 0, h - bb, w, bb, x0, y0 + h, 1, -1);
+  if (x0 > 0) mirror(c, x0, 0, x0, CH, 0, 0, -1, 1);
+  if (rb > 0) mirror(c, x0 + w - rb, 0, rb, CH, x0 + w, 0, -1, 1);
   return c;
 }
 
@@ -950,10 +935,10 @@ async function productPdf(product, ev, sel, panoSize = "50x70") {
     gridPdf(img, CARD_W, CARD_H, 2, 2).save(pdfName(ev, "masa-karti-A4-4lu"));
   } else if (product === "kartvizit") {
     const img = drawBiz(ev, sel, 14).toDataURL("image/jpeg", .95);
-    const one = new jsPDF({unit: "mm", format: [85 + 2 * BL, 55 + 2 * BL], orientation: "landscape"});
-    one.addImage(img, "JPEG", 0, 0, 85 + 2 * BL, 55 + 2 * BL);
-    one.save(pdfName(ev, "kartvizit-tasmali"));
-    gridPdf(img, 85, 55, 2, 5).save(pdfName(ev, "kartvizit-A4-10lu"));
+    const one = new jsPDF({unit: "mm", format: [BIZ_W + 2 * BL, BIZ_H + 2 * BL], orientation: "portrait"});
+    one.addImage(img, "JPEG", 0, 0, BIZ_W + 2 * BL, BIZ_H + 2 * BL);
+    one.save(pdfName(ev, "kartvizit-5x8-tasmali"));
+    gridPdf(img, BIZ_W, BIZ_H, 3, 3).save(pdfName(ev, "kartvizit-A4-9lu"));
   } else {
     // pano: masa kartı tasarımı büyütülür (oranlar neredeyse aynı); 5 mm taşma, ~150 dpi (geniş format baskı)
     const [W, H] = PANO_SIZES[panoSize] || PANO_SIZES["50x70"], PB = 5, s = Math.max((W + 2 * PB) / CARD_W, (H + 2 * PB) / CARD_H);
@@ -1059,7 +1044,7 @@ function mockup(kind, ev, sel, W, H) {
     pxmm = sh / CARD_H * 1.02; t = trimmed(drawKart(ev, sel, pxmm), CARD_BL, pxmm);
     g.shadowColor = "rgba(0,0,0,.18)"; g.shadowBlur = H * .015; put(t, scx - sw / 2, sb - sh, sw, sh); g.shadowColor = "transparent";
     // sehpada üst üste kartvizitler
-    const bw = (tx1 - tx0) * .36, bh = bw * 55 / 85; pxmm = bw / 85 * 1.02; const tb = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
+    const bw = (tx1 - tx0) * .24, bh = bw * BIZ_H / BIZ_W; pxmm = bw / BIZ_W * 1.02; const tb = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
     for (let i = 2; i >= 0; i--) {
       g.save(); g.translate(tx0 + (tx1 - tx0) * .76 + i * 2, tt - H * .02 - i * 2.2); g.transform(1, 0, -.35, .42, 0, 0); g.rotate(-.12 + i * .08);
       g.shadowColor = "rgba(0,0,0,.2)"; g.shadowBlur = 6; g.fillStyle = "#fff"; g.fillRect(-bw / 2, -bh, bw, bh); g.shadowColor = "transparent";
@@ -1068,7 +1053,7 @@ function mockup(kind, ev, sel, W, H) {
   } else if (kind === "kartvizit") {
     const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#f4f1ee"); gr.addColorStop(1, "#ddd6cf"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     g.strokeStyle = "rgba(150,140,130,.12)"; for (let i = 0; i < 14; i++) { g.lineWidth = .5 + r() * 2; g.beginPath(); g.moveTo(r() * W, 0); g.bezierCurveTo(r() * W, H * .3, r() * W, H * .7, r() * W, H); g.stroke(); }
-    const bw = W * .56, bh = bw * 55 / 85, pxmm = bw / 85 * 1.02, t = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
+    const bh = H * .62, bw = bh * BIZ_W / BIZ_H, pxmm = bw / BIZ_W * 1.02, t = trimmed(drawBiz(ev, sel, pxmm), CARD_BL, pxmm);
     const card = (x, y, a, back) => {
       g.save(); g.translate(x, y); g.rotate(a);
       g.shadowColor = "rgba(0,0,0,.25)"; g.shadowBlur = H * .035; g.shadowOffsetY = H * .015;

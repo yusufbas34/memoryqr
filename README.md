@@ -24,7 +24,7 @@ Modern & renkli). Süslemeler kodla çizilir; çocuk ve retro kartlardaki çizim
 İsimler, baş harfler ve tarih etkinlik bilgilerinden gelir. A6 (105×148 mm); iki PDF iner: 3 mm taşma paylı tek kart
 (Özalit'e matbaa baskısı için) ve A4'e 4'lü kesim çizgili. Seçilen tasarım etkinliğe kaydedilir.
 
-**Ürünler ve PDF'ler:** masa kartı (A6, 3 mm taşma + A4'e 4'lü), kartvizit (85 × 55 mm, 3 mm taşma + A4'e 10'lu), ayaklı pano
+**Ürünler ve PDF'ler:** masa kartı (A6, 3 mm taşma + A4'e 4'lü), kartvizit (dikey 55 × 85 mm; seçilen masa kartı tasarımının küçültülmüş hâli, 3 mm taşma + A4'e 9'lu), ayaklı pano
 (50 × 70 ya da 35 × 50 cm, 5 mm taşma, ~150 dpi; masa kartı tasarımı büyütülür). Kendi tasarımı yüklenen etkinliklerde görsel
 kartı kaplar, QR beyaz kutuda seçilen yere basılır. Yüklenen tasarımlar R2'de `t/KOD/` altında durur (31 gün kuralına girmez,
 etkinlik silinince silinir).

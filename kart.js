@@ -209,7 +209,9 @@ function cardKit(g, pxmm, W = CARD_W, H = CARD_H) {
   return k;
 }
 
-const BRAND = (k, ev, y, color, x = CARD_W / 2, align = "center") => k.text(`MemoryQR · Albüm kodu ${ev.code}`, x, y, '600 {s}px "Barlow"', 2.1, color, {sp: .1, align});
+// kartvizitte (drawBiz) yazılmaz: QR yeterli, kenar aynalandığında ters yazı da görünmesin
+let NO_BRAND = false;
+const BRAND = (k, ev, y, color, x = CARD_W / 2, align = "center") => NO_BRAND || k.text(`MemoryQR · Albüm kodu ${ev.code}`, x, y, '600 {s}px "Barlow"', 2.1, color, {sp: .1, align});
 
 // ---------------------------------------------------------------- tasarımlar
 const CARD_DESIGNS = [
@@ -856,7 +858,7 @@ async function cardPdf(ev, designId, text) {
 // sel = {design, text, custom: null | {img, pos, size}}: hazır tasarım ya da etkinlik sahibinin yüklediği görsel
 const CARD_PRODUCTS = {
   kart: {name: "Masa kartı", note: "A6 · 10,5 × 14,8 cm"},
-  kartvizit: {name: "Kartvizit", note: "5,5 × 8,5 cm, dikey"},
+  kartvizit: {name: "Kartvizit", note: "5 × 8,2 cm, dikey"},
   pano: {name: "Ayaklı pano", note: "Düğün girişi · 50 × 70 cm"},
 };
 const PANO_SIZES = {"50x70": [500, 700], "35x50": [350, 500]};
@@ -886,11 +888,14 @@ function drawCustomCard(ev, custom, pxmm) {
 
 function drawKart(ev, sel, pxmm) { return sel.custom ? drawCustomCard(ev, sel.custom, pxmm) : drawCard(ev, sel.design, sel.text, pxmm); }
 
-// kartvizit (dikey 55 × 85 mm): seçilen masa kartı tasarımının küçültülmüş hâli; süsleme, yazı ve renkler birebir aynı.
-// A6 kart genişliğe oturtulur (kenarlardan ~1 mm kırpılır); üstte ve altta kalan ince şerit kartın kenarı aynalanarak doldurulur.
-const BIZ_W = 55, BIZ_H = 85, BIZ_S = 57 / CARD_W;
+// kartvizit (dikey 50 × 82 mm, matbaa şablonu: 3 mm taşma, yazılar kesimden 5 mm içeride): seçilen masa kartı tasarımının
+// küçültülmüş hâli; süsleme, yazı ve renkler birebir aynı. A6 kart 52 mm genişliğe oturtulur (yanlardan 1'er mm kırpılır, yazılar
+// güvenli alanda kalır); üstte ve altta kalan şerit kartın kenarı aynalanarak doldurulur.
+const BIZ_W = 50, BIZ_H = 82, BIZ_S = 52 / CARD_W;
 function drawBiz(ev, sel, pxmm) {
-  const BL = CARD_BL, s = BIZ_S, src = drawKart(ev, sel, pxmm * s);
+  const BL = CARD_BL, s = BIZ_S;
+  NO_BRAND = true;
+  let src; try { src = drawKart(ev, sel, pxmm * s); } finally { NO_BRAND = false; }
   const c = document.createElement("canvas");
   const CW = c.width = Math.round((BIZ_W + 2 * BL) * pxmm), CH = c.height = Math.round((BIZ_H + 2 * BL) * pxmm);
   // son satır/sütun yuvarlamadan yarı saydam kalabilir: kullanılmaz, aynalanan kenar üstüne biner
@@ -937,8 +942,8 @@ async function productPdf(product, ev, sel, panoSize = "50x70") {
     const img = drawBiz(ev, sel, 14).toDataURL("image/jpeg", .95);
     const one = new jsPDF({unit: "mm", format: [BIZ_W + 2 * BL, BIZ_H + 2 * BL], orientation: "portrait"});
     one.addImage(img, "JPEG", 0, 0, BIZ_W + 2 * BL, BIZ_H + 2 * BL);
-    one.save(pdfName(ev, "kartvizit-5x8-tasmali"));
-    gridPdf(img, BIZ_W, BIZ_H, 3, 3).save(pdfName(ev, "kartvizit-A4-9lu"));
+    one.save(pdfName(ev, "kartvizit-50x82-dikey-tasmali"));
+    gridPdf(img, BIZ_W, BIZ_H, 4, 3).save(pdfName(ev, "kartvizit-A4-12li"));
   } else {
     // pano: masa kartı tasarımı büyütülür (oranlar neredeyse aynı); 5 mm taşma, ~150 dpi (geniş format baskı)
     const [W, H] = PANO_SIZES[panoSize] || PANO_SIZES["50x70"], PB = 5, s = Math.max((W + 2 * PB) / CARD_W, (H + 2 * PB) / CARD_H);

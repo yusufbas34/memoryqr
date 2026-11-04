@@ -111,6 +111,8 @@ alter table public.memory_events add column if not exists card_qr_size text;
 -- sürüm 5: etkinliğin paketi (dijital pakette etkinlik sahibi kart PDF'ini kendisi indirir) ve favoriler
 alter table public.memory_events add column if not exists package text;
 alter table public.memory_events alter column guest_gallery set default false;
+-- sürüm 7: kartvizit yönü (yatay | dikey)
+alter table public.memory_events add column if not exists card_biz text;
 do $$
 declare v integer;
 begin
@@ -170,7 +172,7 @@ as $$
     'files', (select count(*) from memory_files f where f.event_code = e.code and f.ready and (p_owner or not f.hidden)),
     'guests', (select count(distinct lower(f.guest)) from memory_files f where f.event_code = e.code and f.ready),
     'card_design', e.card_design, 'card_text', e.card_text,
-    'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size,
+    'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size, 'card_biz', e.card_biz,
     'package', case when p_owner then e.package end,
     'archive_url', case when p_owner then e.archive_url end,
     'owner_name', case when p_owner then e.owner_name end,
@@ -372,8 +374,9 @@ grant execute on function public.memory_owner_settings(text, text, boolean) to a
 
 -- Kart seçimi: hazır tasarım (p_design + p_text) ya da kendi tasarımı (p_custom_key, memory_owner_design_begin ile yüklenen).
 drop function if exists public.memory_owner_card(text, text, text, text);
+drop function if exists public.memory_owner_card(text, text, text, text, text, text, text);
 create or replace function public.memory_owner_card(p_code text, p_pin text, p_design text, p_text text,
-  p_custom_key text default null, p_qr_pos text default null, p_qr_size text default null)
+  p_custom_key text default null, p_qr_pos text default null, p_qr_size text default null, p_biz text default null)
 returns json
 language plpgsql security definer set search_path = public
 as $$
@@ -386,11 +389,12 @@ begin
   update memory_events set card_design = left(p_design, 20), card_text = nullif(left(trim(coalesce(p_text, '')), 120), ''),
       card_custom_key = p_custom_key,
       card_qr_pos = case when p_qr_pos in ('orta', 'alt', 'sag_alt', 'sol_alt') then p_qr_pos end,
-      card_qr_size = case when p_qr_size in ('kucuk', 'orta', 'buyuk') then p_qr_size end
+      card_qr_size = case when p_qr_size in ('kucuk', 'orta', 'buyuk') then p_qr_size end,
+      card_biz = case when p_biz in ('yatay', 'dikey') then p_biz end
     where code = v_code;
   return json_build_object('ok', true);
 end $$;
-grant execute on function public.memory_owner_card(text, text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.memory_owner_card(text, text, text, text, text, text, text, text) to anon, authenticated;
 
 -- Kendi tasarımını yüklemek için imzalı izin (en çok 25 MB, JPG/PNG/WebP)
 create or replace function public.memory_owner_design_begin(p_code text, p_pin text, p_mime text, p_bytes bigint)
@@ -422,7 +426,7 @@ begin
       'event_date', e.event_date, 'expires_at', e.expires_at, 'guest_gallery', e.guest_gallery,
       'owner_name', e.owner_name, 'owner_phone', e.owner_phone, 'note', e.note, 'files_purged', e.files_purged,
       'card_design', e.card_design, 'card_text', e.card_text, 'archive_url', e.archive_url,
-      'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size, 'package', e.package,
+      'card_custom_key', e.card_custom_key, 'card_qr_pos', e.card_qr_pos, 'card_qr_size', e.card_qr_size, 'card_biz', e.card_biz, 'package', e.package,
       'created_at', e.created_at, 'files', s.n, 'bytes', s.b, 'guests', s.g, 'last_upload', s.last)
       order by e.event_date desc, e.created_at desc), '[]'::json)
     from memory_events e
@@ -602,4 +606,4 @@ begin
 end $$;
 grant execute on function public.memory_share_begin(bigint) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 6';
+create or replace function public.memory_version() returns integer language sql immutable as 'select 7';

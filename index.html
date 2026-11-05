@@ -277,6 +277,7 @@ img.mock{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;
 .kbar{position:sticky;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;background:var(--card);border:1px solid var(--line);border-radius:14px;
   box-shadow:0 8px 30px rgba(0,0,0,.14);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-top:10px}
 #dlRow select{width:auto;font-size:16px;padding:10px}
+#dlRow{flex-wrap:wrap}#dlRow #pdfFmt{flex:1;min-width:0}
 @media (max-width:760px){.kp{grid-template-columns:1fr}.kp-prev{position:static}.kp-img img{width:min(70%,260px)}}
 
 .ord{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:20px;align-items:start}
@@ -1102,6 +1103,7 @@ async function kartPanel(ev, pin) {
         <p class="hint" id="prodNote" style="text-align:center"></p>
         <p class="hint" id="noPdf" hidden style="text-align:center">Kartlarınızı biz basıp gönderiyoruz. Tasarımı seçip kaydetmeniz yeterli.</p>
         <div class="row" id="dlRow"><select id="panoSize" hidden><option value="50x70">50 × 70 cm</option><option value="35x50">35 × 50 cm</option></select>
+          <select id="pdfFmt" aria-label="PDF biçimi"><option value="tek">Tek kart (matbaa için)</option><option value="a4">A4 sayfa</option></select>
           <button class="btn ghost" id="dl">${ICON.download}PDF indir</button></div>
       </aside>
       <section class="stack" style="min-width:0">
@@ -1160,6 +1162,9 @@ async function kartPanel(ev, pin) {
       : product === "katlanir" ? (sel.biz === "dikey" ? "Açık hâli 5 × 16,4 cm" : "Açık hâli 8,2 × 10 cm") + ", ortadan katlanır; masaya çadır gibi konur, iki yüzde de kartvizit"
       : CARD_PRODUCTS[product].note) + (product === "pano" ? " · masa kartı tasarımınız büyütülür" : "");
     $("#panoSize").hidden = product !== "pano";
+    // A4: o üründen sayfaya kaç adet sığıyorsa (pano A4'e sığmaz)
+    $("#pdfFmt").hidden = product === "pano";
+    if (product !== "pano") $("#pdfFmt").options[1].textContent = `A4 sayfa (${a4Count(product, cur())} adet, kesim çizgili)`;
     $("#prodTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.p === product));
   };
   const drawCats = () => {
@@ -1216,7 +1221,7 @@ async function kartPanel(ev, pin) {
   $("#dl").onclick = async () => {
     if (mode === "kendi" && !custom.img) return toast("Önce tasarım dosyanızı yükleyin");
     const b = $("#dl"); b.disabled = true; b.lastChild.textContent = "Hazırlanıyor…";
-    try { await productPdf(product, ev, cur(), $("#panoSize").value); toast("PDF indirildi"); }
+    try { await productPdf(product, ev, cur(), $("#panoSize").value, product === "pano" ? "tek" : $("#pdfFmt").value); toast("PDF indirildi"); }
     catch (err) { toast("PDF hazırlanamadı: " + err.message, 5000); }
     b.disabled = false; b.lastChild.textContent = "PDF indir";
   };

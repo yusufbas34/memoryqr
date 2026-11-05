@@ -1012,46 +1012,60 @@ function drawTent(ev, sel, pxmm) {
   g.drawImage(face, 0, cut, face.width, hh, 0, 0, face.width, hh); g.restore();
   return c;
 }
-// A4 dizilim: kesim çizgileri ve kenarlarda katlama işaretleri (kesikli)
-function tentGridPdf(img, w, h, cols, rows) {
-  const a4 = gridPdf(img, w, h, cols, rows), ox = (210 - cols * w) / 2, oy = (297 - rows * h) / 2;
-  a4.setLineDashPattern([1.2, 1], 0); a4.setDrawColor(120);
-  for (let r = 0; r < rows; r++) { const y = oy + r * h + h / 2; a4.line(1, y, ox - 1, y); a4.line(ox + cols * w + 1, y, 209, y); }
-  a4.setLineDashPattern([], 0);
-  a4.setFontSize(7); a4.setTextColor(120); a4.text("- - - katlama çizgisi", ox, oy - 2.5);
-  return a4;
+// A4'e en çok kaç adet sığar: düz ve yan çevrilmiş dizilim, önce 5 mm kenar boşluklu (kesim çizgileri için), olmazsa boşluksuz
+function a4Fit(w, h) {
+  let best = {n: 0};
+  for (const m of [5, 0]) for (const rot of [false, true]) {
+    const [pw, ph] = rot ? [h, w] : [w, h], cols = Math.floor((210 - 2 * m) / pw), rows = Math.floor((297 - 2 * m) / ph);
+    if (cols * rows > best.n) best = {n: cols * rows, cols, rows, rot, pw, ph};
+  }
+  return best;
+}
+// ürünün kesim ölçüsü (mm): A4 adedi ve PDF için
+function productSize(product, sel) {
+  const [bw, bh] = bizSize(sel);
+  return product === "kart" ? [CARD_W, CARD_H] : product === "kartvizit" ? [bw, bh] : product === "katlanir" ? [bw, 2 * bh] : null;
+}
+const a4Count = (product, sel) => { const z = productSize(product, sel); return z ? a4Fit(z[0], z[1]).n : 0; };
+function rotated(cv) {
+  const c = document.createElement("canvas"); c.width = cv.height; c.height = cv.width;
+  const g = c.getContext("2d"); g.translate(c.width, 0); g.rotate(Math.PI / 2); g.drawImage(cv, 0, 0); return c;
+}
+// A4 sayfa: kesim çizgileri; katlanırda kenarlarda kesikli katlama işaretleri
+function a4Sheet(cv, w, h, fold) {
+  const f = a4Fit(w, h), img = (f.rot ? rotated(cv) : cv).toDataURL("image/jpeg", .95);
+  const a4 = gridPdf(img, f.pw, f.ph, f.cols, f.rows), ox = (210 - f.cols * f.pw) / 2, oy = (297 - f.rows * f.ph) / 2;
+  if (fold) {
+    a4.setLineDashPattern([1.2, 1], 0); a4.setDrawColor(120);
+    if (!f.rot) for (let r = 0; r < f.rows; r++) { const y = oy + r * f.ph + f.ph / 2; a4.line(1, y, ox - 1, y); a4.line(ox + f.cols * f.pw + 1, y, 209, y); }
+    else for (let c = 0; c < f.cols; c++) { const x = ox + c * f.pw + f.pw / 2; a4.line(x, 1, x, oy - 1); a4.line(x, oy + f.rows * f.ph + 1, x, 296); }
+    a4.setLineDashPattern([], 0);
+    if (oy > 6 || ox > 6) { a4.setFontSize(7); a4.setTextColor(120); a4.text("- - - katlama çizgisi", Math.max(ox, 2), Math.max(oy - 2.5, 4)); }
+  }
+  return {a4, n: f.n};
 }
 
-async function productPdf(product, ev, sel, panoSize = "50x70") {
+// fmt: "tek" (taşma paylı tek ürün, matbaaya yüklenir) | "a4" (A4'e sığdığı kadar, kesim çizgili)
+async function productPdf(product, ev, sel, panoSize = "50x70", fmt = "tek") {
   await Promise.all([loadScript("vendor/jspdf.umd.min.js"), sel.custom ? cardFonts() : designReady(sel.design)]);
   const {jsPDF} = window.jspdf, BL = CARD_BL;
-  if (product === "kart") {
-    const img = drawKart(ev, sel, 12).toDataURL("image/jpeg", .95);
-    const one = new jsPDF({unit: "mm", format: [CARD_W + 2 * BL, CARD_H + 2 * BL], orientation: "portrait"});
-    one.addImage(img, "JPEG", 0, 0, CARD_W + 2 * BL, CARD_H + 2 * BL);
-    one.save(pdfName(ev, "masa-karti-A6-tasmali"));
-    gridPdf(img, CARD_W, CARD_H, 2, 2).save(pdfName(ev, "masa-karti-A4-4lu"));
-  } else if (product === "kartvizit") {
-    const img = drawBiz(ev, sel, 14).toDataURL("image/jpeg", .95), [bw, bh] = bizSize(sel), yatay = bw > bh;
-    const one = new jsPDF({unit: "mm", format: [bw + 2 * BL, bh + 2 * BL], orientation: yatay ? "landscape" : "portrait"});
-    one.addImage(img, "JPEG", 0, 0, bw + 2 * BL, bh + 2 * BL);
-    one.save(pdfName(ev, yatay ? "kartvizit-82x50-yatay-tasmali" : "kartvizit-50x82-dikey-tasmali"));
-    (yatay ? gridPdf(img, bw, bh, 2, 5) : gridPdf(img, bw, bh, 4, 3)).save(pdfName(ev, yatay ? "kartvizit-A4-10lu" : "kartvizit-A4-12li"));
-  } else if (product === "katlanir") {
-    const img = drawTent(ev, sel, 14).toDataURL("image/jpeg", .95), [bw, bh] = bizSize(sel), yatay = bw > bh, th = 2 * bh;
-    const one = new jsPDF({unit: "mm", format: [bw + 2 * BL, th + 2 * BL], orientation: "portrait"});
-    one.addImage(img, "JPEG", 0, 0, bw + 2 * BL, th + 2 * BL);
-    one.save(pdfName(ev, `katlanir-kartvizit-${bw}x${th}-ortadan-katlanir-tasmali`));
-    (yatay ? tentGridPdf(img, bw, th, 2, 2) : tentGridPdf(img, bw, th, 4, 1)).save(pdfName(ev, "katlanir-kartvizit-A4-4lu"));
-  } else {
+  if (product === "pano") {
     // pano: masa kartı tasarımı büyütülür (oranlar neredeyse aynı); 5 mm taşma, ~150 dpi (geniş format baskı)
     const [W, H] = PANO_SIZES[panoSize] || PANO_SIZES["50x70"], PB = 5, s = Math.max((W + 2 * PB) / CARD_W, (H + 2 * PB) / CARD_H);
     const cv = drawKart(ev, sel, Math.min(5.9 * s, 30));
     const pdf = new jsPDF({unit: "mm", format: [W + 2 * PB, H + 2 * PB], orientation: "portrait"});
     const iw = (CARD_W + 2 * BL) * s, ih = (CARD_H + 2 * BL) * s;
     pdf.addImage(cv.toDataURL("image/jpeg", .92), "JPEG", (W + 2 * PB - iw) / 2, (H + 2 * PB - ih) / 2, iw, ih);
-    pdf.save(pdfName(ev, `ayakli-pano-${panoSize}-5mm-tasmali`));
+    return pdf.save(pdfName(ev, `ayakli-pano-${panoSize}-5mm-tasmali`));
   }
+  const [w, h] = productSize(product, sel), yatay = bizSize(sel)[0] > bizSize(sel)[1];
+  const cv = product === "kart" ? drawKart(ev, sel, 12) : product === "kartvizit" ? drawBiz(ev, sel, 14) : drawTent(ev, sel, 14);
+  const base = product === "kart" ? "masa-karti-A6" : product === "kartvizit" ? `kartvizit-${w}x${h}-${yatay ? "yatay" : "dikey"}`
+    : `katlanir-kartvizit-${w}x${h}-ortadan-katlanir`;
+  if (fmt === "a4") { const {a4, n} = a4Sheet(cv, w, h, product === "katlanir"); return a4.save(pdfName(ev, `${base}-A4-${n}-adet`)); }
+  const one = new jsPDF({unit: "mm", format: [w + 2 * BL, h + 2 * BL], orientation: w > h ? "landscape" : "portrait"});
+  one.addImage(cv.toDataURL("image/jpeg", .95), "JPEG", 0, 0, w + 2 * BL, h + 2 * BL);
+  one.save(pdfName(ev, `${base}-tasmali`));
 }
 
 // önizleme: ürün tuvali (taşma payı dahil)

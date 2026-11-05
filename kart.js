@@ -863,6 +863,7 @@ async function cardPdf(ev, designId, text) {
 const CARD_PRODUCTS = {
   kart: {name: "Masa kartı", note: "A6 · 10,5 × 14,8 cm"},
   kartvizit: {name: "Kartvizit", note: "8,2 × 5 cm"},
+  katlanir: {name: "Katlanır", note: "Masaya çadır gibi konur · ortadan katlanır, iki yüzde de kartvizit"},
   pano: {name: "Ayaklı pano", note: "Düğün girişi · 50 × 70 cm"},
 };
 const PANO_SIZES = {"50x70": [500, 700], "35x50": [350, 500]};
@@ -939,9 +940,13 @@ function drawBizYatay(ev, sel, pxmm) {
   const src = decorCanvas(sel, pxmm * s), q = pxmm * s;             // kaynakta 1 mm = q piksel = hedefte s mm
   const SW = src.width, SH = src.height, a = Math.round(cw * q), b = Math.round(ch * q);
   g.fillStyle = t.bg || "#ffffff"; g.fillRect(0, 0, TW, TH);
-  // fotoğraflı tasarımlarda zemin dokusu görselin ortasından (süslemesiz kısım) gerilerek
-  if (sel.custom?.img || d?.full) g.drawImage(src, a, b, SW - 2 * a, SH - 2 * b, 0, 0, TW, TH);
-  {
+  // fotoğraflı (çerçeve görselli) tasarım: görsel 90° döndürülüp kartı kaplar; çerçeve ve süsleme kesintisiz yatay olur
+  if (d?.full && CARD_IMAGES[d.img]) {
+    const im = CARD_IMAGES[d.img], k2 = Math.max(TW / im.height, TH / im.width);
+    g.save(); g.translate(TW / 2, TH / 2); g.rotate(-Math.PI / 2);
+    g.drawImage(im, -im.width * k2 / 2, -im.height * k2 / 2, im.width * k2, im.height * k2); g.restore();
+  } else if (sel.custom?.img) coverImage(g, sel.custom.img, 0, 0, TW, TH);
+  else {
     // köşe ve kenarlar: üst/alt şerit yatayda aynalanarak döşenir, yan şeritler ortadan kırpılır
     const band = (sy, dy) => {
       const tw = SW - 2 * a, half = (TW - 2 * a) / 2;
@@ -995,6 +1000,28 @@ function gridPdf(img, w, h, cols, rows) {
   return a4;
 }
 
+// katlanır (çadır) kartvizit: tek yaprak ortadan katlanır, iki yüz de kartvizit. Üst yüz 180° çevrilir; katlayınca iki
+// taraftan da düz okunur. Katlama çizgisinde taşma payı yoktur, dış kenarlarda 3 mm vardır.
+function drawTent(ev, sel, pxmm) {
+  const BL = CARD_BL, [bw, bh] = bizSize(sel), face = drawBiz(ev, sel, pxmm);
+  const c = document.createElement("canvas");
+  c.width = face.width; c.height = Math.round((2 * bh + 2 * BL) * pxmm);
+  const g = c.getContext("2d"), cut = Math.round(BL * pxmm), fold = Math.round((BL + bh) * pxmm), hh = face.height - cut;
+  g.drawImage(face, 0, cut, face.width, hh, 0, fold, face.width, hh);   // alt yüz: üst taşması kesilir, katlama çizgisine oturur
+  g.save(); g.translate(face.width, fold); g.rotate(Math.PI);
+  g.drawImage(face, 0, cut, face.width, hh, 0, 0, face.width, hh); g.restore();
+  return c;
+}
+// A4 dizilim: kesim çizgileri ve kenarlarda katlama işaretleri (kesikli)
+function tentGridPdf(img, w, h, cols, rows) {
+  const a4 = gridPdf(img, w, h, cols, rows), ox = (210 - cols * w) / 2, oy = (297 - rows * h) / 2;
+  a4.setLineDashPattern([1.2, 1], 0); a4.setDrawColor(120);
+  for (let r = 0; r < rows; r++) { const y = oy + r * h + h / 2; a4.line(1, y, ox - 1, y); a4.line(ox + cols * w + 1, y, 209, y); }
+  a4.setLineDashPattern([], 0);
+  a4.setFontSize(7); a4.setTextColor(120); a4.text("- - - katlama çizgisi", ox, oy - 2.5);
+  return a4;
+}
+
 async function productPdf(product, ev, sel, panoSize = "50x70") {
   await Promise.all([loadScript("vendor/jspdf.umd.min.js"), sel.custom ? cardFonts() : designReady(sel.design)]);
   const {jsPDF} = window.jspdf, BL = CARD_BL;
@@ -1010,6 +1037,12 @@ async function productPdf(product, ev, sel, panoSize = "50x70") {
     one.addImage(img, "JPEG", 0, 0, bw + 2 * BL, bh + 2 * BL);
     one.save(pdfName(ev, yatay ? "kartvizit-82x50-yatay-tasmali" : "kartvizit-50x82-dikey-tasmali"));
     (yatay ? gridPdf(img, bw, bh, 2, 5) : gridPdf(img, bw, bh, 4, 3)).save(pdfName(ev, yatay ? "kartvizit-A4-10lu" : "kartvizit-A4-12li"));
+  } else if (product === "katlanir") {
+    const img = drawTent(ev, sel, 14).toDataURL("image/jpeg", .95), [bw, bh] = bizSize(sel), yatay = bw > bh, th = 2 * bh;
+    const one = new jsPDF({unit: "mm", format: [bw + 2 * BL, th + 2 * BL], orientation: "portrait"});
+    one.addImage(img, "JPEG", 0, 0, bw + 2 * BL, th + 2 * BL);
+    one.save(pdfName(ev, `katlanir-kartvizit-${bw}x${th}-ortadan-katlanir-tasmali`));
+    (yatay ? tentGridPdf(img, bw, th, 2, 2) : tentGridPdf(img, bw, th, 4, 1)).save(pdfName(ev, "katlanir-kartvizit-A4-4lu"));
   } else {
     // pano: masa kartı tasarımı büyütülür (oranlar neredeyse aynı); 5 mm taşma, ~150 dpi (geniş format baskı)
     const [W, H] = PANO_SIZES[panoSize] || PANO_SIZES["50x70"], PB = 5, s = Math.max((W + 2 * PB) / CARD_W, (H + 2 * PB) / CARD_H);
@@ -1024,6 +1057,7 @@ async function productPdf(product, ev, sel, panoSize = "50x70") {
 // önizleme: ürün tuvali (taşma payı dahil)
 function drawProduct(product, ev, sel, pxmm) {
   if (product === "kartvizit") return drawBiz(ev, sel, pxmm);
+  if (product === "katlanir") return drawTent(ev, sel, pxmm);
   return drawKart(ev, sel, pxmm);
 }
 
@@ -1121,6 +1155,18 @@ function mockup(kind, ev, sel, W, H) {
       g.shadowColor = "rgba(0,0,0,.2)"; g.shadowBlur = 6; g.fillStyle = "#fff"; g.fillRect(-bw / 2, -bh, bw, bh); g.shadowColor = "transparent";
       if (i === 0) put(tb, -bw / 2, -bh, bw, bh); g.restore();
     }
+  } else if (kind === "cadir") {
+    // masada katlanır kartvizit: ön yüz hafif geriye yatık, arkada öbür yüzün sırtı ve gölge
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#efebe6"); gr.addColorStop(1, "#d9d2ca"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    const [zw, zh] = bizSize(sel), fw = zw > zh ? W * .62 : W * .34, fh = fw * zh / zw, px = fw / zw * 1.02;
+    const t = trimmed(drawBiz(ev, sel, px), CARD_BL, px), cx = W / 2, base = H * .5 + fh * .45, lean = .86;
+    g.save(); g.fillStyle = "rgba(0,0,0,.16)"; g.filter = `blur(${Math.round(H * .02)}px)`;
+    g.beginPath(); g.ellipse(cx, base + H * .01, fw * .56, H * .05, 0, 0, 7); g.fill(); g.restore();
+    g.fillStyle = "#e9e4de"; g.fillRect(cx - fw / 2 + fw * .01, base - fh * lean - H * .018, fw * .98, H * .02);   // arka yüzün üst kenarı
+    g.save(); g.translate(cx - fw / 2, base - fh * lean); g.scale(1, lean);
+    g.shadowColor = "rgba(0,0,0,.22)"; g.shadowBlur = H * .03; g.shadowOffsetY = H * .01;
+    put(t, 0, 0, fw, fh); g.restore();
+    g.fillStyle = "rgba(255,255,255,.35)"; g.fillRect(cx - fw / 2, base - fh * lean, fw, 1.5);                     // katlama çizgisi parlaklığı
   } else if (kind === "kartvizit") {
     const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#f4f1ee"); gr.addColorStop(1, "#ddd6cf"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
     g.strokeStyle = "rgba(150,140,130,.12)"; for (let i = 0; i < 14; i++) { g.lineWidth = .5 + r() * 2; g.beginPath(); g.moveTo(r() * W, 0); g.bezierCurveTo(r() * W, H * .3, r() * W, H * .7, r() * W, H); g.stroke(); }

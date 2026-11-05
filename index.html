@@ -1150,13 +1150,15 @@ async function kartPanel(ev, pin) {
     const tok = ++prevTok;
     await (mode === "kendi" ? cardFonts() : designReady(sel.design));
     if (tok !== prevTok) return;
-    $("#prev").src = view === "mekan" ? mockup(product === "kart" ? "stand" : product, ev, cur(), 720, 576).toDataURL("image/jpeg", .88)
-      : drawProduct(product, ev, cur(), product === "kartvizit" ? 7 : 4.4).toDataURL("image/jpeg", .9);
+    $("#prev").src = view === "mekan" ? mockup(product === "kart" ? "stand" : product === "katlanir" ? "cadir" : product, ev, cur(), 720, 576).toDataURL("image/jpeg", .88)
+      : drawProduct(product, ev, cur(), product === "kartvizit" || product === "katlanir" ? 7 : 4.4).toDataURL("image/jpeg", .9);
     $("#prev").className = (product === "kartvizit" && sel.biz === "yatay") || view === "mekan" ? "wide" : "";
-    $("#bizTabs").hidden = product !== "kartvizit";
+    $("#bizTabs").hidden = product !== "kartvizit" && product !== "katlanir";
     $("#bizTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.y === sel.biz));
     $("#viewTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === view));
-    $("#prodNote").textContent = (product === "kartvizit" ? (sel.biz === "dikey" ? "5 × 8,2 cm, dikey" : "8,2 × 5 cm, yatay") : CARD_PRODUCTS[product].note) + (product === "pano" ? " · masa kartı tasarımınız büyütülür" : "");
+    $("#prodNote").textContent = (product === "kartvizit" ? (sel.biz === "dikey" ? "5 × 8,2 cm, dikey" : "8,2 × 5 cm, yatay")
+      : product === "katlanir" ? (sel.biz === "dikey" ? "Açık hâli 5 × 16,4 cm" : "Açık hâli 8,2 × 10 cm") + ", ortadan katlanır; masaya çadır gibi konur, iki yüzde de kartvizit"
+      : CARD_PRODUCTS[product].note) + (product === "pano" ? " · masa kartı tasarımınız büyütülür" : "");
     $("#panoSize").hidden = product !== "pano";
     $("#prodTabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.p === product));
   };

@@ -1701,7 +1701,8 @@ async function designsView() {
             <div class="seg" id="oProd">${Object.entries(PROD_TR).map(([k, v]) => `<button type="button" data-r="${k}">${v}</button>`).join("")}</div>
             <div class="seg" id="oBiz"><button type="button" data-y="yatay">Yatay kartvizit</button><button type="button" data-y="dikey">Dikey kartvizit</button></div></div>
           <label class="switch"><input type="checkbox" id="oArc"> ${esc(EK_ARSIV.ad)} (${esc(EK_ARSIV.fiyat)})</label>
-          <div class="grid2"><div class="stack"><label for="oT">Kartta yazacak isimler</label><input type="text" id="oT" maxlength="60" placeholder="Ör. Seda & Yusuf" required></div>
+          <p class="hint" id="oSum" hidden></p>
+          <div class="grid2" id="oInfo"><div class="stack"><label for="oT">Kartta yazacak isimler</label><input type="text" id="oT" maxlength="60" placeholder="Ör. Seda & Yusuf" required></div>
             <div class="stack"><label for="oD">Etkinlik tarihi</label><input type="date" id="oD" required></div></div>
           <label for="oText">Kart yazısı <span class="opt">(isteğe bağlı)</span></label>
           <textarea id="oText" rows="2" maxlength="120" placeholder="${esc(d.text(evFor(d.id)))}"></textarea>
@@ -1765,6 +1766,12 @@ async function designsView() {
     $("#oArc", m).checked = order.archive; $("#oText", m).value = order.text; $("#oNote", m).value = order.note;
     $("#oName", m).value = order.name; $("#oPhone", m).value = order.phone;
     $("#oT", m).value = st.title; $("#oD", m).value = st.date;
+    // isim ve tarih sayfada yazıldıysa tekrar sorulmaz: özet görünür, istenirse değiştirilir
+    if (st.title) {
+      $("#oInfo", m).hidden = true; $("#oSum", m).hidden = false;
+      $("#oSum", m).innerHTML = `Kartta: <b>${esc(st.title)}</b> · ${esc(KINDS[st.kind] || "")} · ${esc(fmtDate(st.date))} <button type="button" class="linkbtn" id="oEdit">Değiştir</button>`;
+      $("#oEdit", m).onclick = () => { $("#oInfo", m).hidden = false; $("#oSum", m).hidden = true; $("#oT", m).focus(); };
+    }
     // pencerede değişen isim/tarih sayfadaki forma ve kart önizlemelerine de yansır
     $("#oT", m).oninput = ev2 => { st.title = ev2.target.value.trim(); $("#dzT").value = ev2.target.value; clearTimeout(tm); tm = setTimeout(drawImg, 300); redraw(); };
     $("#oD", m).oninput = ev2 => { st.date = ev2.target.value; $("#dzD").value = st.date; clearTimeout(tm); tm = setTimeout(drawImg, 300); redraw(); };
@@ -1797,7 +1804,7 @@ async function designsView() {
     $("#oSend", m).onclick = async () => {
       const name = order.name.trim(), phone = order.phone.trim(), digits = phone.replace(/\D/g, "");
       if (!st.pkg) { err("Önce paketinizi seçin."); return $("#oPkg", m).scrollIntoView({behavior: "smooth", block: "center"}); }
-      if (st.title.length < 2) { err("Kartta yazacak isimleri yazın."); return $("#oT", m).focus(); }
+      if (st.title.length < 2) { err("Kartta yazacak isimleri yazın."); $("#oInfo", m).hidden = false; $("#oSum", m).hidden = true; return $("#oT", m).focus(); }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(st.date || "")) { err("Etkinlik tarihini seçin."); return $("#oD", m).focus(); }
       if (name.length < 2) { err("Adınızı ve soyadınızı yazın."); return $("#oName", m).focus(); }
       if (digits.length < 10 || digits.length > 13) { err("Telefon numaranızı kontrol edin (ör. 0532 123 45 67)."); return $("#oPhone", m).focus(); }

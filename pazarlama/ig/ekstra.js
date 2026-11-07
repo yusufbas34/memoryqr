@@ -179,5 +179,30 @@ const IG_EKSTRA = [
     slides: [{tpl: "m-foto", etiket: "MemoryQR", b: ["Düğününüzün bütün fotoğrafları", "tek albümde."], hs: 84, foto: "pleksi-stand",
       metin: "Misafirler masadaki QR'ı okutur, **fotoğraf ve videolarını** yükler. Uygulama yok, **orijinal kalite.**",
       bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"}]},
+  // ---- paketler tek tek, görselli
+  {t: "karusel", h: "Paketler tek tek (görselli)",
+    ne: "Fiyat soranlara bu gönderiyi at; her paket ayrı slaytta, görseliyle. Tek tek hikâyede de paylaşılabilir.",
+    cap: "Hangi paket size uygun? 💌\n\n1️⃣ Dijital 499 TL: albüm + QR kart PDF'i, kartları kendiniz basarsınız\n2️⃣ Standart 899 TL: 10 masa kartı ya da 100 kartvizit basılı gelir\n3️⃣ Standart + Şövale 1.499 TL: + girişe pano ve ahşap şövale\n4️⃣ Aile paketi 1.999 TL: kına + düğün, 2 ayrı albüm, 60 gün\n\nHepsinde orijinal kalite fotoğraf ve video, tek tıkla indirme. Tek seferlik ödeme, abonelik yok.\n\n👉 Paketinizi seçip sipariş verin: link profilde",
+    tags: ["#düğünbütçesi", "#düğünhazırlığı", "#qrkod", "#masakartı"],
+    slides: [
+      {tpl: "m-kapak", b: ["Hangi paket", "size uygun?"], metin: "Dört paketi **tek tek** anlattık. Kaydırın, size uyanı bulun.", chips: ["💌 Dijital", "🃏 Standart", "🪧 Şövale", "👨‍👩‍👧 Aile"], kaydir: "Kaydır, paketleri gör", bant: "Tek seferlik ödeme, | abonelik yok."},
+      {tpl: "m-pk", etiket: "Paket 1", ad: "Dijital", fiyat: "499 TL", urun: "phone", tasarim: "lacivert_barok",
+        kime: "Kartları **kendiniz bastırmak** isteyenler için.",
+        maddeler: ["1 etkinlik, fotoğraf ve video albümü", "QR kart **PDF'i** (masa kartı, kartvizit, pano)", "30 gün saklama, **tek tıkla indirme**", "60'tan fazla tasarım, isminizle"], bant: "PDF'i alın, | dilediğiniz yerde basın."},
+      {tpl: "m-pk", etiket: "Paket 2", ad: "Standart", fiyat: "899 TL", foto: "tabak-kartvizit", rozet: "En çok tercih edilen",
+        kime: "Kartları **basılı ve hazır** isteyenler için.",
+        maddeler: ["1 etkinlik, fotoğraf ve video albümü", "**10 masa kartı** ya da **100 kartvizit**, basılı", "Kartvizit yatay, dikey ya da **katlanır**", "30 gün saklama, **tek tıkla indirme**"], bant: "Kartlarınız basılı | kapınıza gelir."},
+      {tpl: "m-pk", etiket: "Paket 3", ad: "Standart + Şövale", fiyat: "1.499 TL", foto: "sovale-pano",
+        kime: "Misafirleri **girişte karşılamak** isteyenler için.",
+        maddeler: ["1 etkinlik, fotoğraf ve video albümü", "**10 masa kartı** ya da **100 kartvizit**, basılı", "Girişe **QR'lı pano** ve **ahşap şövale**", "30 gün saklama, **tek tıkla indirme**"], bant: "Girişte pano, | masalarda kart."},
+      {tpl: "m-pk", etiket: "Paket 4", ad: "Aile paketi", fiyat: "1.999 TL", urun: "aile", tasarim: "bordo_gul",
+        kime: "**Kına ve düğünü** birlikte yapanlar için.",
+        maddeler: ["Kına + düğün, **2 ayrı albüm**", "10 masa kartı ya da 100 kartvizit, basılı", "**50 × 70 cm** giriş panosu ve ahşap şövale", "**60 gün** saklama"], bant: "İki gece, | iki albüm."},
+      {tpl: "m-liste", etiket: "Hepsinde", b: ["Her pakette", "bunlar var."], maddeler: [
+        ["foto", "Orijinal kalite", "Fotoğraflar sıkıştırılmadan gelir."],
+        ["video", "Videolar da", "Video başına 300 MB'a kadar."],
+        ["kilit", "Gizlilik", "Albümün tamamını yalnızca siz görürsünüz."],
+        ["hediye", "Ek: 1 yıl saklama", "+299 TL, Google Drive arşivi."]], bant: "Tek seferlik ödeme, | abonelik yok."},
+      {tpl: "m-cta", b: ["Paketinizi seçin,", "siparişi başlatın."]}]},
 ];
 if (typeof module !== "undefined") module.exports = {IG_EKSTRA};

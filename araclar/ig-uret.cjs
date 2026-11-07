@@ -3,6 +3,7 @@
 //   gun-NN-K.jpg         karusel/gönderi (1080×1350) ve hikâye (1080×1920) görselleri
 //   gun-NN.mp4, gun-NN-kapak.jpg   Reels videosu (müziksiz, 1080×1920) ve kapağı
 //   ek-NN-*                içerik bankası (pazarlama/ig/ekstra.js), aynı adlandırma
+//   oc-NN-K.jpg, oc-NN-kapak.jpg   öne çıkan hikâyeleri ve kapakları (pazarlama/ig/onecikan.js)
 // Gerekenler: Playwright (Chromium) ve ffmpeg.
 // Çalıştırma: node araclar/ig-uret.cjs [7 12 …] [ek | ek3 …]  (argümansız: hepsi; EKRANSIZ=1: ekran görüntülerini yeniden alma)
 const path = require("path"), fs = require("fs"), http = require("http"), os = require("os");
@@ -11,10 +12,12 @@ const {chromium} = require(process.env.PW || "playwright");
 const ROOT = path.join(__dirname, ".."), OUT = path.join(ROOT, "pazarlama", "ig");
 const {IG_PLAN} = require(path.join(OUT, "gunler.js"));
 const {IG_EKSTRA} = require(path.join(OUT, "ekstra.js"));
-const args = process.argv.slice(2), only = args.map(Number).filter(Boolean), ekArgs = args.filter(a => /^ek\d*$/.test(a));
+const {IG_ONECIKAN} = require(path.join(OUT, "onecikan.js"));
+const args = process.argv.slice(2), only = args.map(Number).filter(Boolean), ekArgs = args.filter(a => /^(ek|oc)\d*$/.test(a));
 const nn = n => String(n).padStart(2, "0");
 const days = [...IG_PLAN.flatMap(w => w.d).map((d, i) => ({...d, n: i + 1, f: `gun-${nn(i + 1)}`, sec: !args.length || only.includes(i + 1)})),
-  ...IG_EKSTRA.map((d, i) => ({...d, n: i + 1, f: `ek-${nn(i + 1)}`, sec: !args.length || ekArgs.includes("ek") || ekArgs.includes(`ek${i + 1}`)}))];
+  ...IG_EKSTRA.map((d, i) => ({...d, n: i + 1, f: `ek-${nn(i + 1)}`, sec: !args.length || ekArgs.includes("ek") || ekArgs.includes(`ek${i + 1}`)})),
+  ...IG_ONECIKAN.map((d, i) => ({...d, t: "hikaye", n: i + 1, f: `oc-${nn(i + 1)}`, sec: !args.length || ekArgs.includes("oc") || ekArgs.includes(`oc${i + 1}`)}))];
 
 // küçük statik sunucu (yazı tipleri ve görseller dosyadan değil, http'den yüklensin)
 const TYPES = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".jpg": "image/jpeg", ".woff2": "font/woff2", ".json": "application/json"};
@@ -103,6 +106,7 @@ const server = http.createServer((q, r) => {
       await draw(d.slides[i], d.t === "hikaye", path.join(OUT, `${d.f}-${i + 1}.jpg`));
       console.log(`${d.f}: görsel ${i + 1}/${d.slides.length}`);
     }
+    if (d.kapak && !d.reels) { await draw(d.kapak, true, path.join(OUT, `${d.f}-kapak.jpg`)); console.log(`${d.f}: kapak`); }
     if (d.reels) {
       await draw(d.reels.kapak, true, path.join(OUT, `${d.f}-kapak.jpg`));
       const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "reels-")), sc = d.reels.sahneler, X = .25;

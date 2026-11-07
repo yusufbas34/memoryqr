@@ -75,6 +75,8 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m .circ{position:absolute;border-radius:50%;background:rgba(140,47,82,.06)}
 .m .mpad{position:relative;flex:1;display:flex;flex-direction:column;gap:34px;padding:92px 76px 60px;min-height:0}
 .d.m .mpad{padding-top:200px;padding-bottom:120px;gap:44px}
+.d.m.nobant .mpad{padding-bottom:340px}
+.d.m.nobant .mphone{bottom:420px}
 .m .tag{align-self:flex-start;background:rgba(140,47,82,.1);color:var(--mb);font:700 28px var(--body);letter-spacing:.14em;text-transform:uppercase;padding:14px 28px;border-radius:999px}
 .m .mh{font:700 100px/1.02 var(--body);letter-spacing:-.025em;margin:0;color:var(--mi);text-wrap:balance}
 .m .mh em{font-style:normal;color:var(--mb)}
@@ -208,6 +210,7 @@ const band = s => s.bant === false ? "" : `<div class="band"><div class="tile">$
 async function renderM(el, s, d) {
   const t = s.tpl;
   el.classList.add("m");
+  if (s.bant === false) el.classList.add("nobant");
   if (t === "m-kapak") {
     el.innerHTML = `${circles(1)}<div class="mpad"><div class="brand"><div class="tile">${MARK}</div>MemoryQR</div>
       <div style="margin-top:${d ? 120 : 40}px">${head({...s, hs: s.hs || (d ? 150 : 132)})}</div>
@@ -244,6 +247,13 @@ async function renderM(el, s, d) {
   } else if (t === "m-soru") {
     el.innerHTML = `${circles(1)}<div style="position:absolute;right:40px;top:${d ? 160 : 40}px;font:700 620px/1 var(--body);color:rgba(140,47,82,.07)">?</div><div class="mpad" style="justify-content:center"><div class="tag">${esc(s.etiket || "Sık sorulan")}</div>
       <h1 class="qbig">${esc(s.soru)}</h1><div class="abox">${md(s.cevap)}</div></div>${band(s)}`;
+  } else if (t === "m-oc") {
+    // öne çıkan kapağı: bordo zemin, ortada beyaz simge (Instagram yuvarlak kırpar)
+    el.classList.add("cta");
+    const ic = s.ikon === "mark" ? MARK : ICON[s.ikon] || "";
+    el.innerHTML = `${circles(2)}<div style="position:absolute;inset:0;display:grid;place-items:center">${s.yazi
+      ? `<div style="font:700 560px/1 var(--body);color:#fff">${esc(s.yazi)}</div>`
+      : `<div style="width:520px;height:520px;color:#fff">${ic.replace("<svg ", '<svg width="520" height="520" ')}</div>`}</div>`;
   } else if (t === "m-soz") {
     el.classList.add("soz", s.zemin || "koyu");
     const q = (s.soz || []).map(x => esc(x).replace(/\*(.+?)\*/g, "<em>$1</em>")).join("<br>");

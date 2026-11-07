@@ -53,6 +53,7 @@ pre.copy{white-space:pre-wrap;background:var(--soft);border-radius:10px;padding:
 .day details summary{cursor:pointer;font-weight:600;color:var(--accent);font-size:15px}
 ul{padding-left:20px;margin:6px 0}
 li{margin:3px 0}
+.occ{width:56px;height:56px;border-radius:50%;object-fit:cover;object-position:center;display:block}
 .media{display:flex;gap:8px;overflow-x:auto;padding:4px 0 6px;scroll-snap-type:x mandatory}
 .media .th{position:relative;flex:0 0 132px;aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:var(--soft);scroll-snap-align:start;border:1px solid var(--line)}
 .media.tall .th{aspect-ratio:9/16;flex-basis:120px}
@@ -131,6 +132,10 @@ Uygulama yok · Orijinal kalite · 30 gün saklama
 
   <div id="plan"></div>
 
+  <h2 id="onecikan">Öne çıkanlar</h2>
+  <p class="small">Profilin altındaki yuvarlak öne çıkanlar. Her biri için hikâyeleri sırayla paylaş, sonra hikâyeyi açıp sağ alttaki <b>Öne çıkar</b>'a dokun, yeni öne çıkan oluştur ve adını yaz. Kapak için: öne çıkana basılı tut → <b>Öne çıkanı düzenle</b> → <b>Kapağı düzenle</b> → galeriden kapak görselini seç.</p>
+  <div id="oc"></div>
+
   <h2 id="banka">İçerik bankası: istediğin gün paylaş</h2>
   <p class="small">Plan dışı hazır gönderiler (yeni marka tasarımı). Boş kalan günlerde, hafta sonları ya da plan bittikten sonra kullan. "MemoryQR nedir?" karuselini profilin en üstüne sabitle.</p>
   <div id="ek"></div>
@@ -156,6 +161,7 @@ Beğendiğiniz tasarımda "Siparişi başlat"a dokunmanız yeterli. Etkinlik tar
 
 <script src="ig/gunler.js"></script>
 <script src="ig/ekstra.js"></script>
+<script src="ig/onecikan.js"></script>
 <script>
 "use strict";
 // plan ve her günün içeriği ig/gunler.js dosyasında; görseller ve videolar araclar/ig-uret.cjs ile üretilir
@@ -207,6 +213,12 @@ function render() {
         ${d.cap ? `<details${n === firstOpen ? " open" : ""}><summary>Açıklama ve etiketler</summary><pre class="copy" id="${id}">${esc(caption(d))}</pre><button class="btn" data-copy="${id}">Kopyala</button></details>` : ""}
       </div></article>`;
   }).join("") + `</section>`).join("");
+  document.getElementById("oc").innerHTML = IG_ONECIKAN.map((d, i) => {
+    const k = i + 1, kap = `ig/oc-${nn(k)}-kapak.jpg`;
+    return `<article class="day"><span></span>
+      <div class="head"><a href="${kap}" download title="Kapağı indir"><img class="occ" src="${kap}" alt="${esc(d.h)} kapağı" loading="lazy"></a><b>${esc(d.h)}</b><span class="small">Öne çıkan adı: <b>${esc(d.ad)}</b></span></div>
+      <div class="body">${media({...d, t: "hikaye"}, k, "oc")}<p class="small">Kapak: yuvarlak görsele dokun → indir.</p></div></article>`;
+  }).join("");
   document.getElementById("ek").innerHTML = IG_EKSTRA.map((d, i) => {
     const k = i + 1, id = "e" + k;
     return `<article class="day${doneEk.has(k) ? " done" : ""}" data-e="${k}">

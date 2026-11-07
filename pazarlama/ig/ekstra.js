@@ -172,5 +172,12 @@ const IG_EKSTRA = [
         {tpl: "m-soz", sure: 3, zemin: "krem", soz: ["Ama o anlar", "*telefonlarda* kalır."]},
         {tpl: "kamera", sure: 2.2, baslik: "Bu sefer değil."},
         {tpl: "m-cta", sure: 3, b: ["Hepsini bir araya", "getirelim."], ust: "Misafirlerin çektiği her an, tek albümde", alt: "Tek QR · Uygulama yok · Orijinal kalite"}]}},
+  // ---- DM görseli: tanışma mesajının üstüne tek görsel
+  {t: "gonderi", h: "DM görseli (tanışma mesajıyla gönder)",
+    ne: "Instagram'da birine ilk mesajı atarken önce bu görseli, sonra tanışma mesajını gönder.",
+    cap: "", tags: [],
+    slides: [{tpl: "m-foto", etiket: "MemoryQR", b: ["Düğününüzün bütün fotoğrafları", "tek albümde."], hs: 84, foto: "pleksi-stand",
+      metin: "Misafirler masadaki QR'ı okutur, **fotoğraf ve videolarını** yükler. Uygulama yok, **orijinal kalite.**",
+      bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"}]},
 ];
 if (typeof module !== "undefined") module.exports = {IG_EKSTRA};

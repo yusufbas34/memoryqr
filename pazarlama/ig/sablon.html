@@ -185,7 +185,8 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m.bil{background:linear-gradient(165deg,var(--tz2) 0%,var(--tz) 100%)}
 .m.bil .tag{background:rgba(255,255,255,.18);color:#fff}
 .m.bil .mh{color:#fff;font-size:76px}.m.bil .mh em{color:var(--ta)}
-.m.bil .nots{position:relative;display:grid;gap:0;width:640px;margin-top:20px}
+.m.bil .nots{position:relative;display:grid;gap:0;width:700px;margin-top:20px}
+.m.bil .nt p{white-space:nowrap}.m.bil .nt small{white-space:nowrap}
 .m.bil .nt{display:flex;align-items:baseline;justify-content:space-between;gap:20px;border-bottom:2px solid rgba(255,255,255,.22);padding:22px 4px}
 .m.bil .nth{font:600 28px var(--body);color:rgba(255,255,255,.85);margin-bottom:-4px}.m.bil .nth b{color:#fff}
 .m.bil .nt small{font:500 32px var(--body);color:var(--ta);margin:0;text-align:right}
@@ -193,7 +194,7 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m.bil .nt p{margin:0;font:700 40px var(--body);color:#fff}
 .m.bil .nt small{display:block;font:500 22px var(--body);color:#8a7a82;margin-top:4px}
 .m.bil .th3{display:flex;gap:6px}.m.bil .th3 i{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:28px}
-.m.bil .kcard{position:absolute;right:70px;bottom:220px;width:300px;transform:rotate(7deg);border-radius:8px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.m.bil .kcard{position:absolute;right:80px;bottom:185px;width:260px;transform:rotate(7deg);border-radius:8px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
 .m.bil .nt small{font:500 30px var(--body)!important;color:var(--ta)!important;margin:0!important;text-align:right}
 .m.bil .nth{font-size:30px!important}
 .m.bil .alt2{position:absolute;left:76px;bottom:208px;width:560px;font:600 32px/1.35 var(--body);color:#fff}
@@ -306,7 +307,7 @@ async function renderM(el, s, d) {
     await loadScript("kart.js"); await designReady(s.tasarim);
     const kart = drawCard({code: "ORNEK1", title: s.isim, kind: s.kind, event_date: "2026-06-14"}, s.tasarim, "", 5).toDataURL("image/jpeg", .9);
     el.innerHTML = `<div class="mpad" style="gap:40px;padding-top:110px"><div class="tag">${esc(s.etiket)}</div>${head({...s, hs: s.hs || 80})}
-      <div class="nots"><div class="nth">Albümünüzde, misafire göre</div>${s.bildirim.slice(0, 3).map(([ad, ne]) => `<div class="nt"><p><b>${esc(ad)}</b></p><small>${esc(ne)}</small></div>`).join("")}</div></div>
+      <div class="nots"><div class="nth">Nasıl çalışır?</div>${s.liste.map(([ad, ne]) => `<div class="nt"><p><b>${esc(ad)}</b></p><small>${esc(ne)}</small></div>`).join("")}</div></div>
       <img class="kcard" src="${kart}">${band({bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"})}`;
   } else if (t === "m-tur") {
     el.classList.add("tur"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");

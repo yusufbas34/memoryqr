@@ -185,14 +185,17 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m.bil{background:linear-gradient(165deg,var(--tz2) 0%,var(--tz) 100%)}
 .m.bil .tag{background:rgba(255,255,255,.18);color:#fff}
 .m.bil .mh{color:#fff;font-size:76px}.m.bil .mh em{color:var(--ta)}
-.m.bil .nots{position:relative;display:grid;gap:22px;width:760px;margin-top:10px}
-.m.bil .nt{display:flex;align-items:center;gap:22px;background:rgba(255,255,255,.96);border-radius:34px;padding:22px 26px;box-shadow:0 18px 40px rgba(0,0,0,.18)}
-.m.bil .nt:nth-child(2){margin-left:50px}.m.bil .nt:nth-child(3){margin-left:20px}.m.bil .nt:nth-child(4){margin-left:70px;opacity:.9}
+.m.bil .nots{position:relative;display:grid;gap:0;width:640px;margin-top:20px}
+.m.bil .nt{display:flex;align-items:baseline;justify-content:space-between;gap:20px;border-bottom:2px solid rgba(255,255,255,.22);padding:22px 4px}
+.m.bil .nth{font:600 28px var(--body);color:rgba(255,255,255,.85);margin-bottom:-4px}.m.bil .nth b{color:#fff}
+.m.bil .nt small{font:500 32px var(--body);color:var(--ta);margin:0;text-align:right}
 .m.bil .av{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font:700 34px var(--body);color:#fff;flex:none}
-.m.bil .nt p{margin:0;flex:1;font:500 30px/1.25 var(--body);color:#2a1a22}.m.bil .nt p b{font-weight:700}
+.m.bil .nt p{margin:0;font:700 40px var(--body);color:#fff}
 .m.bil .nt small{display:block;font:500 22px var(--body);color:#8a7a82;margin-top:4px}
 .m.bil .th3{display:flex;gap:6px}.m.bil .th3 i{width:54px;height:54px;border-radius:12px;display:grid;place-items:center;font-style:normal;font-size:28px}
-.m.bil .kcard{position:absolute;right:56px;bottom:200px;width:290px;transform:rotate(7deg);border-radius:8px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.m.bil .kcard{position:absolute;right:70px;bottom:220px;width:300px;transform:rotate(7deg);border-radius:8px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.m.bil .nt small{font:500 30px var(--body)!important;color:var(--ta)!important;margin:0!important;text-align:right}
+.m.bil .nth{font-size:30px!important}
 .m.bil .alt2{position:absolute;left:76px;bottom:208px;width:560px;font:600 32px/1.35 var(--body);color:#fff}
 .m.bil .alt2 b{color:var(--ta)}
 </style>
@@ -298,16 +301,13 @@ async function renderM(el, s, d) {
       <div class="pkimg" style="background-image:url(${img})"></div>
       <ul class="pkl">${s.maddeler.map(x => `<li><span>${md(x)}</span></li>`).join("")}</ul></div>${band(s)}`;
   } else if (t === "m-bil") {
-    el.classList.add("bil"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--tz2", s.renk2 || s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");
+    // sade: tek renk zemin, başlık, albümde misafire göre 3 satır, köşede gerçek kart
+    el.classList.add("bil"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--tz2", s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");
     await loadScript("kart.js"); await designReady(s.tasarim);
     const kart = drawCard({code: "ORNEK1", title: s.isim, kind: s.kind, event_date: "2026-06-14"}, s.tasarim, "", 5).toDataURL("image/jpeg", .9);
-    const COL = ["#c2185b", "#5e35b1", "#00897b", "#ef6c00", "#3949ab", "#6d4c41"];
-    const TINT = ["#fde4ec", "#ede7f6", "#e0f2f1", "#fff3e0", "#e8eaf6", "#efebe9"];
-    el.innerHTML = `${circles(1)}<div class="mpad" style="gap:26px"><div class="tag">${esc(s.etiket)}</div>${head({...s, hs: s.hs || 76})}
-      <div class="nots">${s.bildirim.map(([ad, ne, em, zaman], i) => `<div class="nt"><div class="av" style="background:${COL[i % 6]}">${esc(ad.slice(0, 1))}</div>
-        <p><b>${esc(ad)}</b> ${esc(ne)}<small>${esc(s.albumAd)} · ${esc(zaman)}</small></p>
-        <div class="th3">${[0, 1].map(j => `<i style="background:${TINT[(i + j) % 6]}">${em[j] || em[0]}</i>`).join("")}</div></div>`).join("")}</div></div>
-      <p class="alt2">${md(s.alt)}</p><img class="kcard" src="${kart}">${band({bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"})}`;
+    el.innerHTML = `<div class="mpad" style="gap:40px;padding-top:110px"><div class="tag">${esc(s.etiket)}</div>${head({...s, hs: s.hs || 80})}
+      <div class="nots"><div class="nth">Albümünüzde, misafire göre</div>${s.bildirim.slice(0, 3).map(([ad, ne]) => `<div class="nt"><p><b>${esc(ad)}</b></p><small>${esc(ne)}</small></div>`).join("")}</div></div>
+      <img class="kcard" src="${kart}">${band({bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"})}`;
   } else if (t === "m-tur") {
     el.classList.add("tur"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");
     await loadScript("kart.js");

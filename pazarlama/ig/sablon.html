@@ -199,6 +199,25 @@ body{margin:0;background:#888;font-family:var(--body)}
 .m.bil .nth{font-size:30px!important}
 .m.bil .alt2{position:absolute;left:76px;bottom:208px;width:560px;font:600 32px/1.35 var(--body);color:#fff}
 .m.bil .alt2 b{color:var(--ta)}
+
+/* şık seri (lux) */
+.ab.lux{background:#f8f3ec;color:#2a2024}
+.lux .lfr{position:absolute;inset:36px;border:1.5px solid rgba(176,138,62,.55);pointer-events:none}
+.lux .lfr::after{content:"";position:absolute;inset:10px;border:1px solid rgba(176,138,62,.3)}
+.lux .lpad{position:relative;flex:1;display:flex;flex-direction:column;padding:120px 100px 90px}
+.lux .leb{font:600 26px var(--body);letter-spacing:.32em;text-transform:uppercase;color:var(--ec)}
+.lux .lh{font:400 82px/1.08 var(--serif);margin:26px 0 0;color:#2a2024;letter-spacing:-.01em}
+.lux .lh em{font:400 118px/1 var(--script);color:var(--ec);font-style:normal;display:inline-block;margin-top:6px}
+.lux .lrow{flex:1;display:flex;align-items:center;justify-content:space-between;gap:40px;margin-top:20px}
+.lux .lst{list-style:none;margin:0;padding:0;display:grid;gap:0;width:440px}
+.lux .lst li{display:flex;gap:26px;align-items:baseline;padding:26px 0;border-bottom:1px solid rgba(176,138,62,.4)}
+.lux .lst li:first-child{border-top:1px solid rgba(176,138,62,.4)}
+.lux .lst span{font:italic 400 44px var(--serif);color:#b08a3e;width:62px;flex:none}
+.lux .lst b{display:block;font:600 33px/1.2 var(--body);color:#2a2024}
+.lux .lst small{display:block;font:400 26px var(--body);color:#7a6a70;margin-top:6px}
+.lux .lcard{width:360px;border-radius:6px;box-shadow:0 30px 60px rgba(60,30,40,.22),0 4px 12px rgba(60,30,40,.1)}
+.lux .lft{display:flex;align-items:center;justify-content:center;gap:18px;font:500 26px var(--body);letter-spacing:.06em;color:#7a6a70}
+.lux .lft i{width:70px;height:1px;background:rgba(176,138,62,.6)}.lux .lft b{color:#b08a3e}
 </style>
 </head>
 <body>
@@ -302,13 +321,16 @@ async function renderM(el, s, d) {
       <div class="pkimg" style="background-image:url(${img})"></div>
       <ul class="pkl">${s.maddeler.map(x => `<li><span>${md(x)}</span></li>`).join("")}</ul></div>${band(s)}`;
   } else if (t === "m-bil") {
-    // sade: tek renk zemin, başlık, albümde misafire göre 3 satır, köşede gerçek kart
-    el.classList.add("bil"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--tz2", s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");
+    // şık: krem zemin, ince altın çerçeve, serif başlık + el yazısı vurgu, numaralı 3 adım, sağda gerçek kart
+    el.classList.add("lux"); el.style.setProperty("--ec", s.renk);
     await loadScript("kart.js"); await designReady(s.tasarim);
-    const kart = drawCard({code: "ORNEK1", title: s.isim, kind: s.kind, event_date: "2026-06-14"}, s.tasarim, "", 5).toDataURL("image/jpeg", .9);
-    el.innerHTML = `<div class="mpad" style="gap:40px;padding-top:110px"><div class="tag">${esc(s.etiket)}</div>${head({...s, hs: s.hs || 80})}
-      <div class="nots"><div class="nth">Nasıl çalışır?</div>${s.liste.map(([ad, ne]) => `<div class="nt"><p><b>${esc(ad)}</b></p><small>${esc(ne)}</small></div>`).join("")}</div></div>
-      <img class="kcard" src="${kart}">${band({bant: "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"})}`;
+    const kart = drawCard({code: "ORNEK1", title: s.isim, kind: s.kind, event_date: "2026-06-14"}, s.tasarim, "", 6).toDataURL("image/jpeg", .92);
+    el.innerHTML = `<div class="lfr"></div><div class="lpad">
+      <div class="leb">${esc(s.etiket)}</div>
+      <h1 class="lh">${esc(s.b[0])}<br><em>${esc(s.b[1])}</em></h1>
+      <div class="lrow"><ol class="lst">${s.liste.map(([ad, ne], i) => `<li><span>0${i + 1}</span><div><b>${esc(ad.replace(/^\d\.\s*/, ""))}</b><small>${esc(ne)}</small></div></li>`).join("")}</ol>
+        <img class="lcard" src="${kart}"></div>
+      <div class="lft"><i></i>memoryqr.bulqr.com.tr<b>·</b>@memoryqrtr<i></i></div></div>`;
   } else if (t === "m-tur") {
     el.classList.add("tur"); el.style.setProperty("--tz", s.renk); el.style.setProperty("--ta", s.vurgu || "#f6d38a");
     await loadScript("kart.js");

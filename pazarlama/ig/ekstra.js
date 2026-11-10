@@ -224,6 +224,6 @@ const IG_EKSTRA = [
     ne: "Seriden bir gönderi. Haftaya yayarak paylaş.",
     cap: `${e.ad} için QR kodlu ortak albüm 📸\n\n1. Masadaki QR'ı ${e.kim} telefon kamerasıyla okutur.\n2. Adını yazar, çektiği fotoğraf ve videoları yükler.\n3. Hepsi orijinal kalitede tek albümde toplanır, siz tek tıkla indirirsiniz.\n\nUygulama yok, üyelik yok. Kart ve kartvizit isminizle hazırlanır. Paketler 499 TL'den başlıyor.\n\n👉 Tasarımınızı seçin: link profilde`,
     tags: [e.tag, "#qrkod", "#anıalbümü", "#misafirfotoğrafları"],
-    slides: [{tpl: "m-bil", etiket: e.ad, ...e, liste: [["1. Misafir QR'ı okutur", "Uygulama yok"], ["2. Fotoğraf ve video yükler", "Orijinal"], ["3. Siz hepsini indirirsiniz", "Tek tıkla"]]}]})),
+    slides: [{tpl: "m-bil", etiket: e.ad, ...e, liste: [["1. Misafir QR'ı okutur", "Uygulama yok"], ["2. Fotoğraf ve video yükler", "Orijinal kalite"], ["3. Siz hepsini indirirsiniz", "Tek tıkla"]]}]})),
 ];
 if (typeof module !== "undefined") module.exports = {IG_EKSTRA};

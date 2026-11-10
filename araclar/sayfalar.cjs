@@ -151,7 +151,7 @@ function sayfa(p) {
 <title>${esc(p.title)}</title>
 <meta name="description" content="${esc(p.desc)}">
 <link rel="canonical" href="${url}">
-<meta name="theme-color" content="#8c2f52">
+<meta name="theme-color" content="#f8f3ec">
 <link rel="icon" type="image/svg+xml" href="${up}logo.svg">
 <link rel="apple-touch-icon" href="${up}apple-touch-icon.png">
 <meta property="og:type" content="${rehber ? "article" : "website"}">
@@ -163,6 +163,7 @@ function sayfa(p) {
 <meta property="og:image" content="${SITE}og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="${up}fonts.css">
+<link rel="stylesheet" href="${up}kart.css">
 <link rel="stylesheet" href="${up}sayfa.css">
 <script type="application/ld+json">${JSON.stringify(ld)}</script>
 </head>

@@ -111,6 +111,9 @@ Komut satırından: `cd worker && npx wrangler deploy && npx wrangler secret put
 - Aile paketi: kına + nişan + düğün için tek QR'dan ayrı albümler
 - Yükleme kuyruğunun sayfa kapanınca da sürmesi (IndexedDB)
 
+## Instagram görsel standardı
+Bütün Instagram görselleri tek görünümde: krem zemin (#f8f3ec), ince çift altın çerçeve, başlık Playfair Display, vurgu Great Vibes (bordo #8c2f52), metin Barlow, süs altın (#b08a3e). Koyu ya da renkli zemin kullanılmaz (fotoğraflı slaytlar hariç). Kurallar `pazarlama/ig/sablon.html` içindeki "MARKA STANDARDI" bölümünde.
+
 ## Sipariş akışı
 - Ana sayfadaki "Bu paketi isteyin" → `?tasarimlar&paket=<kod>` (kodlar `PAKETLER[].kod`: dijital, standart, sovale, aile). Müşteri paketini, isimlerini,
   tasarımını, basılı ürünü (masa kartı / yatay-dikey kartvizit) ve iletişim bilgisini seçer; `memory_order_add` ile `memory_orders` tablosuna kaydedilir.

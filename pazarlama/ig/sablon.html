@@ -218,6 +218,65 @@ body{margin:0;background:#888;font-family:var(--body)}
 .lux .lcard{width:360px;border-radius:6px;box-shadow:0 30px 60px rgba(60,30,40,.22),0 4px 12px rgba(60,30,40,.1)}
 .lux .lft{display:flex;align-items:center;justify-content:center;gap:18px;font:500 26px var(--body);letter-spacing:.06em;color:#7a6a70}
 .lux .lft i{width:70px;height:1px;background:rgba(176,138,62,.6)}.lux .lft b{color:#b08a3e}
+
+/* ===================== MARKA STANDARDI (bütün Instagram görselleri) =====================
+   Zemin krem #f8f3ec, ince çift altın çerçeve; başlıklar Playfair Display (serif), vurgu Great Vibes (el yazısı, bordo),
+   metin Barlow; vurgu rengi bordo #8c2f52, süs rengi altın #b08a3e. Koyu/renkli zeminler kullanılmaz (fotoğraflı slaytlar hariç). */
+:root{--std-bg:#f8f3ec;--std-ink:#2a2024;--std-mut:#7a6a70;--std-gold:#b08a3e;--std-acc:#8c2f52}
+.ab{background:var(--std-bg)!important;color:var(--std-ink)!important}
+.ab::after{content:"";position:absolute;inset:36px;border:1.5px solid rgba(176,138,62,.55);box-shadow:inset 0 0 0 10px var(--std-bg),inset 0 0 0 11px rgba(176,138,62,.3);pointer-events:none;z-index:0}
+.ab.t-foto::after,.ab.soz.foto::after{border-color:rgba(255,255,255,.55);box-shadow:none}
+.ab.t-foto,.ab.soz.foto{background:#000!important;color:#fff!important}
+.frame,.circ,.grain,.bignum{display:none!important}
+/* eski şablonlar */
+.bas{font:400 132px/1.04 var(--serif)!important;letter-spacing:-.01em}
+.d .bas{font-size:140px!important}
+.ust{font:600 28px var(--body)!important;letter-spacing:.32em!important;color:var(--std-acc)!important}
+.alt{color:var(--std-mut)!important}
+.foot{color:var(--std-mut)!important}.foot b{color:var(--std-acc)}
+.t-bordo,.t-koyu{background:var(--std-bg)!important;color:var(--std-ink)!important}
+.t-bordo .pad,.t-bordo .bas{color:var(--std-ink)!important}.t-bordo .alt{color:var(--std-mut)!important}
+.t-bordo .pill{background:var(--std-acc);color:#fff}
+.t-bordo .logo{color:var(--std-acc)}
+.t-foto .bas,.t-foto .alt,.t-foto .ust{color:#fff!important}
+.q{font:400 104px/1.08 var(--serif)!important}
+.price{font-family:var(--serif)!important;font-weight:400!important}
+.num{background:var(--std-acc)!important}
+.items div,.chat div{box-shadow:none!important;border:1px solid rgba(176,138,62,.35)}
+.tnum{font:italic 400 90px var(--serif)!important;color:var(--std-gold)!important}
+.wa{background:var(--std-bg)!important;background-image:none!important}
+.wa .ust{color:var(--std-acc)!important}
+.chat div{background:#fff!important}.chat div:nth-child(even){background:#efe4d6!important}
+/* marka seti (m-*) */
+.m{background:var(--std-bg)!important}
+.m .mh{font:400 92px/1.08 var(--serif)!important;color:var(--std-ink)!important;letter-spacing:-.01em!important}
+.m .mh em{font:400 1.3em/1 var(--script)!important;color:var(--std-acc)!important}
+.m .tag{background:none!important;padding:0!important;color:var(--std-acc)!important;letter-spacing:.32em!important;font-size:26px!important}
+.m .brand{font:400 60px var(--serif)!important}
+.m .tile{background:var(--std-acc)!important}
+.m .chips span,.m .step,.m .feat,.m .pk>div,.m .abox{box-shadow:none!important;border:1px solid rgba(176,138,62,.4)}
+.m .step i,.m .feat i,.m .pkl li::before{background:var(--std-acc)!important}
+.m .mt{color:var(--std-mut)!important}.m .mt b{color:var(--std-ink)!important}
+.m .qbig{font:400 84px/1.1 var(--serif)!important;color:var(--std-ink)!important}
+.m .pkp,.m .pk strong{font-family:var(--serif)!important;font-weight:400!important}
+.m .swipe{color:var(--std-gold)!important}
+.m .band{background:none!important;color:var(--std-mut)!important;height:120px;margin:0 76px 50px;padding:0!important;border-top:1px solid rgba(176,138,62,.5)}
+.m .band p{font:500 26px/1.3 var(--body)!important;color:var(--std-mut)}
+.m .band span{color:var(--std-acc)!important;font-size:28px!important}
+.m .band .tile{background:var(--std-acc)!important;width:60px!important;height:60px!important;border-radius:16px!important}
+.m .band .tile svg{color:#fff!important;width:38px!important;height:38px!important}
+.m.cta{background:var(--std-bg)!important;color:var(--std-ink)!important}
+.m.cta .mh{color:var(--std-ink)!important}.m.cta .mt{color:var(--std-mut)!important}
+.m.cta .bigtile{background:var(--std-acc)!important;box-shadow:none!important}.m.cta .bigtile svg{color:#fff!important}
+.m.cta .btns span{background:var(--std-acc)!important;color:#fff!important}.m.cta .btns span.l{background:#fff!important;color:var(--std-acc)!important;border:1px solid var(--std-acc)}
+.m.cta div[style*="font:700 92px"]{font:400 84px var(--serif)!important}
+.m.soz:not(.foto){background:var(--std-bg)!important;color:var(--std-ink)!important}
+.m.soz:not(.foto) .q em{color:var(--std-acc)!important}.m.soz:not(.foto) .s{color:var(--std-mut)!important}
+.m.soz:not(.foto) .line{background:var(--std-gold)!important}.m.soz:not(.foto) .sig{color:var(--std-mut)!important}.m.soz .no{color:var(--std-gold)!important}
+.m.soz:not(.foto) .tag{color:var(--std-acc)!important}
+.m.pk .pkbadge,.m .pkbadge{background:var(--std-acc)!important}
+/* öne çıkan kapakları: krem zemin, bordo simge */
+.m.cta.ockap{background:var(--std-bg)!important}
 </style>
 </head>
 <body>
@@ -343,12 +402,12 @@ async function renderM(el, s, d) {
       <div class="tst"><span><i>1</i>QR'ı okut</span><span><i>2</i>Adını yaz</span><span><i>3</i>Yükle</span></div>
       <div class="tpr">Uygulama yok · Orijinal kalite · <b>499 TL'den</b></div></div>${band({bant: s.bant || "Kartınızı isminizle görün: | memoryqr.bulqr.com.tr/?tasarimlar"})}`;
   } else if (t === "m-oc") {
-    // öne çıkan kapağı: bordo zemin, ortada beyaz simge (Instagram yuvarlak kırpar)
-    el.classList.add("cta");
+    // öne çıkan kapağı: krem zemin, ortada bordo simge (Instagram yuvarlak kırpar)
+    el.classList.add("cta", "ockap");
     const ic = s.ikon === "mark" ? MARK : ICON[s.ikon] || "";
     el.innerHTML = `${circles(2)}<div style="position:absolute;inset:0;display:grid;place-items:center">${s.yazi
-      ? `<div style="font:700 560px/1 var(--body);color:#fff">${esc(s.yazi)}</div>`
-      : `<div style="width:520px;height:520px;color:#fff">${ic.replace("<svg ", '<svg width="520" height="520" ')}</div>`}</div>`;
+      ? `<div style="font:400 560px/1 var(--serif);color:#8c2f52">${esc(s.yazi)}</div>`
+      : `<div style="width:520px;height:520px;color:#8c2f52">${ic.replace("<svg ", '<svg width="520" height="520" ')}</div>`}</div>`;
   } else if (t === "m-soz") {
     el.classList.add("soz", s.zemin || "koyu");
     const q = (s.soz || []).map(x => esc(x).replace(/\*(.+?)\*/g, "<em>$1</em>")).join("<br>");

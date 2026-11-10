@@ -337,7 +337,7 @@ footer a{color:var(--muted)}
 <h2>Paketler ve fiyatlar</h2>
 <ul><li><strong>Dijital: 499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, QR kart PDF'i (kendiniz basın), Tek tıkla hepsini indirme</li><li><strong>Standart: 899 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz)</li><li><strong>Standart + Şövale: 1.499 TL</strong> · 1 etkinlik, sınırsız fotoğraf ve video, 30 gün saklama, Tek tıkla hepsini indirme, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), Giriş panosu ve ahşap şövale</li><li><strong>Aile paketi: 1.999 TL</strong> · Kına + düğün, 2 ayrı albüm, 10 masa kartı (A6) ya da 100 kartvizit, basılı olarak (siz seçersiniz), 1 giriş panosu (50 × 70 cm) ve ahşap şövale, 60 gün saklama</li><li><strong>Ek: 1 yıl saklama +299 TL</strong></li></ul>
 <h2>QR kart tasarımları</h2>
-<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 60 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
+<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 66 tasarım; sünnet ve baby shower için ayrı tasarımlar. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
 <h2>Etkinliğe göre QR kodlu albüm</h2>
 <ul><li><a href="dugun-qr-kod/">Düğün QR kod</a></li><li><a href="kina-gecesi-qr-kod/">Kına gecesi QR kod</a></li><li><a href="nisan-qr-kod/">Nişan ve söz QR kod</a></li><li><a href="dogum-gunu-qr-kod/">Doğum günü partisi QR kod</a></li><li><a href="mezuniyet-qr-kod/">Mezuniyet balosu QR kod</a></li><li><a href="rehber/dugunde-misafir-fotograflari-nasil-toplanir/">Düğünde misafir fotoğrafları nasıl toplanır?</a></li></ul>
 <h2>Sık sorulan sorular</h2>
@@ -391,7 +391,7 @@ const session = {
   del(k) { try { sessionStorage.removeItem("mqr_" + k); } catch (e) {} },
 };
 
-const KINDS = {dugun: "Düğün", nisan: "Nişan", kina: "Kına", soz: "Söz", mezuniyet: "Mezuniyet", dogum_gunu: "Doğum günü", diger: "Etkinlik"};
+const KINDS = {dugun: "Düğün", nisan: "Nişan", kina: "Kına", soz: "Söz", mezuniyet: "Mezuniyet", dogum_gunu: "Doğum günü", sunnet: "Sünnet", baby_shower: "Baby shower", diger: "Etkinlik"};
 const fmtDate = d => new Date(String(d).length === 10 ? d + "T12:00:00" : d).toLocaleDateString("tr-TR", {day: "numeric", month: "long", year: "numeric"});
 const fmtTime = d => new Date(d).toLocaleString("tr-TR", {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
 const daysLeft = d => Math.max(0, Math.ceil((new Date(d) - Date.now()) / 864e5));
@@ -1083,7 +1083,7 @@ async function slideView(code) {
 
 // ---------------------------------------------------------------- kart tasarımı sayfası (?e=KOD&kart, PIN ile): müşteriye gönderilen link
 const loadImg = src => new Promise((res, rej) => { const im = new Image(); im.crossOrigin = "anonymous"; im.onload = () => res(im); im.onerror = rej; im.src = src; });
-const KIND_CAT = {dugun: "dugun", nisan: "dugun", kina: "dugun", soz: "dugun", mezuniyet: "mezuniyet"};
+const KIND_CAT = {dugun: "dugun", nisan: "dugun", kina: "dugun", soz: "dugun", mezuniyet: "mezuniyet", sunnet: "sunnet", baby_shower: "bebek"};
 const QR_POS_TR = {alt: "Altta", orta: "Ortada", sag_alt: "Sağ altta", sol_alt: "Sol altta"};
 const QR_SIZE_TR = {kucuk: "Küçük", orta: "Orta", buyuk: "Büyük"};
 
@@ -1467,7 +1467,7 @@ function adminPanel(key, list) {
 // ---------------------------------------------------------------- giriş sayfası (kod ile)
 // örnek isimler: kartın türüne göre (kız/erkek doğum günü, mezuniyet), diğerlerinde verilen örnek
 const SAMPLE_BY_CAT = {dogum_kiz: ["Seda'nın Doğum Günü", "dogum_gunu"], dogum_erkek: ["Uras'ın Doğum Günü Partisi", "dogum_gunu"],
-  mezuniyet: ["Hukuk Fakültesi Mezuniyet Balosu", "mezuniyet"]};
+  mezuniyet: ["Hukuk Fakültesi Mezuniyet Balosu", "mezuniyet"], sunnet: ["Uras'ın Sünnet Düğünü", "sunnet"], bebek: ["Seda'nın Baby Shower'ı", "baby_shower"]};
 const sampleEv = (id, base) => { const x = SAMPLE_BY_CAT[cardDesign(id).cat]; return x ? {...base, title: x[0], kind: x[1]} : base; };
 // sayfaya özel arama motoru açıklaması ve asıl adres
 function setMeta(desc, canonical) {
@@ -1630,7 +1630,7 @@ async function designsView() {
   const st = {title: "", kind: "dugun", date: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10), cat: "",
     pkg: PAKETLER.find(p => p.kod === params.get("paket"))?.kod || null};
   const sample = {dugun: "Seda & Yusuf", nisan: "Seda & Yusuf", kina: "Seda'nın Kına Gecesi", soz: "Seda & Yusuf", mezuniyet: "Hukuk Fakültesi Mezuniyet Balosu",
-    dogum_gunu: "Seda'nın Doğum Günü", diger: "Seda & Yusuf"};
+    dogum_gunu: "Seda'nın Doğum Günü", sunnet: "Uras'ın Sünnet Düğünü", baby_shower: "Seda'nın Baby Shower'ı", diger: "Seda & Yusuf"};
   app.innerHTML = `<nav class="lnav">${brandHtml}<div class="row"><a href="./#paketler">Paketler</a><a href="./#sss">SSS</a><a class="btn small" href="./">Ana sayfa</a></div></nav>
     <section class="stack" style="padding:28px 0 8px"><div class="eyebrow">Sipariş</div><h1 style="font-size:clamp(36px,6vw,54px)">Kartınızı seçin, siparişinizi verin</h1>
       <p class="lede">Paketinizi seçin, isimlerinizi yazın ve beğendiğiniz tasarıma dokunun. İletişim bilgilerinizi bırakın; sizi arayıp siparişinizi birlikte onaylayalım.</p></section>
@@ -1673,7 +1673,7 @@ async function designsView() {
   $("#dzK").onchange = e => {
     st.kind = e.target.value;
     // etkinliğe uygun kategori öne gelsin
-    st.cat = {mezuniyet: "mezuniyet", dogum_gunu: ""}[st.kind] ?? (["dugun", "nisan", "kina", "soz"].includes(st.kind) ? "dugun" : "");
+    st.cat = {mezuniyet: "mezuniyet", dogum_gunu: "", sunnet: "sunnet", baby_shower: "bebek"}[st.kind] ?? (["dugun", "nisan", "kina", "soz"].includes(st.kind) ? "dugun" : "");
     cats(); grid();
   };
   $("#dzC").onclick = e => { const b = e.target.closest("[data-c]"); if (!b) return; st.cat = b.dataset.c; cats(); grid(); };

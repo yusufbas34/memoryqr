@@ -10,9 +10,9 @@ let DECOR_ONLY = false;  // yatay kartvizit için: tasarım yalnızca süslemele
 
 // "Düğünümüzde", "Kına gecemizde"…: varsayılan kart yazılarında etkinlik türüne göre
 const KIND_IN = {dugun: "Düğünümüzde", nisan: "Nişanımızda", kina: "Kına gecemizde", soz: "Söz törenimizde",
-  mezuniyet: "Mezuniyetimizde", dogum_gunu: "Doğum günümüzde", diger: "Bu özel günümüzde"};
+  mezuniyet: "Mezuniyetimizde", dogum_gunu: "Doğum günümüzde", sunnet: "Sünnet düğünümüzde", baby_shower: "Bebek partimizde", diger: "Bu özel günümüzde"};
 const KIND_DAY = {dugun: "Bu mutlu günümüze", nisan: "Nişanımıza", kina: "Kına gecemize", soz: "Söz törenimize",
-  mezuniyet: "Mezuniyetimize", dogum_gunu: "Doğum günümüze", diger: "Bu özel günümüze"};
+  mezuniyet: "Mezuniyetimize", dogum_gunu: "Doğum günümüze", sunnet: "Sünnet düğünümüze", baby_shower: "Bebek partimize", diger: "Bu özel günümüze"};
 
 const dateDots = d => { const [y, m, g] = String(d).slice(0, 10).split("-"); return `${g}.${m}.${y}`; };
 // "Seda & Yusuf" → ["S", "Y"]; ayrılamayan başlıkta tek harf
@@ -365,8 +365,10 @@ const CARD_DESIGNS = [
 
 // ---------------------------------------------------------------- afiş tasarımları (ortak yerleşim, süsleme tasarıma özel)
 const CARD_CATS = {dugun: "Düğün · Nişan · Kına", dogum_kiz: "Doğum günü · kız", dogum_erkek: "Doğum günü · erkek",
-  mezuniyet: "Mezuniyet", retro: "Retro & eğlenceli", modern: "Modern & renkli"};
+  mezuniyet: "Mezuniyet", sunnet: "Sünnet", bebek: "Baby shower", retro: "Retro & eğlenceli", modern: "Modern & renkli"};
 const POSTER_TEXT = "Bu güzel günden kalan fotoğraf ve videoları QR kodu okutarak bizimle paylaşır mısınız?";
+const SUNNET_TEXT = "Sünnet düğünümüzden kalan fotoğraf ve videoları QR kodu okutarak bizimle paylaşır mısınız?";
+const BEBEK_TEXT = "Bebeğimizi beklerken çektiğiniz fotoğraf ve videoları QR kodu okutarak bizimle paylaşır mısınız?";
 const KIDS_TEXT = "Doğum günü anılarını QR kodu okutarak bizimle paylaşır mısınız?";
 const GRAD_TEXT = "Bu güzel günün fotoğraf ve videolarını QR kodu okutarak bizimle paylaşın!";
 const F = {play: '400 {s}px "Playfair Display"', mont: '400 {s}px "Montserrat"', montB: '600 {s}px "Montserrat"', vibes: '400 {s}px "Great Vibes"',
@@ -768,6 +770,39 @@ const FRAMES = [
       k.heartPath(52.5, 125.6, 3); g.fillStyle = R; g.fill();
     },
     after(k, g, ev) { k.text(`${KINDS[ev.kind] || ""} · ${dateDots(ev.event_date)}`, 52.5, 132.5, F.mont, 2.8, "#333333", {upper: true, sp: .5}); }}),
+  // ---- sünnet
+  poster({id: "sunnet_prens", name: "Küçük Prens", cat: "sunnet", emojis: ["1f451", "2b50", "1f31f"], text: SUNNET_TEXT,
+    bg: "#13234d", hc: "#e8c478", hf: F.vibes, h: ["Maşallah"], hs: [17], mc: "#dfe6ff", nc: "#ffffff", nf: F.play, ns: 7.5, bc: "rgba(255,255,255,.55)",
+    L: {h: [40], msg: 52, qrY: 66, qr: 30, name: 116},
+    deco(k, g) { k.sparkles(70, "#e8c478", 21); k.emoji("1f451", 52.5, 20, 17);
+      g.strokeStyle = "#e8c478"; g.lineWidth = k.mm(.35); g.strokeRect(k.X(6), k.X(6), k.mm(93), k.mm(136)); g.lineWidth = k.mm(.2); g.strokeRect(k.X(8), k.X(8), k.mm(89), k.mm(132));
+      k.emoji("2b50", 14, 128, 7); k.emoji("1f31f", 91, 128, 7); },
+    after(k, g, ev) { k.text(`Sünnet düğünü · ${dateDots(ev.event_date)}`, 52.5, 125, F.mont, 3, "#e8c478", {upper: true, sp: .6}); }}),
+  poster({id: "sunnet_mavi", name: "Mavi Sünnet", cat: "sunnet", ...KIDS, h: ["Sünnet", "Düğünü"], hs: [11, 11], L: {h: [30, 42], msg: 52}, text: SUNNET_TEXT,
+    emojis: ["1f451", "1f40e", "2b50"], bg: "#e3f0fb", hc: "#1f4e8c", mc: "#2a4058", nc: "#1f4e8c",
+    deco(k) { k.bunting(4, ["#1f4e8c", "#e8c478", "#9fc6ee", "#ffffff"], 9); k.sparkles(30, "#ffffff", 9);
+      k.emoji("1f40e", 17, 131, 22); k.emoji("1f451", 88, 131, 18, .15); }}),
+  poster({id: "sunnet_altin", name: "Altın Taç", cat: "sunnet", emojis: ["1f451", "1f4ab"], text: SUNNET_TEXT,
+    bg: "#fbf6ea", hc: "#8a6a24", hf: F.bod, h: ["SÜNNET", "DÜĞÜNÜ"], hs: [10, 10], hsp: 1.5, mc: "#4e4436", nf: F.vibes, ns: 11, nc: "#13234d",
+    L: {h: [36, 47], msg: 55, qrY: 67, qr: 30, name: 117},
+    deco(k, g) { k.emoji("1f451", 52.5, 20, 14);
+      g.strokeStyle = "#c9a04f"; g.lineWidth = k.mm(.4);
+      for (const s of [0, 2.2]) { g.beginPath(); [[52.5, 8 + s], [97 - s, 30], [97 - s, 140 - s], [8 + s, 140 - s], [8 + s, 30]].forEach(([x, y], i) => i ? g.lineTo(k.X(x), k.X(y)) : g.moveTo(k.X(x), k.X(y))); g.closePath(); g.stroke(); }
+      k.emoji("1f4ab", 16, 131, 7); k.emoji("1f4ab", 89, 131, 7, 0, true); },
+    after(k, g, ev) { k.text(dateDots(ev.event_date), 52.5, 128, F.mont, 3.4, "#8a6a24", {sp: .8}); }}),
+  // ---- baby shower
+  poster({id: "bebek_bulut", name: "Bulutlar", cat: "bebek", ...KIDS, h: ["Hoş geldin", "bebek"], hf: F.vibes, hs: [15, 15], L: {h: [30, 44], msg: 54}, text: BEBEK_TEXT,
+    emojis: ["2601", "1f319", "2b50"], bg: "#e6f1fb", hc: "#3d6a9c", mc: "#33475e", nc: "#3d6a9c",
+    deco(k) { k.sparkles(40, "#ffffff", 13); k.emoji("2601", 16, 14, 18); k.emoji("2601", 90, 20, 14, 0, true); k.emoji("1f319", 86, 130, 16, -.2);
+      k.emoji("2601", 20, 133, 20); k.emoji("2b50", 70, 11, 5); }}),
+  poster({id: "bebek_pembe", name: "Pembe Bebek", cat: "bebek", ...KIDS, h: ["Baby", "Shower"], hf: F.vibes, hs: [16, 16], L: {h: [30, 44], msg: 54}, text: BEBEK_TEXT,
+    emojis: ["1f37c", "1f497", "1f9f8"], bg: "#fbe9ef", hc: "#b84d72", mc: "#5a3a46", nc: "#b84d72",
+    deco(k) { k.bunting(4, ["#f4a7c0", "#ffffff", "#f9d4e0", "#e8c478"], 9);
+      k.emoji("1f9f8", 17, 130, 22); k.emoji("1f37c", 89, 131, 16, .25); k.emoji("1f497", 12, 30, 6); k.emoji("1f497", 93, 32, 5); }}),
+  poster({id: "bebek_ayi", name: "Ayıcık", cat: "bebek", ...KIDS, h: ["Bebeğimizi", "bekliyoruz"], hf: F.vibes, hs: [13, 13], L: {h: [30, 43], msg: 53}, text: BEBEK_TEXT,
+    emojis: ["1f9f8", "1f388", "1f463"], bg: "#f6efe4", hc: "#8a6440", mc: "#4e4032", nc: "#8a6440",
+    deco(k) { k.emoji("1f388", 14, 22, 16, -.2); k.emoji("1f388", 92, 20, 14, .2, true); k.emoji("1f9f8", 17, 131, 20);
+      k.emoji("1f463", 88, 134, 9, .3); }}),
 ];
 CARD_DESIGNS.push(...POSTERS);
 CARD_DESIGNS.push(...FRAMES, FIRCA);

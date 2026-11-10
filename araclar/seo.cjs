@@ -41,7 +41,7 @@ const staticBlock = `<!-- SEO:ICERIK (araclar/seo.cjs üretir; JavaScript açıl
 <h2>Paketler ve fiyatlar</h2>
 <ul>${PAKETLER.map(p => `<li><strong>${esc(p.ad)}: ${esc(p.fiyat)}</strong> · ${esc(p.ozellik.join(", "))}</li>`).join("")}<li><strong>Ek: ${esc(EK.ad)} ${esc(EK.fiyat)}</strong></li></ul>
 <h2>QR kart tasarımları</h2>
-<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 60 tasarım. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
+<p>Düğün, nişan ve kına için klasik, modern ve çiçekli; kız ve erkek doğum günü partisi için çocuk temalı; mezuniyet balosu için kepli ve retro olmak üzere 66 tasarım; sünnet ve baby shower için ayrı tasarımlar. <a href="?tasarimlar">Tasarımları kendi isminizle görün</a>.</p>
 <h2>Etkinliğe göre QR kodlu albüm</h2>
 <ul><li><a href="dugun-qr-kod/">Düğün QR kod</a></li><li><a href="kina-gecesi-qr-kod/">Kına gecesi QR kod</a></li><li><a href="nisan-qr-kod/">Nişan ve söz QR kod</a></li><li><a href="dogum-gunu-qr-kod/">Doğum günü partisi QR kod</a></li><li><a href="mezuniyet-qr-kod/">Mezuniyet balosu QR kod</a></li><li><a href="rehber/dugunde-misafir-fotograflari-nasil-toplanir/">Düğünde misafir fotoğrafları nasıl toplanır?</a></li></ul>
 <h2>Sık sorulan sorular</h2>

@@ -69,7 +69,7 @@ create table if not exists public.memory_events (
   code text primary key,
   pin text not null,
   title text not null,                      -- "Ayşe & Mehmet"
-  kind text not null default 'dugun' check (kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'diger')),
+  kind text not null default 'dugun' check (kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'sunnet', 'baby_shower', 'diger')),
   event_date date not null,
   expires_at timestamptz not null,          -- yükleme ve görüntüleme bu ana kadar; dosyalar R2'de yaşam döngüsü kuralıyla silinir
   guest_gallery boolean not null default false, -- true: misafirler başkalarının yüklediklerini de görür
@@ -111,6 +111,16 @@ alter table public.memory_events add column if not exists card_qr_size text;
 -- sürüm 5: etkinliğin paketi (dijital pakette etkinlik sahibi kart PDF'ini kendisi indirir) ve favoriler
 alter table public.memory_events add column if not exists package text;
 alter table public.memory_events alter column guest_gallery set default false;
+-- sürüm 9: sünnet ve baby shower etkinlik türleri (tür kısıtı yeniden kurulur)
+do $$
+declare c text;
+begin
+  for c in select conname from pg_constraint where conrelid = 'public.memory_events'::regclass and contype = 'c' and pg_get_constraintdef(oid) like '%kind%' loop
+    execute format('alter table public.memory_events drop constraint %I', c);
+  end loop;
+  alter table public.memory_events add constraint memory_events_kind_check
+    check (kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'sunnet', 'baby_shower', 'diger'));
+end $$;
 -- sürüm 7: kartvizit yönü (yatay | dikey)
 alter table public.memory_events add column if not exists card_biz text;
 do $$
@@ -625,7 +635,7 @@ begin
   end if;
   insert into memory_orders (name, phone, title, kind, event_date, package, product, card_biz, design, card_text, archive, note)
     values (v_name, v_phone, v_title,
-      case when p_kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'diger') then p_kind else 'diger' end,
+      case when p_kind in ('dugun', 'nisan', 'kina', 'soz', 'mezuniyet', 'dogum_gunu', 'sunnet', 'baby_shower', 'diger') then p_kind else 'diger' end,
       p_event_date,
       case when p_package in ('dijital', 'standart', 'sovale', 'aile') then p_package end,
       case when p_product in ('kart', 'kartvizit') then p_product end,
@@ -698,4 +708,4 @@ begin
 end $$;
 grant execute on function public.memory_share_begin(bigint) to anon, authenticated;
 
-create or replace function public.memory_version() returns integer language sql immutable as 'select 8';
+create or replace function public.memory_version() returns integer language sql immutable as 'select 9';

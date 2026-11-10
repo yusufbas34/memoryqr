@@ -204,5 +204,19 @@ const IG_EKSTRA = [
         ["kilit", "Gizlilik", "Albümün tamamını yalnızca siz görürsünüz."],
         ["hediye", "Ek: 1 yıl saklama", "+299 TL, Google Drive arşivi."]], bant: "Tek seferlik ödeme, | abonelik yok."},
       {tpl: "m-cta", b: ["Paketinizi seçin,", "siparişi başlatın."]}]},
+  // ---- etkinlik türü serisi: her tür ayrı gönderi (gerçek kart tasarımı + kartvizit)
+  ...[
+    ["Düğün", "dugun", "Seda & Yusuf", "lacivert_barok", "#5a1c36", ["Düğününüzün tüm anıları", "tek albümde."], "#düğünfotoğrafları"],
+    ["Kına gecesi", "kina", "Seda'nın Kına Gecesi", "bordo_gul", "#7a1a24", ["Kına gecesinin her karesi", "tek albümde."], "#kınaorganizasyonu"],
+    ["Nişan", "nisan", "Seda & Yusuf", "pudra_yuzuk", "#6d4a5a", ["Nişan anılarınız", "için tek QR."], "#nişanhazırlığı"],
+    ["Doğum günü", "dogum_gunu", "Seda'nın Doğum Günü", "unicorn", "#5b3b8c", ["Doğum gününde tüm anılar", "tek albümde."], "#doğumgünüpartisi"],
+    ["Mezuniyet", "mezuniyet", "Hukuk Fakültesi Mezuniyet Balosu", "mezun_lacivert", "#14295a", ["Bütün sınıfın fotoğrafları", "tek albümde."], "#mezuniyetbalosu"],
+    ["Sünnet", "sunnet", "Uras'ın Sünnet Düğünü", "sunnet_prens", "#13234d", ["Sünnet düğününüz", "tek albümde."], "#sünnetdüğünü"],
+    ["Baby shower", "baby_shower", "Seda'nın Baby Shower'ı", "bebek_pembe", "#a8486c", ["Baby shower'da", "her an tek albümde."], "#babyshower"],
+  ].map(([ad, kind, isim, tasarim, renk, b, tag]) => ({t: "gonderi", h: `Etkinlik serisi: ${ad}`,
+    ne: "Seriden bir gönderi. Hepsini art arda değil, haftaya yayarak paylaş; profilde yan yana renkli bir dizi oluşur.",
+    cap: `${ad} için QR kodlu ortak albüm 📸\n\nMisafirleriniz masadaki QR'ı okutur, adını yazar, çektiği fotoğraf ve videoları yükler. Uygulama yok, orijinal kalite. Kart ve kartvizit kendi isminizle hazırlanır.\n\n💌 Paketler 499 TL'den başlıyor.\n👉 Tasarımınızı seçin: link profilde`,
+    tags: [tag, "#qrkod", "#anıalbümü", "#misafirfotoğrafları"],
+    slides: [{tpl: "m-tur", etiket: ad, kind, isim, tasarim, renk, b}]})),
 ];
 if (typeof module !== "undefined") module.exports = {IG_EKSTRA};

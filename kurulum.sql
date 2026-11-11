@@ -548,6 +548,10 @@ begin
   if (select count(*) from memory_reviews where not approved and created_at > now() - interval '1 hour') >= 30 then
     return json_build_object('ok', false, 'error', 'busy');
   end if;
+  -- aynı kişinin aynı yorumu (çift gönderim) tekrar kaydedilmez
+  if exists (select 1 from memory_reviews where lower(name) = lower(v_name) and body = v_body and created_at > now() - interval '1 day') then
+    return json_build_object('ok', true);
+  end if;
   insert into memory_reviews (name, event_text, rating, body)
     values (v_name, nullif(left(trim(coalesce(p_event, '')), 60), ''), least(greatest(coalesce(p_rating, 5), 1), 5), v_body);
   return json_build_object('ok', true);

@@ -1593,10 +1593,15 @@ function homeView() {
   const drawStars = () => $("#rStars").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.r <= rating));
   drawStars();
   $("#rStars").onclick = e => { const b = e.target.closest("[data-r]"); if (b) { rating = +b.dataset.r; drawStars(); } };
+  let sending = false;
   $("#rf").onsubmit = async e => {
     e.preventDefault();
+    if (sending) return;  // çift dokunuş aynı yorumu iki kez göndermesin
+    sending = true;
+    const btn = $("#rf button[type=submit], #rf .btn:not([data-r])"); if (btn) btn.disabled = true;
     const r = await rpc("memory_review_add", {p_name: $("#rName").value, p_event: $("#rEvent").value, p_rating: rating, p_body: $("#rBody").value})
       .catch(() => ({ok: false, error: "net"}));
+    sending = false; if (btn) btn.disabled = false;
     if (!r.ok) return toast({short: "Adınızı ve en az 10 karakterlik bir yorum yazın.", busy: "Şu anda çok fazla yorum var, birazdan tekrar deneyin."}[r.error] || "Gönderilemedi, tekrar deneyin.", 4000);
     $("#rf").innerHTML = `<p class="ok">Teşekkürler! Yorumunuz onaylandıktan sonra burada yayınlanacak.</p>`;
   };
